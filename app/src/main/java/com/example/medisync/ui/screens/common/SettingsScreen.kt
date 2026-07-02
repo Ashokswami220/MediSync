@@ -44,12 +44,17 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.unit.Dp
 import com.example.medisync.ui.navigation.UserTopBar
 import com.example.medisync.ui.components.LanguageBottomSheet
+import com.example.medisync.ui.components.AppearanceBottomSheet
+import com.example.medisync.ui.theme.LocalAppearance
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    onNavigateToEditProfile: () -> Unit = {}
+) {
     val colorScheme = MaterialTheme.colorScheme
 
-    var isDarkMode by remember { mutableStateOf(false) }
+    var showAppearanceSheet by remember { mutableStateOf(false) }
+    var currentAppearance by LocalAppearance.current
     var isHaptic by remember { mutableStateOf(true) }
     
     var showLanguageSheet by remember { mutableStateOf(false) }
@@ -78,7 +83,7 @@ fun SettingsScreen() {
                     .fillMaxWidth()
                     .background(colorScheme.surface)
                     .border(1.dp, colorScheme.outlineVariant)
-                    .clickable { /* Edit Profile */ }
+                    .clickable { onNavigateToEditProfile() }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -147,11 +152,11 @@ fun SettingsScreen() {
                     onClick = { showLanguageSheet = true }
                 )
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-                SettingsSwitchItem(
+                SettingsItem(
                     icon = Icons.Default.DarkMode,
-                    title = "Dark Mode",
-                    checked = isDarkMode,
-                    onCheckedChange = { isDarkMode = it }
+                    title = "Appearance",
+                    value = currentAppearance,
+                    onClick = { showAppearanceSheet = true }
                 )
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
                 SettingsSwitchItem(
@@ -304,6 +309,16 @@ fun SettingsScreen() {
                 onLanguageSelected = { language ->
                     currentLanguage = language
                     showLanguageSheet = false
+                }
+            )
+        }
+        
+        if (showAppearanceSheet) {
+            AppearanceBottomSheet(
+                currentAppearance = currentAppearance,
+                onDismiss = { showAppearanceSheet = false },
+                onAppearanceSelected = { appearance ->
+                    currentAppearance = appearance
                 }
             )
         }

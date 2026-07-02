@@ -12,6 +12,7 @@ object Routes {
     // Common Screens
     const val ABOUT_US = "about_us_screen"
     const val SETTINGS = "settings_screen"
+    const val EDIT_PROFILE = "edit_profile_screen"
 
     // Onboarding Screens
     const val CAROUSEL = "carousel_screen"

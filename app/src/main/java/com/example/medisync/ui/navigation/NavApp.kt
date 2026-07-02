@@ -31,6 +31,7 @@ import com.example.medisync.ui.screens.user.UserHomeScreen
 import com.example.medisync.ui.screens.user.UserReportsScreen
 import com.example.medisync.ui.screens.user.ReportDetailScreen
 import com.example.medisync.ui.screens.common.SettingsScreen
+import com.example.medisync.ui.screens.common.EditProfileScreen
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
@@ -205,7 +206,10 @@ fun NavApp(
                     // AboutUsScreen(onBackClick = { navController.popBackStack() })
                 }
                 composable(route = Routes.SETTINGS) {
-                    SettingsScreen()
+                    SettingsScreen(onNavigateToEditProfile = { navigateToDest(Routes.EDIT_PROFILE) })
+                }
+                composable(route = Routes.EDIT_PROFILE) {
+                    EditProfileScreen(onBackClick = { navController.popBackStack() })
                 }
             }
         }
