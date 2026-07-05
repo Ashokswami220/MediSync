@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import com.example.medisync.R
 import androidx.compose.ui.unit.dp
@@ -42,17 +43,24 @@ import androidx.compose.material.icons.filled.Directions
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import android.content.Intent
 import android.content.Context
+import androidx.compose.foundation.ScrollState
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import com.example.medisync.ui.components.CallUsBottomSheet
 import com.example.medisync.ui.components.HealthStatBottomSheet
 import com.example.medisync.ui.components.HealthStatDetails
 import androidx.core.net.toUri
+import com.example.medisync.data.local.ContactConfig
+import com.example.medisync.utils.HapticHelper
 
 @Composable
 fun UserHomeScreen(
-    onNavigateToReportDetail: () -> Unit = {}
+    onNavigateToReportDetail: () -> Unit = {},
+    onNavigateToReports: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     val colorScheme = MaterialTheme.colorScheme
@@ -63,7 +71,11 @@ fun UserHomeScreen(
     var selectedHealthStat by remember { mutableStateOf<HealthStatDetails?>(null) }
 
     val collapseRangePx = with(density) { 70.dp.toPx() }
-    val scrollFraction = (scrollState.value / collapseRangePx).coerceIn(0f, 1f)
+    val scrollFraction by remember {
+        derivedStateOf {
+            (scrollState.value / collapseRangePx).coerceIn(0f, 1f)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -71,28 +83,49 @@ fun UserHomeScreen(
                 .fillMaxSize()
                 .background(colorScheme.background)
                 .verticalScroll(scrollState)
-                .padding(top = 196.dp, bottom = 120.dp, start = 16.dp, end = 16.dp)
+                .padding(top = 196.dp, bottom = 120.dp)
         ) {
-            HealthStatsGrid(
-                onCallUsClick = { showCallSheet = true },
-                onStatClick = { stat -> selectedHealthStat = stat },
-                context = context,
-                colorScheme = colorScheme
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                HealthStatsGrid(
+                    onCallUsClick = { showCallSheet = true },
+                    onStatClick = { stat -> selectedHealthStat = stat },
+                    context = context,
+                    colorScheme = colorScheme
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                RecentReportsSection(
+                    onNavigateToReportDetail = onNavigateToReportDetail,
+                    onNavigateToReports = onNavigateToReports,
+                    colorScheme = colorScheme
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            RecentReportsSection(
-                onNavigateToReportDetail = onNavigateToReportDetail,
+            PharmacistSection(
                 colorScheme = colorScheme
             )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            PromotionCard()
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            AnimatedSloganText(scrollState = scrollState)
         }
 
         UserHomeTopBar(
             modifier = Modifier.align(Alignment.TopCenter),
             scrollFraction = scrollFraction
         )
-        
+
         if (showCallSheet) {
             CallUsBottomSheet(
                 onDismissRequest = { showCallSheet = false },
@@ -105,7 +138,7 @@ fun UserHomeScreen(
                 }
             )
         }
-        
+
         HealthStatBottomSheet(
             statDetails = selectedHealthStat,
             onDismissRequest = { selectedHealthStat = null }
@@ -117,9 +150,9 @@ fun openMedicalCoordinates(context: Context) {
     val uri = "geo:0,0?q=28.026437,74.466879(Balaji Medical & Labs)"
     val intent = Intent(Intent.ACTION_VIEW, uri.toUri())
     intent.setPackage("com.google.android.apps.maps")
-    if (intent.resolveActivity(context.packageManager) != null) {
+    try {
         context.startActivity(intent)
-    } else {
+    } catch (_: android.content.ActivityNotFoundException) {
         context.startActivity(Intent(Intent.ACTION_VIEW, uri.toUri()))
     }
 }
@@ -158,7 +191,10 @@ fun HealthStatsGrid(
                     .weight(0.38f)
                     .fillMaxHeight()
                     .background(colorScheme.surface)
-                    .clickable { onCallUsClick() },
+                    .clickable { 
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        onCallUsClick() 
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Row(
@@ -195,7 +231,10 @@ fun HealthStatsGrid(
                     .weight(0.38f)
                     .fillMaxHeight()
                     .background(colorScheme.surface)
-                    .clickable { openMedicalCoordinates(context) },
+                    .clickable { 
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        openMedicalCoordinates(context) 
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -243,7 +282,9 @@ fun HealthStatsGrid(
                     .clickable(
                         interactionSource = syringeInteractionSource,
                         indication = LocalIndication.current
-                    ) { /* TODO */ },
+                    ) { 
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -265,6 +306,7 @@ fun HealthStatsGrid(
                 .fillMaxWidth()
                 .background(colorScheme.surface)
                 .clickable {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                     onStatClick(
                         HealthStatDetails(
                             title = "Blood Pressure",
@@ -352,6 +394,7 @@ fun HealthStatsGrid(
                     .fillMaxHeight()
                     .background(colorScheme.surface)
                     .clickable {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                         onStatClick(
                             HealthStatDetails(
                                 title = "Blood Type",
@@ -414,6 +457,7 @@ fun HealthStatsGrid(
                     .fillMaxHeight()
                     .background(colorScheme.surface)
                     .clickable {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                         onStatClick(
                             HealthStatDetails(
                                 title = "Blood Sugar",
@@ -475,8 +519,11 @@ fun HealthStatsGrid(
 @Composable
 fun RecentReportsSection(
     onNavigateToReportDetail: () -> Unit,
+    onNavigateToReports: () -> Unit,
     colorScheme: ColorScheme
 ) {
+    val context = LocalContext.current
+
     // Recent Reports Header
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -490,7 +537,10 @@ fun RecentReportsSection(
             color = colorScheme.onBackground
         )
         TextButton(
-            onClick = { /* TODO */ },
+            onClick = { 
+                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                onNavigateToReports() 
+            },
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             shape = RoundedCornerShape(50),
             border = BorderStroke(1.dp, colorScheme.outlineVariant)
@@ -581,3 +631,236 @@ data class ReportItem(
     val iconColor: Color,
     val iconBgColor: Color
 )
+
+@Composable
+fun PharmacistSection(colorScheme: ColorScheme) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "Pharmacist",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = colorScheme.onBackground,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            val context = LocalContext.current
+            PharmacistCard(
+                name = "Sawai Singh",
+                specialty = "Pharmacist",
+                experience = "8 years experience",
+                imageRes = R.drawable.doctor1,
+                colorScheme = colorScheme,
+                onCallClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    val intent = Intent(Intent.ACTION_DIAL).apply {
+                        data = "tel:${ContactConfig.pharmacistPhones.sawaiSingh}".toUri()
+                    }
+                    context.startActivity(intent)
+                }
+            )
+            PharmacistCard(
+                name = "Govind",
+                specialty = "Pharmacist",
+                experience = "5 years experience",
+                imageRes = R.drawable.doctor2,
+                colorScheme = colorScheme,
+                onCallClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    val intent = Intent(Intent.ACTION_DIAL).apply {
+                        data = "tel:${ContactConfig.pharmacistPhones.govind}".toUri()
+                    }
+                    context.startActivity(intent)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun PharmacistCard(
+    name: String,
+    specialty: String,
+    experience: String,
+    imageRes: Int,
+    colorScheme: ColorScheme,
+    onCallClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(colorScheme.surface)
+            .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            // Image touches left and bottom
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = "Doctor Image",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxHeight()
+            )
+
+            // Details
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(top = 16.dp, bottom = 16.dp, end = 16.dp, start = 24.dp)
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = colorScheme.onSurface
+                    )
+                    Text(
+                        text = specialty,
+                        fontSize = 16.sp,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = experience,
+                        fontSize = 14.sp,
+                        color = colorScheme.outline,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
+
+                // Contact Button
+                Row(
+                    modifier = Modifier
+                        .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(50))
+                        .clip(RoundedCornerShape(50))
+                        .clickable { onCallClick() }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Call,
+                        contentDescription = "Contact",
+                        tint = colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Contact",
+                        color = colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PromotionCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Shree BalaJi Medical & Labs",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.flask),
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
+                )
+            }
+
+            Image(
+                painter = painterResource(id = R.drawable.medical_image),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                contentScale = ContentScale.FillWidth
+            )
+        }
+    }
+}
+
+@Composable
+fun AnimatedSloganText(scrollState: ScrollState) {
+    val textAnimationProgress by remember {
+        derivedStateOf {
+            if (scrollState.maxValue == 0) {
+                1f
+            } else {
+                val threshold = scrollState.maxValue - 600
+                if (scrollState.value <= threshold) {
+                    0f
+                } else {
+                    val range = 600f
+                    ((scrollState.value - threshold).toFloat() / range).coerceIn(0f, 1f)
+                }
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 30.dp)
+            .graphicsLayer {
+                alpha = textAnimationProgress
+                translationY = (1f - textAnimationProgress) * 200f
+            },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Every Medicine",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "Any Emergency",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Center
+        )
+    }
+}

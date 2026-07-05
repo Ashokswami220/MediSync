@@ -34,12 +34,14 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material3.IconButton
+import com.example.medisync.utils.HapticHelper
 
 @Composable
 fun UserReportsScreen(
     onNavigateToReportDetail: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = androidx.compose.ui.platform.LocalContext.current
     
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -105,7 +107,10 @@ fun UserReportsScreen(
                                         if (isSelected) Color.Transparent else colorScheme.outlineVariant, 
                                         RoundedCornerShape(50)
                                     )
-                                    .clickable { selectedCategory = category }
+                                    .clickable { 
+                                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                        selectedCategory = category 
+                                    }
                                     .padding(horizontal = 16.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -127,7 +132,10 @@ fun UserReportsScreen(
                     
                     // Filter Menu
                     Box {
-                        IconButton(onClick = { showSortMenu = true }) {
+                        IconButton(onClick = { 
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            showSortMenu = true 
+                        }) {
                             Icon(
                                 Icons.Default.FilterAlt,
                                 contentDescription = "Filter",
@@ -143,6 +151,7 @@ fun UserReportsScreen(
                                 DropdownMenuItem(
                                     text = { Text(sortOption, color = colorScheme.onSurface) },
                                     onClick = {
+                                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                                         selectedSort = sortOption
                                         showSortMenu = false
                                     },

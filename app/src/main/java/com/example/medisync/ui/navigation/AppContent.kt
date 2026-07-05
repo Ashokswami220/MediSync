@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -52,14 +51,17 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import com.example.medisync.R
 import com.example.medisync.model.UserRole
+import com.example.medisync.utils.HapticHelper
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.blur.blurEffect
@@ -433,6 +435,7 @@ fun UserHomeTopBar(
     scrollFraction: Float = 0f
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
 
     // Smooth the scroll fraction for animation
     val fraction by animateFloatAsState(
@@ -442,7 +445,7 @@ fun UserHomeTopBar(
     // Top bar height interpolation
     val expandedHeight = 180.dp
     val collapsedHeight = 110.dp
-    val currentHeight = androidx.compose.ui.unit.lerp(expandedHeight, collapsedHeight, fraction)
+    val currentHeight = lerp(expandedHeight, collapsedHeight, fraction)
 
     Box(
         modifier = modifier
@@ -513,7 +516,10 @@ fun UserHomeTopBar(
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
                             .background(Color.Black.copy(alpha = 0.5f))
-                            .clickable { expandedMenu = true }
+                            .clickable { 
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                expandedMenu = true 
+                            }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -532,7 +538,7 @@ fun UserHomeTopBar(
                     }
 
                     if (expandedMenu) {
-                        androidx.compose.ui.window.Popup(
+                        Popup(
                             alignment = Alignment.TopCenter,
                             onDismissRequest = { expandedMenu = false }
                         ) {
@@ -554,6 +560,7 @@ fun UserHomeTopBar(
                                                 if (isSelected) colorScheme.secondary else Color.Transparent
                                             )
                                             .clickable {
+                                                HapticHelper.trigger(context, HapticHelper.Type.MEDIUM)
                                                 selectedMember = member
                                                 expandedMenu = false
                                             }
@@ -578,7 +585,10 @@ fun UserHomeTopBar(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.5f))
-                        .clickable { /* Notification action */ }
+                        .clickable { 
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            /* Notification action */ 
+                        }
                         .padding(10.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -606,6 +616,7 @@ fun UserTopBar(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val focusRequester = remember { FocusRequester() }
+    val context = LocalContext.current
 
     Box(
         modifier = modifier
@@ -634,7 +645,10 @@ fun UserTopBar(
                     tint = colorScheme.onBackground,
                     modifier = Modifier
                         .size(24.dp)
-                        .clickable { onSearchActiveChange(false) }
+                        .clickable { 
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            onSearchActiveChange(false) 
+                        }
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 TextField(
@@ -659,7 +673,10 @@ fun UserTopBar(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Clear",
                                 tint = colorScheme.onSurfaceVariant,
-                                modifier = Modifier.clickable { onSearchQueryChange("") }
+                                modifier = Modifier.clickable { 
+                                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                    onSearchQueryChange("") 
+                                }
                             )
                         }
                     }
@@ -688,7 +705,10 @@ fun UserTopBar(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(50))
                                     .background(Color.Black.copy(alpha = 0.5f))
-                                    .clickable { expandedMenu = true }
+                                    .clickable { 
+                                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                        expandedMenu = true 
+                                    }
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -729,6 +749,7 @@ fun UserTopBar(
                                                         if (isSelected) colorScheme.secondary else Color.Transparent
                                                     )
                                                     .clickable {
+                                                        HapticHelper.trigger(context, HapticHelper.Type.MEDIUM)
                                                         selectedMember = member
                                                         expandedMenu = false
                                                     }
@@ -755,8 +776,9 @@ fun UserTopBar(
                             .clip(CircleShape)
                             .background(Color.Black.copy(alpha = 0.5f))
                             .clickable {
-                                if (showSearchIcon) onSearchActiveChange(true)
-                            }
+                                                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                                        if (showSearchIcon) onSearchActiveChange(true)
+                                                    }
                             .padding(10.dp),
                         contentAlignment = Alignment.Center
                     ) {

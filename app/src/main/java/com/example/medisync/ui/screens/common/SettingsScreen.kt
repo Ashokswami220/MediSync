@@ -1,5 +1,7 @@
 package com.example.medisync.ui.screens.common
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +27,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.example.medisync.utils.HapticHelper
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,20 +48,25 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.unit.Dp
+import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.ui.navigation.UserTopBar
 import com.example.medisync.ui.components.LanguageBottomSheet
 import com.example.medisync.ui.components.AppearanceBottomSheet
 import com.example.medisync.ui.theme.LocalAppearance
+import androidx.core.net.toUri
 
 @Composable
 fun SettingsScreen(
     onNavigateToEditProfile: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var showAppearanceSheet by remember { mutableStateOf(false) }
     var currentAppearance by LocalAppearance.current
-    var isHaptic by remember { mutableStateOf(true) }
+    val settingsManager = remember { com.example.medisync.data.SettingsManager(context) }
+    val isHaptic by settingsManager.hapticsFlow.collectAsState(initial = true)
+    val coroutineScope = rememberCoroutineScope()
     
     var showLanguageSheet by remember { mutableStateOf(false) }
     var currentLanguage by remember { mutableStateOf("English") }
@@ -83,7 +94,10 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .background(colorScheme.surface)
                     .border(1.dp, colorScheme.outlineVariant)
-                    .clickable { onNavigateToEditProfile() }
+                    .clickable { 
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        onNavigateToEditProfile() 
+                    }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -149,21 +163,30 @@ fun SettingsScreen(
                     icon = Icons.Default.Language,
                     title = "App Language",
                     value = currentLanguage,
-                    onClick = { showLanguageSheet = true }
+                    onClick = { 
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        showLanguageSheet = true 
+                    }
                 )
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
                 SettingsItem(
                     icon = Icons.Default.DarkMode,
                     title = "Appearance",
                     value = currentAppearance,
-                    onClick = { showAppearanceSheet = true }
+                    onClick = { 
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        showAppearanceSheet = true 
+                    }
                 )
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
                 SettingsSwitchItem(
                     icon = Icons.Default.Vibration,
                     title = "Haptic Feedback",
                     checked = isHaptic,
-                    onCheckedChange = { isHaptic = it }
+                    onCheckedChange = { checked ->
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        coroutineScope.launch { settingsManager.setHapticsEnabled(checked) }
+                    }
                 )
             }
 
@@ -192,7 +215,19 @@ fun SettingsScreen(
                             .diagonalHatch(
                                 colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
                             )
-                            .clickable { }
+                            .clickable {
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                val intent = Intent(
+                                    Intent.ACTION_VIEW,
+
+                                    ContactConfig.socialLinks.telegram.toUri()
+                                )
+                                try {
+                                    context.startActivity(intent)
+                                } catch (_: ActivityNotFoundException) {
+                                    // Handle missing browser
+                                }
+                            }
                             .padding(16.dp), contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -214,7 +249,9 @@ fun SettingsScreen(
                             .diagonalHatch(
                                 colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
                             )
-                            .clickable { }
+                            .clickable {
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            }
                             .padding(16.dp), contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -236,7 +273,9 @@ fun SettingsScreen(
                             .diagonalHatch(
                                 colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
                             )
-                            .clickable { }
+                            .clickable {
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            }
                             .padding(16.dp), contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -261,7 +300,8 @@ fun SettingsScreen(
                     SettingsItem(
                         icon = Icons.Default.Info,
                         title = "About Us",
-                        showArrow = true
+                        showArrow = true,
+                        onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) }
                     )
                 }
             }
@@ -288,14 +328,16 @@ fun SettingsScreen(
                     icon = Icons.Default.Delete,
                     title = "Delete My Data",
                     titleColor = colorScheme.error,
-                    showArrow = false
+                    showArrow = false,
+                    onClick = { HapticHelper.trigger(context, HapticHelper.Type.HEAVY) }
                 )
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
                 SettingsItem(
                     icon = Icons.Default.PersonRemove,
                     title = "Delete My Account",
                     titleColor = colorScheme.error,
-                    showArrow = false
+                    showArrow = false,
+                    onClick = { HapticHelper.trigger(context, HapticHelper.Type.HEAVY) }
                 )
             }
 

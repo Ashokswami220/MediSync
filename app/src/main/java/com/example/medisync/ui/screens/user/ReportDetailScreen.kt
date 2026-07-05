@@ -1,11 +1,11 @@
 package com.example.medisync.ui.screens.user
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Share
@@ -29,138 +29,107 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.medisync.utils.HapticHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportDetailScreen(
     reportName: String = "Comprehensive Metabolic Panel",
-    reportTime: String = "Oct 24, 2026, 10:30 AM",
-    reportType: String = "Lab Results",
     onBackClick: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var isFullScreen by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                modifier = Modifier.padding(horizontal = 8.dp),
-                title = {
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.5f))
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = "Report",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = Color.White,
-                        )
-                    }
-                },
-                navigationIcon = {
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 12.dp)
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.5f))
-                            .clickable { onBackClick() }
-                            .padding(10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIosNew,
-                            contentDescription = "Back",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                },
-                actions = {
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.5f))
-                            .clickable { /* TODO: Share */ }
-                            .padding(10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Share",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorScheme.background
+            Column {
+                TopAppBar(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    title = {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(alpha = 0.5f))
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .wrapContentWidth()
+                        ) {
+                            Text(
+                                text = reportName,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                maxLines = 1,
+                                color = Color.White,
+                                modifier = Modifier.horizontalScroll(rememberScrollState())
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 12.dp)
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(alpha = 0.5f))
+                                .clickable { 
+                                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                    onBackClick() 
+                                }
+                                .padding(10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIosNew,
+                                contentDescription = "Back",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    },
+                    actions = {
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(alpha = 0.5f))
+                                .clickable { 
+                                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                    /* TODO: Share */ 
+                                }
+                                .padding(10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = colorScheme.surfaceContainerLowest
+                    )
                 )
-            )
+                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+            }
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(colorScheme.background)
+                .background(colorScheme.surfaceContainerLowest)
         ) {
-            // Report Info Header
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(top = 16.dp)
-            ) {
-                Text(
-                    text = reportName,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = reportTime,
-                    fontSize = 16.sp,
-                    color = colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = " • ",
-                    fontSize = 16.sp,
-                    color = colorScheme.outline
-                )
-                Text(
-                    text = reportType,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-            Spacer(modifier = Modifier.height(24.dp))
-            } // End of Header Column
-            
+
             // Image Container without border/clip, takes full width
             ZoomableReportImage(
                 modifier = Modifier
@@ -168,10 +137,10 @@ fun ReportDetailScreen(
                     .weight(1f)
                     .background(colorScheme.background)
             )
-            
+
             HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-            Spacer(modifier = Modifier.height(16.dp))
-            
+            Spacer(modifier = Modifier.height(12.dp))
+
             // Bottom Controls
             Row(
                 modifier = Modifier
@@ -191,7 +160,7 @@ fun ReportDetailScreen(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     IconButton(
-                        onClick = { /* TODO: Prev Page */ },
+                        onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
@@ -203,7 +172,7 @@ fun ReportDetailScreen(
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     IconButton(
-                        onClick = { /* TODO: Next Page */ },
+                        onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
@@ -214,33 +183,36 @@ fun ReportDetailScreen(
                         )
                     }
                 }
-                
+
                 // Right: Download & Fullscreen
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
-                        onClick = { /* TODO: Download */ },
+                        onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(48.dp)
                             .background(colorScheme.secondary, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,
                             contentDescription = "Download",
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(24.dp),
                             tint = Color.White
                         )
                     }
                     Spacer(modifier = Modifier.width(24.dp))
                     IconButton(
-                        onClick = { isFullScreen = true },
+                        onClick = { 
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            isFullScreen = true 
+                        },
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(48.dp)
                             .background(colorScheme.surfaceVariant, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Fullscreen,
                             contentDescription = "Full Screen",
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(24.dp),
                             tint = colorScheme.onSurfaceVariant
                         )
                     }
@@ -260,10 +232,13 @@ fun ReportDetailScreen(
                         ZoomableReportImage(
                             modifier = Modifier.fillMaxSize()
                         )
-                        
+
                         // Fullscreen Exit Button
                         IconButton(
-                            onClick = { isFullScreen = false },
+                            onClick = { 
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                isFullScreen = false 
+                            },
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
                                 .padding(16.dp)

@@ -17,9 +17,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.example.medisync.R
+import com.example.medisync.data.local.ContactConfig
 
 data class ContactOption(
     val name: String,
@@ -34,9 +36,11 @@ fun CallUsBottomSheet(
     onCallClick: (String) -> Unit
 ) {
     val contacts = listOf(
-        ContactOption("Doctor 1", "1234567890", R.drawable.balaji_avatart1),
-        ContactOption("Doctor 2", "9876543210", R.drawable.balaji_avatar2),
-        ContactOption("Doctor 3", "5555555555", R.drawable.holding_flowers)
+        ContactOption("Sawai Singh", ContactConfig.pharmacistPhones.sawaiSingh, R.drawable.doctor1),
+        ContactOption("Govind", ContactConfig.pharmacistPhones.govind, R.drawable.doctor2),
+        ContactOption(
+            "Ashok Swami", ContactConfig.pharmacistPhones.thirdNum, R.drawable.holding_flowers
+        )
     )
 
     ModalBottomSheet(
@@ -74,8 +78,12 @@ fun CallUsBottomSheet(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(
+                            1.dp, MaterialTheme.colorScheme.outlineVariant,
+                            RoundedCornerShape(12.dp)
+                        )
+                        .background(MaterialTheme.colorScheme.surface)
                         .clickable { onCallClick(contact.number) }
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -88,6 +96,7 @@ fun CallUsBottomSheet(
                         modifier = Modifier
                             .size(56.dp)
                             .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.outlineVariant)
                     )
 
                     Spacer(modifier = Modifier.width(16.dp))
