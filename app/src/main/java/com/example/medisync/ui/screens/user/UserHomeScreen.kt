@@ -589,7 +589,7 @@ fun RecentReportsSection(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(colorScheme.surfaceVariant),
+                                .background(colorScheme.secondary.copy(alpha = 0.07f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(

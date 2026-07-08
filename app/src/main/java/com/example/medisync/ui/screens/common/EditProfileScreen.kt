@@ -25,7 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
     onBackClick: () -> Unit = {}
@@ -47,34 +49,51 @@ fun EditProfileScreen(
             .fillMaxSize()
             .background(colorScheme.background)
     ) {
-        // Custom Top Bar with iOS Back Button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-                .padding(top = 24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(colorScheme.surfaceVariant, CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBackIosNew,
-                    contentDescription = "Back",
-                    modifier = Modifier.size(20.dp),
-                    tint = colorScheme.onSurfaceVariant
+        Column {
+            TopAppBar(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                title = {
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .wrapContentWidth()
+                    ) {
+                        Text(
+                            text = "Edit Profile",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            color = Color.White
+                        )
+                    }
+                },
+                navigationIcon = {
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .clickable { onBackClick() }
+                            .padding(10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBackIosNew,
+                            contentDescription = "Back",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
                 )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = "Edit Profile",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorScheme.onBackground
             )
+            HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
         }
 
         Column(
@@ -92,13 +111,13 @@ fun EditProfileScreen(
                         .size(100.dp)
                         .clip(CircleShape)
                         .background(colorScheme.primaryContainer.copy(alpha = 0.3f))
-                        .border(2.dp, colorScheme.primary, CircleShape),
+                        .border(1.5.dp, colorScheme.primary.copy(alpha = 0.7f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Profile",
-                        tint = colorScheme.primary,
+                        tint = colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(48.dp)
                     )
                 }
@@ -113,7 +132,6 @@ fun EditProfileScreen(
                     .background(colorScheme.surface)
                     .border(1.dp, colorScheme.outlineVariant)
             ) {
-                // Name Field
                 ProfileItem(
                     icon = Icons.Default.Person,
                     label = "Name",
@@ -124,12 +142,23 @@ fun EditProfileScreen(
                     onEditClick = {
                         editingField = "Name"
                         editValue = name
-                    }
+                    },
+                    onCancelClick = { editingField = null },
+                    onSaveClick = {
+                        coroutineScope.launch {
+                            isLoading = true
+                            delay(1000.milliseconds)
+                            isLoading = false
+                            name = editValue
+                            Toast.makeText(context, "Name updated successfully", Toast.LENGTH_SHORT).show()
+                            editingField = null
+                        }
+                    },
+                    isLoading = isLoading && editingField == "Name"
                 )
 
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
 
-                // Number Field
                 ProfileItem(
                     icon = Icons.Default.Phone,
                     label = "Phone Number",
@@ -140,12 +169,30 @@ fun EditProfileScreen(
                     onEditClick = {
                         editingField = "Number"
                         editValue = number
-                    }
+                    },
+                    onCancelClick = { editingField = null },
+                    onSaveClick = {
+                        coroutineScope.launch {
+                            isLoading = true
+                            delay(1000.milliseconds)
+                            isLoading = false
+                            number = editValue
+                            Toast.makeText(context, "Number updated successfully", Toast.LENGTH_SHORT).show()
+                            editingField = null
+                        }
+                    },
+                    isLoading = isLoading && editingField == "Number"
                 )
-
-                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-
-                // Email Field (Read Only)
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(colorScheme.surface)
+                    .border(1.dp, colorScheme.outlineVariant)
+            ) {
                 ProfileItem(
                     icon = Icons.Default.Email,
                     label = "Email Address",
@@ -156,60 +203,15 @@ fun EditProfileScreen(
                     onEditClick = {
                         Toast.makeText(context, "Email editing coming soon!", Toast.LENGTH_SHORT).show()
                     },
+                    onCancelClick = {},
+                    onSaveClick = {},
                     showEditIcon = false
                 )
             }
             
             Spacer(modifier = Modifier.weight(1f))
             
-            // Bottom Action Buttons
-            if (editingField != null) {
-                if (isLoading) {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = colorScheme.primary)
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { editingField = null },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(56.dp)
-                        ) {
-                            Text("Cancel", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                        }
-
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    isLoading = true
-                                    delay(1000) // Simulate network request
-                                    isLoading = false
-                                    if (editingField == "Name") {
-                                        name = editValue
-                                    } else if (editingField == "Number") {
-                                        number = editValue
-                                    }
-                                    Toast.makeText(context, "$editingField updated successfully", Toast.LENGTH_SHORT).show()
-                                    editingField = null
-                                }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(56.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorScheme.primary,
-                                contentColor = colorScheme.onPrimary
-                            )
-                        ) {
-                            Text("Save", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
+            // Action buttons moved inside ProfileItem
             
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -225,6 +227,9 @@ fun ProfileItem(
     editValue: String,
     onEditValueChange: (String) -> Unit,
     onEditClick: () -> Unit,
+    onCancelClick: () -> Unit,
+    onSaveClick: () -> Unit,
+    isLoading: Boolean = false,
     showEditIcon: Boolean = true
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -233,26 +238,57 @@ fun ProfileItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp).padding(top = 4.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         
-        if (isEditing) {
-            OutlinedTextField(
-                value = editValue,
-                onValueChange = onEditValueChange,
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            )
-        } else {
-            Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f)) {
+            if (isEditing) {
+                OutlinedTextField(
+                    value = editValue,
+                    onValueChange = onEditValueChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = colorScheme.primary, modifier = Modifier.size(24.dp))
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onCancelClick,
+                            modifier = Modifier.weight(1f).height(40.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("Cancel", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        }
+
+                        Button(
+                            onClick = onSaveClick,
+                            modifier = Modifier.weight(1f).height(40.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorScheme.primary,
+                                contentColor = colorScheme.onPrimary
+                            )
+                        ) {
+                            Text("Save", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            } else {
                 Text(
                     text = label,
                     fontSize = 12.sp,
@@ -276,7 +312,7 @@ fun ProfileItem(
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit $label",
-                    tint = colorScheme.secondary,
+                    tint = colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }

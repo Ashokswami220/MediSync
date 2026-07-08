@@ -2,6 +2,7 @@ package com.example.medisync.ui.screens.common
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,13 +45,17 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import com.example.medisync.data.local.ContactConfig
-import com.example.medisync.ui.navigation.UserTopBar
+import com.example.medisync.ui.navigation.TopBar
 import com.example.medisync.ui.components.LanguageBottomSheet
 import com.example.medisync.ui.components.AppearanceBottomSheet
 import com.example.medisync.ui.theme.LocalAppearance
@@ -60,7 +66,7 @@ fun SettingsScreen(
     onNavigateToEditProfile: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
 
     var showAppearanceSheet by remember { mutableStateOf(false) }
     var currentAppearance by LocalAppearance.current
@@ -76,7 +82,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(colorScheme.background)
     ) {
-        UserTopBar(
+        TopBar(
             title = "Settings",
             showName = false, 
             showSearchIcon = false
@@ -341,6 +347,32 @@ fun SettingsScreen(
                 )
             }
 
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            OutlinedButton(
+                onClick = { HapticHelper.trigger(context, HapticHelper.Type.HEAVY) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 48.dp)
+                    .height(44.dp),
+                border = BorderStroke(1.dp, colorScheme.error),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = colorScheme.error
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                    contentDescription = "Sign Out",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Sign Out",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
             Spacer(modifier = Modifier.height(120.dp))
         }
         
@@ -446,7 +478,7 @@ fun SettingsSwitchItem(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = androidx.compose.material3.SwitchDefaults.colors(
+            colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.surface,
                 checkedTrackColor = MaterialTheme.colorScheme.secondary,
             )

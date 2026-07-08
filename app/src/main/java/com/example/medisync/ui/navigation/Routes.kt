@@ -5,6 +5,7 @@ object Routes {
     const val ADMIN_HOME = "admin_home_screen"
     const val UPLOAD_DATA = "upload_data_screen"
     const val USER_LIST = "user_list_screen"
+    const val USER_DETAIL = "user_detail_screen"
 
     // Auth Screens
     const val LOGIN = "login_screen"
@@ -13,6 +14,7 @@ object Routes {
     const val ABOUT_US = "about_us_screen"
     const val SETTINGS = "settings_screen"
     const val EDIT_PROFILE = "edit_profile_screen"
+    const val REPORT_DETAIL_2 = "report_detail_screen_2"
 
     // Onboarding Screens
     const val CAROUSEL = "carousel_screen"

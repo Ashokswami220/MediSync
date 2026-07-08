@@ -1,4 +1,4 @@
-package com.example.medisync.ui.screens.user
+package com.example.medisync.ui.screens.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,7 +44,7 @@ fun ReportDetailScreen(
     onBackClick: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
 
     var isFullScreen by remember { mutableStateOf(false) }
 
@@ -51,7 +52,6 @@ fun ReportDetailScreen(
         topBar = {
             Column {
                 TopAppBar(
-                    modifier = Modifier.padding(horizontal = 8.dp),
                     title = {
                         Box(
                             modifier = Modifier

@@ -11,7 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 
-import com.example.medisync.ui.navigation.UserTopBar
+import com.example.medisync.ui.navigation.TopBar
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.Color
@@ -61,7 +61,7 @@ fun UserReportsScreen(
             .fillMaxSize()
             .background(colorScheme.background)
     ) {
-        UserTopBar(
+        TopBar(
             title = "Reports",
             isSearchActive = isSearchActive,
             searchQuery = searchQuery,
@@ -225,7 +225,7 @@ fun UserReportsScreen(
                                 modifier = Modifier
                                     .size(48.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(colorScheme.surfaceVariant),
+                                    .background(colorScheme.secondary.copy(alpha = 0.07f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(report.third, contentDescription = null, tint = colorScheme.onSurfaceVariant)

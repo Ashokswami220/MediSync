@@ -27,9 +27,11 @@ import com.example.medisync.ui.screens.onboarding.UserRoleDecideScreen
 import com.example.medisync.ui.screens.admin.AdminHomeScreen
 import com.example.medisync.ui.screens.admin.UploadDataScreen
 import com.example.medisync.ui.screens.admin.UserListScreen
+import com.example.medisync.ui.screens.admin.UserDetailScreen
 import com.example.medisync.ui.screens.user.UserHomeScreen
 import com.example.medisync.ui.screens.user.UserReportsScreen
-import com.example.medisync.ui.screens.user.ReportDetailScreen
+import com.example.medisync.ui.screens.common.ReportDetailScreen
+import com.example.medisync.ui.screens.common.ReportDetailScreen2
 import com.example.medisync.ui.screens.common.SettingsScreen
 import com.example.medisync.ui.screens.common.EditProfileScreen
 import dev.chrisbanes.haze.HazeState
@@ -39,6 +41,7 @@ const val ANIM_DURATION = 400
 val ANIM_EASING = FastOutSlowInEasing
 
 @OptIn(ExperimentalMaterial3Api::class)
+@android.annotation.SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun NavApp(
     startDestination: String = Routes.ROLE_DECIDE
@@ -47,10 +50,7 @@ fun NavApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: startDestination
     
-    // State to hold the current user role
     var currentRole by rememberSaveable { mutableStateOf(UserRole.NONE) }
-
-    // Haze state — shared between content (source) and glass bar (effect)
     val hazeState = remember { HazeState() }
 
     // List of screens that should show the bottom bar
@@ -100,8 +100,7 @@ fun NavApp(
                 )
             }
         }
-    ) { innerPadding ->
-        // Apply hazeSource here — this is the content BEHIND the glass bar
+    ) { _ ->
         Surface(
             modifier = Modifier
                 .fillMaxSize()
@@ -187,7 +186,15 @@ fun NavApp(
                     UploadDataScreen(onBackClick = { navController.popBackStack() })
                 }
                 composable(route = Routes.USER_LIST) {
-                    UserListScreen()
+                    UserListScreen(
+                        onNavigateToUserDetail = { navigateToDest(Routes.USER_DETAIL) }
+                    )
+                }
+                composable(route = Routes.USER_DETAIL) {
+                    UserDetailScreen(
+                        onBackClick = { navController.popBackStack() },
+                        onNavigateToReportDetail = { navigateToDest(Routes.REPORT_DETAIL) }
+                    )
                 }
 
                 // =================== USER =======================
@@ -195,10 +202,13 @@ fun NavApp(
                     UserHomeScreen(onNavigateToReportDetail = { navigateToDest(Routes.REPORT_DETAIL) })
                 }
                 composable(route = Routes.USER_REPORTS) {
-                    UserReportsScreen(onNavigateToReportDetail = { navigateToDest(Routes.REPORT_DETAIL) })
+                    UserReportsScreen(onNavigateToReportDetail = { navigateToDest(Routes.REPORT_DETAIL_2) })
                 }
                 composable(route = Routes.REPORT_DETAIL) {
                     ReportDetailScreen(onBackClick = { navController.popBackStack() })
+                }
+                composable(route = Routes.REPORT_DETAIL_2) {
+                    ReportDetailScreen2(onBackClick = { navController.popBackStack() })
                 }
 
                 // ================== COMMON ======================

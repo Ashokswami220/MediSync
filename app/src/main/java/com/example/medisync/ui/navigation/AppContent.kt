@@ -27,7 +27,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -58,8 +57,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
 import com.example.medisync.R
+import com.example.medisync.ui.components.MemberSwitcher
 import com.example.medisync.model.UserRole
 import com.example.medisync.utils.HapticHelper
 import dev.chrisbanes.haze.HazeState
@@ -507,87 +506,21 @@ fun UserHomeTopBar(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Person
-                var expandedMenu by remember { mutableStateOf(false) }
-                val members = listOf("Ashok", "John Doe", "Jane Doe")
-                var selectedMember by remember { mutableStateOf(members[0]) }
+                var selectedMember by remember { mutableStateOf("Ashok") }
 
-                Box {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(Color.Black.copy(alpha = 0.5f))
-                            .clickable { 
-                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                                expandedMenu = true 
-                            }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = selectedMember, fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp, color = Color.White
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Default.ExpandMore,
-                                contentDescription = "Expand", tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-
-                    if (expandedMenu) {
-                        Popup(
-                            alignment = Alignment.TopCenter,
-                            onDismissRequest = { expandedMenu = false }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .width(IntrinsicSize.Max)
-                                    .clip(RoundedCornerShape(24.dp))
-                                    .background(Color.Black.copy(alpha = 0.7f))
-                                    .padding(4.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                members.forEach { member ->
-                                    val isSelected = member == selectedMember
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(20.dp))
-                                            .background(
-                                                if (isSelected) colorScheme.secondary else Color.Transparent
-                                            )
-                                            .clickable {
-                                                HapticHelper.trigger(context, HapticHelper.Type.MEDIUM)
-                                                selectedMember = member
-                                                expandedMenu = false
-                                            }
-                                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = member,
-                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                                            fontSize = 14.sp,
-                                            color = Color.White
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                MemberSwitcher(
+                    selectedMember = selectedMember,
+                    onMemberSelected = { selectedMember = it }
+                )
 
                 // Bell
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.5f))
-                        .clickable { 
+                        .clickable {
                             HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            /* Notification action */ 
+                            /* Notification action */
                         }
                         .padding(10.dp),
                     contentAlignment = Alignment.Center
@@ -604,7 +537,7 @@ fun UserHomeTopBar(
 }
 
 @Composable
-fun UserTopBar(
+fun TopBar(
     modifier: Modifier = Modifier,
     title: String = "BalaJiMedic",
     showName: Boolean = true,
@@ -612,7 +545,8 @@ fun UserTopBar(
     searchQuery: String = "",
     onSearchActiveChange: (Boolean) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
-    showSearchIcon: Boolean = true
+    showSearchIcon: Boolean = true,
+    extraActions: @Composable RowScope.() -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val focusRequester = remember { FocusRequester() }
@@ -637,17 +571,18 @@ fun UserTopBar(
                 LaunchedEffect(Unit) {
                     focusRequester.requestFocus()
                 }
-                
+
                 // Search Bar
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
                     contentDescription = "Back",
                     tint = colorScheme.onBackground,
                     modifier = Modifier
+                        .padding(start = 8.dp)
                         .size(24.dp)
-                        .clickable { 
+                        .clickable {
                             HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            onSearchActiveChange(false) 
+                            onSearchActiveChange(false)
                         }
                 )
                 Spacer(modifier = Modifier.width(16.dp))
@@ -673,9 +608,9 @@ fun UserTopBar(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Clear",
                                 tint = colorScheme.onSurfaceVariant,
-                                modifier = Modifier.clickable { 
+                                modifier = Modifier.clickable {
                                     HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                                    onSearchQueryChange("") 
+                                    onSearchQueryChange("")
                                 }
                             )
                         }
@@ -696,79 +631,15 @@ fun UserTopBar(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     if (showName) {
-                        var expandedMenu by remember { mutableStateOf(false) }
-                        val members = listOf("Ashok", "John Doe", "Jane Doe")
-                        var selectedMember by remember { mutableStateOf(members[0]) }
+                        var selectedMember by remember { mutableStateOf("Ashok") }
 
-                        Box {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(Color.Black.copy(alpha = 0.5f))
-                                    .clickable { 
-                                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                                        expandedMenu = true 
-                                    }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = selectedMember, fontWeight = FontWeight.Medium,
-                                        fontSize = 14.sp, color = Color.White
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector = Icons.Default.ExpandMore,
-                                        contentDescription = "Expand", tint = Color.White,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-
-                            if (expandedMenu) {
-                                Popup(
-                                    alignment = Alignment.TopCenter,
-                                    onDismissRequest = { expandedMenu = false }
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .width(IntrinsicSize.Max)
-                                            .clip(RoundedCornerShape(24.dp))
-                                            .background(Color.Black.copy(alpha = 0.7f))
-                                            .padding(4.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        members.forEach { member ->
-                                            val isSelected = member == selectedMember
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .clip(RoundedCornerShape(20.dp))
-                                                    .background(
-                                                        if (isSelected) colorScheme.secondary else Color.Transparent
-                                                    )
-                                                    .clickable {
-                                                        HapticHelper.trigger(context, HapticHelper.Type.MEDIUM)
-                                                        selectedMember = member
-                                                        expandedMenu = false
-                                                    }
-                                                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = member,
-                                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                                                    fontSize = 14.sp,
-                                                    color = Color.White
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        MemberSwitcher(
+                            selectedMember = selectedMember,
+                            onMemberSelected = { selectedMember = it }
+                        )
                     }
+
+                    extraActions()
 
                     // Action button
                     Box(
@@ -776,9 +647,9 @@ fun UserTopBar(
                             .clip(CircleShape)
                             .background(Color.Black.copy(alpha = 0.5f))
                             .clickable {
-                                                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                                                        if (showSearchIcon) onSearchActiveChange(true)
-                                                    }
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                if (showSearchIcon) onSearchActiveChange(true)
+                            }
                             .padding(10.dp),
                         contentAlignment = Alignment.Center
                     ) {
