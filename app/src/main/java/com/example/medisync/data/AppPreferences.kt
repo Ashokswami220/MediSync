@@ -14,6 +14,7 @@ class SettingsManager(private val context: Context) {
     companion object {
         val HAPTICS_KEY = booleanPreferencesKey("haptics_enabled")
         val APPEARANCE_KEY = stringPreferencesKey("appearance_theme") // "System", "Light", "Dark"
+        val ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("onboarding_completed_v2")
     }
 
     val hapticsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -21,7 +22,11 @@ class SettingsManager(private val context: Context) {
     }
 
     val appearanceFlow: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[APPEARANCE_KEY] ?: "System"
+        preferences[APPEARANCE_KEY] ?: "Light"
+    }
+
+    val onboardingCompletedFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[ONBOARDING_COMPLETED_KEY] ?: false
     }
 
     suspend fun setHapticsEnabled(enabled: Boolean) {
@@ -33,6 +38,12 @@ class SettingsManager(private val context: Context) {
     suspend fun setAppearanceTheme(theme: String) {
         context.dataStore.edit { preferences ->
             preferences[APPEARANCE_KEY] = theme
+        }
+    }
+
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[ONBOARDING_COMPLETED_KEY] = completed
         }
     }
 }

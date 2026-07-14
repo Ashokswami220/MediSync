@@ -380,16 +380,16 @@ fun GlassNavBar(
                     .hazeEffect(state = hazeState) {
                         blurEffect {
                             blurRadius = 25.dp
-                            noiseFactor = 0.10f
+                            noiseFactor = 0.15f
                             colorEffects = listOf(
-                                HazeColorEffect.tint(Color(0xFF1C1C1E).copy(alpha = 0.30f))
+                                HazeColorEffect.tint(Color(0xFF1C1C1E).copy(alpha = 0.55f))
                             )
                         }
                     }
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.04f),
+                                Color.White.copy(alpha = 0.08f),
                                 Color.Transparent
                             ),
                             startY = 0f,

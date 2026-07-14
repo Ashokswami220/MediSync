@@ -52,25 +52,7 @@ fun ReportDetailScreen(
         topBar = {
             Column {
                 TopAppBar(
-                    title = {
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.5f))
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .wrapContentWidth()
-                        ) {
-                            Text(
-                                text = reportName,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
-                                maxLines = 1,
-                                color = Color.White,
-                                modifier = Modifier.horizontalScroll(rememberScrollState())
-                            )
-                        }
-                    },
+                    title = {},
                     navigationIcon = {
                         Box(
                             modifier = Modifier
@@ -97,21 +79,18 @@ fun ReportDetailScreen(
                         Box(
                             modifier = Modifier
                                 .padding(end = 12.dp)
-                                .size(44.dp)
                                 .clip(CircleShape)
                                 .background(Color.Black.copy(alpha = 0.5f))
-                                .clickable { 
-                                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                                    /* TODO: Share */ 
-                                }
-                                .padding(10.dp),
-                            contentAlignment = Alignment.Center
+                                .padding(horizontal = 16.dp, vertical = 10.dp)
+                                .wrapContentWidth()
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = "Share",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                            Text(
+                                text = reportName,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                maxLines = 1,
+                                color = Color.White,
+                                modifier = Modifier.horizontalScroll(rememberScrollState())
                             )
                         }
                     },
@@ -130,7 +109,6 @@ fun ReportDetailScreen(
                 .background(colorScheme.surfaceContainerLowest)
         ) {
 
-            // Image Container without border/clip, takes full width
             ZoomableReportImage(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,82 +120,9 @@ fun ReportDetailScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             // Bottom Controls
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left: Page Navigation
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Page 1 of 1",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    IconButton(
-                        onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ChevronLeft,
-                            contentDescription = "Previous Page",
-                            modifier = Modifier.size(24.dp),
-                            tint = colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(
-                        onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = "Next Page",
-                            modifier = Modifier.size(24.dp),
-                            tint = colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                // Right: Download & Fullscreen
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(colorScheme.secondary, CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = "Download",
-                            modifier = Modifier.size(24.dp),
-                            tint = Color.White
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(24.dp))
-                    IconButton(
-                        onClick = { 
-                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            isFullScreen = true 
-                        },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(colorScheme.surfaceVariant, CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Fullscreen,
-                            contentDescription = "Full Screen",
-                            modifier = Modifier.size(24.dp),
-                            tint = colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+            ReportDetailBottomControls(
+                onFullScreenClick = { isFullScreen = true }
+            )
 
             if (isFullScreen) {
                 Dialog(
@@ -252,6 +157,107 @@ fun ReportDetailScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ReportDetailBottomControls(
+    onFullScreenClick: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Left: Page Navigation
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ChevronLeft,
+                    contentDescription = "Previous Page",
+                    modifier = Modifier.size(24.dp),
+                    tint = colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                text = "1/1",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            IconButton(
+                onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Next Page",
+                    modifier = Modifier.size(24.dp),
+                    tint = colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Right: Actions
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = { 
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    /* TODO: Share */
+                },
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(colorScheme.surfaceVariant, CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = "Share",
+                    modifier = Modifier.size(24.dp),
+                    tint = colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            IconButton(
+                onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(colorScheme.secondary, CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = "Download",
+                    modifier = Modifier.size(24.dp),
+                    tint = Color.White
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            IconButton(
+                onClick = { 
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    onFullScreenClick()
+                },
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(colorScheme.surfaceVariant, CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Fullscreen,
+                    contentDescription = "Full Screen",
+                    modifier = Modifier.size(24.dp),
+                    tint = colorScheme.onSurfaceVariant
+                )
             }
         }
     }

@@ -78,13 +78,15 @@ fun MemberSwitcher(
         }
 
         if (expandedMenu) {
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val yOffsetPx = with(density) { popupOffsetY.dp.roundToPx() }
             Popup(
                 alignment = popupAlignment,
+                offset = androidx.compose.ui.unit.IntOffset(0, yOffsetPx),
                 onDismissRequest = { expandedMenu = false }
             ) {
                 Column(
                     modifier = Modifier
-                        .offset(y = popupOffsetY.dp)
                         .width(IntrinsicSize.Max)
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color.Black.copy(alpha = 0.7f))

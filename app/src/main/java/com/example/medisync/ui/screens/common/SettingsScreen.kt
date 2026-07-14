@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
 import com.example.medisync.utils.HapticHelper
 import androidx.compose.ui.Alignment
@@ -60,13 +61,31 @@ import com.example.medisync.ui.components.LanguageBottomSheet
 import com.example.medisync.ui.components.AppearanceBottomSheet
 import com.example.medisync.ui.theme.LocalAppearance
 import androidx.core.net.toUri
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import com.example.medisync.repo.AuthRepository
 
 @Composable
 fun SettingsScreen(
-    onNavigateToEditProfile: () -> Unit = {}
+    onNavigateToEditProfile: () -> Unit = {},
+    onSignOut: () -> Unit = {},
+    profileViewModel: ProfileViewModel = koinViewModel()
 ) {
+    val authRepo: AuthRepository = koinInject()
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
+
+    val profileState by profileViewModel.profileState.collectAsState()
+    var name by remember { mutableStateOf("User") }
+    var number by remember { mutableStateOf("") }
+
+    LaunchedEffect(profileState) {
+        if (profileState is ProfileState.Success) {
+            val p = (profileState as ProfileState.Success).profile
+            name = "${p.firstName} ${p.lastName}".trim()
+            number = p.phoneNumber
+        }
+    }
 
     var showAppearanceSheet by remember { mutableStateOf(false) }
     var currentAppearance by LocalAppearance.current
@@ -127,14 +146,14 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(20.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Ashok Swami",
+                            text = name.ifBlank { "User" },
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorScheme.onBackground
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "+91 9876543210",
+                            text = number,
                             fontSize = 15.sp,
                             color = colorScheme.onSurfaceVariant
                         )
@@ -350,7 +369,13 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(32.dp))
             
             OutlinedButton(
-                onClick = { HapticHelper.trigger(context, HapticHelper.Type.HEAVY) },
+                onClick = { 
+                    HapticHelper.trigger(context, HapticHelper.Type.HEAVY) 
+                    coroutineScope.launch {
+                        authRepo.signOut()
+                        onSignOut()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 48.dp)

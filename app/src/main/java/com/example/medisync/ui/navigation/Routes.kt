@@ -8,13 +8,13 @@ object Routes {
     const val USER_DETAIL = "user_detail_screen"
 
     // Auth Screens
+    const val AUTH_FLOW = "auth_flow_screen"
     const val LOGIN = "login_screen"
 
     // Common Screens
     const val ABOUT_US = "about_us_screen"
     const val SETTINGS = "settings_screen"
     const val EDIT_PROFILE = "edit_profile_screen"
-    const val REPORT_DETAIL_2 = "report_detail_screen_2"
 
     // Onboarding Screens
     const val CAROUSEL = "carousel_screen"

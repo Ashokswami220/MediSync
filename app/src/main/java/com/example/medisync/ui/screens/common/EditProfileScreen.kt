@@ -26,23 +26,47 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    viewModel: ProfileViewModel = koinViewModel()
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var name by remember { mutableStateOf("Ashok Swami") }
-    var number by remember { mutableStateOf("+91 98765 43210") }
-    var email by remember { mutableStateOf("ashok@example.com") }
+    val profileState by viewModel.profileState.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
+
+    var name by remember { mutableStateOf("") }
+    var number by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") } // Later we can fetch email if available
 
     var editingField by remember { mutableStateOf<String?>(null) }
     var editValue by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+    val isLoading = updateState is ProfileUpdateState.Saving
+
+    LaunchedEffect(profileState) {
+        if (profileState is ProfileState.Success) {
+            val p = (profileState as ProfileState.Success).profile
+            name = "${p.firstName} ${p.lastName}".trim()
+            number = p.phoneNumber
+        }
+    }
+
+    LaunchedEffect(updateState) {
+        if (updateState is ProfileUpdateState.Success) {
+            Toast.makeText(context, "Profile updated successfully", Toast.LENGTH_SHORT).show()
+            viewModel.resetUpdateState()
+            editingField = null
+        } else if (updateState is ProfileUpdateState.Error) {
+            Toast.makeText(context, (updateState as ProfileUpdateState.Error).message, Toast.LENGTH_SHORT).show()
+            viewModel.resetUpdateState()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -145,14 +169,10 @@ fun EditProfileScreen(
                     },
                     onCancelClick = { editingField = null },
                     onSaveClick = {
-                        coroutineScope.launch {
-                            isLoading = true
-                            delay(1000.milliseconds)
-                            isLoading = false
-                            name = editValue
-                            Toast.makeText(context, "Name updated successfully", Toast.LENGTH_SHORT).show()
-                            editingField = null
-                        }
+                        val parts = editValue.trim().split(" ", limit = 2)
+                        val fName = parts.getOrNull(0) ?: ""
+                        val lName = parts.getOrNull(1) ?: ""
+                        viewModel.updateProfile(fName, lName, number)
                     },
                     isLoading = isLoading && editingField == "Name"
                 )
@@ -172,14 +192,10 @@ fun EditProfileScreen(
                     },
                     onCancelClick = { editingField = null },
                     onSaveClick = {
-                        coroutineScope.launch {
-                            isLoading = true
-                            delay(1000.milliseconds)
-                            isLoading = false
-                            number = editValue
-                            Toast.makeText(context, "Number updated successfully", Toast.LENGTH_SHORT).show()
-                            editingField = null
-                        }
+                        val parts = name.trim().split(" ", limit = 2)
+                        val fName = parts.getOrNull(0) ?: ""
+                        val lName = parts.getOrNull(1) ?: ""
+                        viewModel.updateProfile(fName, lName, editValue)
                     },
                     isLoading = isLoading && editingField == "Number"
                 )

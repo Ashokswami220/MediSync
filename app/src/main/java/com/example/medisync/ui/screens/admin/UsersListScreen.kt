@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.ui.navigation.TopBar
+import org.koin.androidx.compose.koinViewModel
 
 data class UserAdminModel(
     val name: String,
@@ -44,7 +45,8 @@ data class UserAdminModel(
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun UserListScreen(
-    onNavigateToUserDetail: (String) -> Unit = {}
+    onNavigateToUserDetail: (String) -> Unit = {},
+    viewModel: UserListViewModel = koinViewModel()
 ) {
     val colorScheme = MaterialTheme.colorScheme
     var isSearchActive by remember { mutableStateOf(false) }
@@ -53,13 +55,8 @@ fun UserListScreen(
     var showFilterMenu by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("Default") }
     
-    val users = listOf(
-        UserAdminModel("Ashok Swami", "Comprehensive Metabolic Panel", "10:30 AM", true),
-        UserAdminModel("Sarah Johnson", "Chest X-Ray", "Yesterday", false),
-        UserAdminModel("Michael Chen", "Complete Blood Count", "Oct 24", true),
-        UserAdminModel("Emily Davis", "MRI Scan Results", "Oct 20", true),
-        UserAdminModel("David Wilson", "Lipid Panel", "Oct 15", false)
-    )
+    val users by viewModel.usersState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     
     val selectedUsers = remember { mutableStateListOf<String>() }
 
@@ -148,7 +145,16 @@ fun UserListScreen(
             HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
         }
 
-        LazyColumn(
+        if (isLoading && users.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (users.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No users found", color = colorScheme.onSurfaceVariant)
+            }
+        } else {
+            LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
         ) {
@@ -256,6 +262,7 @@ fun UserListScreen(
                     color = colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
             }
+        }
         }
     }
 }

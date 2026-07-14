@@ -1,4 +1,141 @@
 package com.example.medisync.ui.screens.auth
 
-class AuthViewModel {
+import android.content.Context
+import android.util.Log
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.medisync.model.UserProfile
+import com.example.medisync.repo.AuthRepository
+import com.example.medisync.repo.UserRepository
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+
+sealed class AuthState {
+    object Idle : AuthState()
+    object Loading : AuthState()
+    object NeedsInfo : AuthState()
+    object Success : AuthState()
+    data class Error(val message: String) : AuthState()
+}
+
+class AuthViewModel(
+    private val authRepo: AuthRepository,
+    private val userRepo: UserRepository,
+    private val context: Context
+) : ViewModel() {
+
+    private val credentialManager = CredentialManager.create(context)
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
+    val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+    // Using Web Client ID from google-services.json
+    private val webClientId = "590270466349-6esu0sc0ec33tcnhvc8g4ag5qpqdjev7.apps.googleusercontent.com"
+
+    fun resetState() {
+        _authState.value = AuthState.Idle
+    }
+
+    fun signInWithGoogle() {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
+                    .setFilterByAuthorizedAccounts(false)
+                    .setServerClientId(webClientId)
+                    .setAutoSelectEnabled(false)
+                    .build()
+
+                val request: GetCredentialRequest = GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build()
+
+                val result = credentialManager.getCredential(
+                    request = request,
+                    context = context,
+                )
+
+                val credential = result.credential
+                if (credential is CustomCredential &&
+                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                ) {
+                    val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                    val idToken = googleIdTokenCredential.idToken
+                    
+                    // Auth with Firebase
+                    val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
+                    val authResult = FirebaseAuth.getInstance().signInWithCredential(firebaseCredential).await()
+                    
+                    val user = authResult.user
+                    if (user != null) {
+                        checkIfUserNeedsInfo(user.uid)
+                    } else {
+                        _authState.value = AuthState.Error("Firebase Auth failed.")
+                    }
+                } else {
+                    _authState.value = AuthState.Error("Unexpected credential type.")
+                }
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Google Sign In Failed", e)
+                _authState.value = AuthState.Error(e.localizedMessage ?: "Unknown error occurred")
+            }
+        }
+    }
+
+    private suspend fun checkIfUserNeedsInfo(uid: String) {
+        try {
+            val profile = userRepo.getUserProfile(uid).first()
+            if (profile == null || profile.firstName.isEmpty() || profile.phoneNumber.isEmpty()) {
+                _authState.value = AuthState.NeedsInfo
+            } else {
+                _authState.value = AuthState.Success
+            }
+        } catch (e: Exception) {
+             _authState.value = AuthState.Error(e.message ?: "Failed to read user data")
+        }
+    }
+
+    fun completeProfile(firstName: String, lastName: String, phoneNumber: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                val currentUser = authRepo.getCurrentUserSync()
+                if (currentUser != null) {
+                    // Try to fetch existing to preserve roles, Blood type, etc.
+                    val existingProfile = userRepo.getUserProfile(currentUser.uid).first()
+                    val newProfile = existingProfile?.copy(
+                        firstName = firstName,
+                        lastName = lastName,
+                        phoneNumber = phoneNumber
+                    ) ?: UserProfile(
+                        uid = currentUser.uid,
+                        firstName = firstName,
+                        lastName = lastName,
+                        phoneNumber = phoneNumber
+                    )
+                    
+                    val result = userRepo.createUserProfile(newProfile)
+                    if (result.isSuccess) {
+                        _authState.value = AuthState.Success
+                    } else {
+                        _authState.value = AuthState.Error("Failed to save profile.")
+                    }
+                } else {
+                    _authState.value = AuthState.Error("No authenticated user found.")
+                }
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Failed to complete profile")
+            }
+        }
+    }
 }

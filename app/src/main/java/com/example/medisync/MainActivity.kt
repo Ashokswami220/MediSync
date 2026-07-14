@@ -14,8 +14,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.example.medisync.data.SettingsManager
 import com.example.medisync.ui.navigation.NavApp
+import com.example.medisync.ui.navigation.Routes
 import com.example.medisync.ui.theme.LocalAppearance
 import com.example.medisync.ui.theme.MediSyncTheme
 import com.example.medisync.utils.HapticHelper
@@ -28,7 +34,7 @@ class MainActivity : ComponentActivity() {
         val settingsManager = SettingsManager(this)
 
         setContent {
-            val storedAppearance by settingsManager.appearanceFlow.collectAsState(initial = "System")
+            val storedAppearance by settingsManager.appearanceFlow.collectAsState(initial = "Light")
             val appearanceState = remember(storedAppearance) { mutableStateOf(storedAppearance) }
             
             LaunchedEffect(appearanceState.value) {
@@ -57,9 +63,27 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
 
+            val onboardingCompleted by settingsManager.onboardingCompletedFlow.collectAsState(initial = null)
+            
+            if (onboardingCompleted == null) {
+                // Wait for the flow to emit the first value
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                )
+                return@setContent
+            }
+            
+            val startDest = if (onboardingCompleted == true) {
+                Routes.ROLE_DECIDE
+            } else {
+                Routes.CAROUSEL
+            }
+
             CompositionLocalProvider(LocalAppearance provides appearanceState) {
                 MediSyncTheme(darkTheme = darkTheme) {
-                    NavApp()
+                    NavApp(startDestination = startDest)
                 }
             }
         }
