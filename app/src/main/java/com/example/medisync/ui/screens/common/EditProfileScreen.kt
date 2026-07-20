@@ -1,6 +1,7 @@
 package com.example.medisync.ui.screens.common
 
 import android.widget.Toast
+import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +17,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -23,9 +27,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,14 +37,16 @@ fun EditProfileScreen(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-
     val profileState by viewModel.profileState.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
 
     var name by remember { mutableStateOf("") }
     var number by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") } // Later we can fetch email if available
+    var email by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        email = FirebaseAuth.getInstance().currentUser?.email ?: ""
+    }
 
     var editingField by remember { mutableStateOf<String?>(null) }
     var editValue by remember { mutableStateOf("") }
@@ -134,8 +137,8 @@ fun EditProfileScreen(
                     modifier = Modifier
                         .size(100.dp)
                         .clip(CircleShape)
-                        .background(colorScheme.primaryContainer.copy(alpha = 0.3f))
-                        .border(1.5.dp, colorScheme.primary.copy(alpha = 0.7f), CircleShape),
+                        .background(colorScheme.secondary.copy(alpha = 0.2f))
+                        .border(1.5.dp, colorScheme.outlineVariant, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -249,6 +252,15 @@ fun ProfileItem(
     showEditIcon: Boolean = true
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(isEditing) {
+        if (isEditing) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -269,14 +281,21 @@ fun ProfileItem(
                 OutlinedTextField(
                     value = editValue,
                     onValueChange = onEditValueChange,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester),
                     singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorScheme.secondary,
+                        focusedLabelColor = colorScheme.secondary,
+                        cursorColor = colorScheme.secondary
+                    )
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 if (isLoading) {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = colorScheme.primary, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(color = colorScheme.secondary, modifier = Modifier.size(24.dp))
                     }
                 } else {
                     Row(
@@ -296,8 +315,8 @@ fun ProfileItem(
                             modifier = Modifier.weight(1f).height(40.dp),
                             contentPadding = PaddingValues(0.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = colorScheme.primary,
-                                contentColor = colorScheme.onPrimary
+                                containerColor = colorScheme.secondary,
+                                contentColor = colorScheme.onSecondary
                             )
                         ) {
                             Text("Save", fontSize = 14.sp, fontWeight = FontWeight.Bold)
@@ -328,7 +347,7 @@ fun ProfileItem(
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit $label",
-                    tint = colorScheme.primary,
+                    tint = colorScheme.secondary,
                     modifier = Modifier.size(20.dp)
                 )
             }

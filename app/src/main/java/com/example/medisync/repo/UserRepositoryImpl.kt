@@ -7,13 +7,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import com.example.medisync.data.local.room.UserDao
 import com.example.medisync.data.local.room.UserEntity
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class UserRepositoryImpl(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val userDao: UserDao
 ) : UserRepository {
 
@@ -59,8 +58,9 @@ class UserRepositoryImpl(
             try {
                 val snapshot = usersCollection.get().await()
                 val profiles = snapshot.toObjects(UserProfile::class.java)
+                userDao.deleteAllUsers()
                 userDao.insertUsers(profiles.map { UserEntity.fromUserProfile(it) })
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Network errors are ignored here, relying on offline Room cache
             }
         }

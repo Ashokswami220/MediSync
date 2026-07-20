@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.ui.navigation.TopBar
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.foundation.ExperimentalFoundationApi
 
 data class UserAdminModel(
     val name: String,
@@ -42,7 +43,7 @@ data class UserAdminModel(
     val hasViewed: Boolean
 )
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UserListScreen(
     onNavigateToUserDetail: (String) -> Unit = {},

@@ -1,5 +1,6 @@
 package com.example.medisync.ui.screens.user
 
+import android.content.ActivityNotFoundException
 import androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
 import androidx.compose.animation.core.Spring.StiffnessMedium
 import androidx.compose.animation.core.animateDpAsState
@@ -56,6 +57,8 @@ import com.example.medisync.ui.components.HealthStatDetails
 import androidx.core.net.toUri
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.utils.HapticHelper
+import com.example.medisync.utils.GlobalToastManager
+import androidx.compose.material.icons.filled.Notifications
 
 @Composable
 fun UserHomeScreen(
@@ -123,7 +126,13 @@ fun UserHomeScreen(
 
         UserHomeTopBar(
             modifier = Modifier.align(Alignment.TopCenter),
-            scrollFraction = scrollFraction
+            scrollFraction = scrollFraction,
+            onBellClick = {
+                GlobalToastManager.showToast(
+                    message = "No new notifications",
+                    icon = Icons.Default.Notifications
+                )
+            }
         )
 
         if (showCallSheet) {
@@ -152,7 +161,7 @@ fun openMedicalCoordinates(context: Context) {
     intent.setPackage("com.google.android.apps.maps")
     try {
         context.startActivity(intent)
-    } catch (_: android.content.ActivityNotFoundException) {
+    } catch (_: ActivityNotFoundException) {
         context.startActivity(Intent(Intent.ACTION_VIEW, uri.toUri()))
     }
 }

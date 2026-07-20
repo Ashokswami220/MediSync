@@ -61,6 +61,7 @@ import com.example.medisync.R
 import com.example.medisync.ui.components.MemberSwitcher
 import com.example.medisync.model.UserRole
 import com.example.medisync.utils.HapticHelper
+import com.google.firebase.auth.FirebaseAuth
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.blur.blurEffect
@@ -74,11 +75,12 @@ data class NavItem(
 
 @Composable
 fun GlassNavBar(
+    modifier: Modifier = Modifier,
     role: UserRole,
     currentRoute: String,
     onNavigate: (String) -> Unit,
     hazeState: HazeState,
-    modifier: Modifier = Modifier
+    onUploadButtonPositioned: (androidx.compose.ui.geometry.Offset) -> Unit = {},
 ) {
     val separatedItem = if (role == UserRole.ADMIN) {
         NavItem(Routes.UPLOAD_DATA, Icons.Default.Upload, "Upload")
@@ -376,6 +378,10 @@ fun GlassNavBar(
                 modifier = Modifier
                     .aspectRatio(1f)
                     .fillMaxHeight()
+                    .onGloballyPositioned { coords ->
+                        val center = coords.localToRoot(androidx.compose.ui.geometry.Offset(coords.size.width / 2f, coords.size.height / 2f))
+                        onUploadButtonPositioned(center)
+                    }
                     .clip(CircleShape)
                     .hazeEffect(state = hazeState) {
                         blurEffect {
@@ -431,7 +437,8 @@ fun GlassNavBar(
 @Composable
 fun UserHomeTopBar(
     modifier: Modifier = Modifier,
-    scrollFraction: Float = 0f
+    scrollFraction: Float = 0f,
+    onBellClick: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -507,11 +514,15 @@ fun UserHomeTopBar(
             ) {
                 // Person
                 var selectedMember by remember { mutableStateOf("Ashok") }
+                val currentUser = FirebaseAuth.getInstance().currentUser
+                val isLoggedIn = currentUser != null
 
-                MemberSwitcher(
-                    selectedMember = selectedMember,
-                    onMemberSelected = { selectedMember = it }
-                )
+                if (isLoggedIn) {
+                    MemberSwitcher(
+                        selectedMember = selectedMember,
+                        onMemberSelected = { selectedMember = it }
+                    )
+                }
 
                 // Bell
                 Box(
@@ -520,7 +531,7 @@ fun UserHomeTopBar(
                         .background(Color.Black.copy(alpha = 0.5f))
                         .clickable {
                             HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            /* Notification action */
+                            onBellClick()
                         }
                         .padding(10.dp),
                     contentAlignment = Alignment.Center
@@ -632,11 +643,15 @@ fun TopBar(
                 ) {
                     if (showName) {
                         var selectedMember by remember { mutableStateOf("Ashok") }
+                        val currentUser = FirebaseAuth.getInstance().currentUser
+                        val isLoggedIn = currentUser != null
 
-                        MemberSwitcher(
-                            selectedMember = selectedMember,
-                            onMemberSelected = { selectedMember = it }
-                        )
+                        if (isLoggedIn) {
+                            MemberSwitcher(
+                                selectedMember = selectedMember,
+                                onMemberSelected = { selectedMember = it }
+                            )
+                        }
                     }
 
                     extraActions()

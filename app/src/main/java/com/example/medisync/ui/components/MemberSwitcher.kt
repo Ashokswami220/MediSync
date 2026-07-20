@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import com.example.medisync.utils.HapticHelper
 
 @Composable
@@ -78,11 +80,11 @@ fun MemberSwitcher(
         }
 
         if (expandedMenu) {
-            val density = androidx.compose.ui.platform.LocalDensity.current
+            val density = LocalDensity.current
             val yOffsetPx = with(density) { popupOffsetY.dp.roundToPx() }
             Popup(
                 alignment = popupAlignment,
-                offset = androidx.compose.ui.unit.IntOffset(0, yOffsetPx),
+                offset = IntOffset(0, yOffsetPx),
                 onDismissRequest = { expandedMenu = false }
             ) {
                 Column(

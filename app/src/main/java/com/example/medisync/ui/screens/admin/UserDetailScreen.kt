@@ -1,6 +1,7 @@
 package com.example.medisync.ui.screens.admin
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -262,7 +263,7 @@ fun UserDetailReportsList(
                         bottomEnd = 4.dp
                     ),
                     color = colorScheme.background,
-                    border = androidx.compose.foundation.BorderStroke(
+                    border = BorderStroke(
                         1.dp, colorScheme.secondaryContainer
                     ),
                     modifier = Modifier

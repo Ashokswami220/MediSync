@@ -2,7 +2,6 @@ package com.example.medisync.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +29,7 @@ class UserListViewModel(
     private fun fetchUsers() {
         viewModelScope.launch {
             userRepository.getAllUsers()
-                .catch { e ->
+                .catch { _ ->
                     // Handle error if necessary
                     _isLoading.value = false
                 }

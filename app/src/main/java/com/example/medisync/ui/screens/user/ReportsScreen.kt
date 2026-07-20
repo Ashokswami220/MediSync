@@ -35,13 +35,14 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material3.IconButton
 import com.example.medisync.utils.HapticHelper
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun UserReportsScreen(
     onNavigateToReportDetail: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }

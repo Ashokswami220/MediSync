@@ -26,6 +26,7 @@ sealed class AuthState {
     object Loading : AuthState()
     object NeedsInfo : AuthState()
     object Success : AuthState()
+    object LoggedOut : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
@@ -42,8 +43,32 @@ class AuthViewModel(
     // Using Web Client ID from google-services.json
     private val webClientId = "590270466349-6esu0sc0ec33tcnhvc8g4ag5qpqdjev7.apps.googleusercontent.com"
 
+    fun checkInitialAuthState() {
+        if (_authState.value != AuthState.Idle) return
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                val currentUser = authRepo.getCurrentUserSync()
+                if (currentUser != null) {
+                    checkIfUserNeedsInfo(currentUser.uid)
+                } else {
+                    _authState.value = AuthState.LoggedOut
+                }
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Failed to check auth state")
+            }
+        }
+    }
+
     fun resetState() {
         _authState.value = AuthState.Idle
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            authRepo.signOut()
+            _authState.value = AuthState.LoggedOut
+        }
     }
 
     fun signInWithGoogle() {

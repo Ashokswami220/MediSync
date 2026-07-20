@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 import com.example.medisync.utils.HapticHelper
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,18 +58,24 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import com.example.medisync.data.local.ContactConfig
+import com.example.medisync.data.SettingsManager
 import com.example.medisync.ui.navigation.TopBar
 import com.example.medisync.ui.components.LanguageBottomSheet
 import com.example.medisync.ui.components.AppearanceBottomSheet
+import com.example.medisync.ui.components.DeleteAccountDialog
+import com.example.medisync.ui.components.DeleteDataDialog
+import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.ui.theme.LocalAppearance
 import androidx.core.net.toUri
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import com.example.medisync.repo.AuthRepository
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun SettingsScreen(
     onNavigateToEditProfile: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {},
     onSignOut: () -> Unit = {},
     profileViewModel: ProfileViewModel = koinViewModel()
 ) {
@@ -76,20 +84,37 @@ fun SettingsScreen(
     val context = LocalContext.current
 
     val profileState by profileViewModel.profileState.collectAsState()
-    var name by remember { mutableStateOf("User") }
-    var number by remember { mutableStateOf("") }
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val isLoggedIn = currentUser != null
+
+    var name by remember { mutableStateOf("Guest") }
+    var number by remember { mutableStateOf("Tap to login") }
+    var email by remember { mutableStateOf("") }
 
     LaunchedEffect(profileState) {
         if (profileState is ProfileState.Success) {
             val p = (profileState as ProfileState.Success).profile
             name = "${p.firstName} ${p.lastName}".trim()
             number = p.phoneNumber
+            email = currentUser?.email ?: ""
         }
     }
 
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            profileViewModel.loadProfile()
+        } else {
+            name = "Guest"
+            number = "Tap to login"
+        }
+    }
+
+    val (showDeleteDataDialog, setShowDeleteDataDialog) = remember { mutableStateOf(false) }
+    val (showDeleteAccountDialog, setShowDeleteAccountDialog) = remember { mutableStateOf(false) }
+
     var showAppearanceSheet by remember { mutableStateOf(false) }
     var currentAppearance by LocalAppearance.current
-    val settingsManager = remember { com.example.medisync.data.SettingsManager(context) }
+    val settingsManager = remember { SettingsManager(context) }
     val isHaptic by settingsManager.hapticsFlow.collectAsState(initial = true)
     val coroutineScope = rememberCoroutineScope()
     
@@ -121,7 +146,11 @@ fun SettingsScreen(
                     .border(1.dp, colorScheme.outlineVariant)
                     .clickable { 
                         HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        onNavigateToEditProfile() 
+                        if (isLoggedIn) {
+                            onNavigateToEditProfile() 
+                        } else {
+                            onNavigateToLogin()
+                        }
                     }
             ) {
                 Row(
@@ -132,7 +161,7 @@ fun SettingsScreen(
                         modifier = Modifier
                             .size(64.dp)
                             .clip(CircleShape)
-                            .background(colorScheme.primaryContainer.copy(alpha = 0.3f))
+                            .background(colorScheme.secondary.copy(alpha = 0.2f))
                             .border(1.dp, colorScheme.outlineVariant, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -146,17 +175,27 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(20.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = name.ifBlank { "User" },
+                            text = if (isLoggedIn) name else "Guest",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorScheme.onBackground
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = number,
+                            text = if (isLoggedIn) number else "Tap to login to access profile",
                             fontSize = 15.sp,
                             color = colorScheme.onSurfaceVariant
                         )
+                        if (isLoggedIn && email.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = email,
+                                fontSize = 13.sp,
+                                color = colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -352,53 +391,67 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Delete,
                     title = "Delete My Data",
-                    titleColor = colorScheme.error,
+                    titleColor = if (isLoggedIn) colorScheme.error else colorScheme.onSurfaceVariant,
                     showArrow = false,
-                    onClick = { HapticHelper.trigger(context, HapticHelper.Type.HEAVY) }
+                    onClick = { 
+                        if (isLoggedIn) {
+                            HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                            setShowDeleteDataDialog(true)
+                        } 
+                    }
                 )
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
                 SettingsItem(
                     icon = Icons.Default.PersonRemove,
                     title = "Delete My Account",
-                    titleColor = colorScheme.error,
+                    titleColor = if (isLoggedIn) colorScheme.error else colorScheme.onSurfaceVariant,
                     showArrow = false,
-                    onClick = { HapticHelper.trigger(context, HapticHelper.Type.HEAVY) }
+                    onClick = { 
+                        if (isLoggedIn) {
+                            HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                            setShowDeleteAccountDialog(true)
+                        } 
+                    }
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
             
-            OutlinedButton(
-                onClick = { 
-                    HapticHelper.trigger(context, HapticHelper.Type.HEAVY) 
-                    coroutineScope.launch {
-                        authRepo.signOut()
-                        onSignOut()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 48.dp)
-                    .height(44.dp),
-                border = BorderStroke(1.dp, colorScheme.error),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Sign Out",
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Sign Out",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
+            if (isLoggedIn) {
+                OutlinedButton(
+                    onClick = { 
+                        HapticHelper.trigger(context, HapticHelper.Type.HEAVY) 
+                        coroutineScope.launch {
+                            authRepo.signOut()
+                            onSignOut()
+                            GlobalToastManager.showToast(
+                                message = "You have Logged out successfully",
+                                icon = Icons.AutoMirrored.Filled.Logout
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    border = BorderStroke(1.dp, colorScheme.error),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = "Sign Out",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Sign Out",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.height(120.dp))
+            Spacer(modifier = Modifier.height(100.dp))
         }
         
         if (showLanguageSheet) {
@@ -419,6 +472,32 @@ fun SettingsScreen(
                 onAppearanceSelected = { appearance ->
                     currentAppearance = appearance
                 }
+            )
+        }
+
+        if (showDeleteDataDialog) {
+            DeleteDataDialog(
+                onConfirm = {
+                    profileViewModel.deleteData {
+                        // Data deleted
+                    }
+                },
+                onDismiss = { setShowDeleteDataDialog(false) }
+            )
+        }
+
+        if (showDeleteAccountDialog) {
+            DeleteAccountDialog(
+                onConfirm = {
+                    profileViewModel.deleteAccount {
+                        GlobalToastManager.showToast(
+                            message = "Your Account has been deleted",
+                            icon = Icons.Default.Delete
+                        )
+                        onSignOut()
+                    }
+                },
+                onDismiss = { setShowDeleteAccountDialog(false) }
             )
         }
     }

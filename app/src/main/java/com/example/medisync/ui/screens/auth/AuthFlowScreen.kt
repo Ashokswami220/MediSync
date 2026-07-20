@@ -10,14 +10,24 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import android.widget.Toast
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.ui.platform.LocalContext
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.ui.Alignment
@@ -26,10 +36,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.example.medisync.R
+import com.example.medisync.utils.GlobalToastManager
 
 enum class AuthStep(val title: String) {
     LANGUAGE("Choose an\nLanguage"),
@@ -50,25 +65,42 @@ fun AuthFlowScreen(
     LaunchedEffect(authState) {
         when (val state = authState) {
             is AuthState.Success -> {
+                GlobalToastManager.showToast(
+                    message = "You have successfully logged in",
+                    icon = Icons.AutoMirrored.Filled.Login
+                )
                 viewModel.resetState()
                 onNavigateNext()
             }
+
             is AuthState.NeedsInfo -> {
                 currentStep = AuthStep.INFO
             }
+
             is AuthState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG)
+                    .show()
                 viewModel.resetState()
             }
+
+            is AuthState.LoggedOut -> {
+                currentStep = AuthStep.LOGIN
+                viewModel.resetState()
+            }
+
             else -> {}
         }
     }
 
     BackHandler(enabled = currentStep != AuthStep.LANGUAGE) {
-        currentStep = when (currentStep) {
-            AuthStep.INFO -> AuthStep.LOGIN
-            AuthStep.LOGIN -> AuthStep.LANGUAGE
-            AuthStep.LANGUAGE -> AuthStep.LANGUAGE
+        if (currentStep == AuthStep.INFO) {
+            (context as? android.app.Activity)?.finishAffinity()
+        } else {
+            currentStep = when (currentStep) {
+                AuthStep.INFO -> AuthStep.LOGIN
+                AuthStep.LOGIN -> AuthStep.LANGUAGE
+                AuthStep.LANGUAGE -> AuthStep.LANGUAGE
+            }
         }
     }
 
@@ -117,27 +149,29 @@ fun AuthFlowScreen(
                 AuthSheetsStack(
                     currentStep = currentStep,
                     onStepChange = { currentStep = it },
-                    onNavigateNext = onNavigateNext,
                     onGoogleSignIn = { viewModel.signInWithGoogle() },
                     onCompleteProfile = { f, l, p -> viewModel.completeProfile(f, l, p) },
+                    onLogout = { viewModel.signOut() },
                     isLoading = authState is AuthState.Loading
                 )
             }
 
-            // Skip Button
-            TextButton(
-                onClick = onNavigateNext,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(horizontal = 16.dp)
-            ) {
-                Text(
-                    text = "Skip",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp
-                )
+            // Skip Button (Only visible on LOGIN sheet)
+            if (currentStep == AuthStep.LOGIN) {
+                TextButton(
+                    onClick = onNavigateNext,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .statusBarsPadding()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = "Skip",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
     }
@@ -147,9 +181,9 @@ fun AuthFlowScreen(
 fun AuthSheetsStack(
     currentStep: AuthStep,
     onStepChange: (AuthStep) -> Unit,
-    onNavigateNext: () -> Unit,
     onGoogleSignIn: () -> Unit,
     onCompleteProfile: (String, String, String) -> Unit,
+    onLogout: () -> Unit,
     isLoading: Boolean
 ) {
     Box(
@@ -167,7 +201,7 @@ fun AuthSheetsStack(
                     .fillMaxWidth()
                     .fillMaxHeight(0.9f),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.background,
                 shadowElevation = 8.dp
             ) {
                 Box(
@@ -191,7 +225,7 @@ fun AuthSheetsStack(
                     .fillMaxWidth()
                     .fillMaxHeight(0.95f),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                color = MaterialTheme.colorScheme.background,
                 shadowElevation = 16.dp
             ) {
                 Box(
@@ -200,7 +234,6 @@ fun AuthSheetsStack(
                         .navigationBarsPadding()
                 ) {
                     LoginSheet(
-                        onNext = { onStepChange(AuthStep.INFO) },
                         onGoogleSignIn = onGoogleSignIn,
                         isLoading = isLoading
                     )
@@ -219,7 +252,7 @@ fun AuthSheetsStack(
                     .fillMaxWidth()
                     .fillMaxHeight(1f),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.background,
                 shadowElevation = 24.dp
             ) {
                 Box(
@@ -229,6 +262,7 @@ fun AuthSheetsStack(
                 ) {
                     InfoSheet(
                         onDone = onCompleteProfile,
+                        onLogout = onLogout,
                         isLoading = isLoading
                     )
                 }
@@ -306,7 +340,10 @@ fun LangSelectionSheet(onNext: () -> Unit) {
             shape = RoundedCornerShape(100.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
         ) {
-            Text("Next", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Done", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
@@ -316,8 +353,10 @@ fun LanguageCard(
     modifier: Modifier = Modifier, title: String, subtitle: String, iconText: String,
     isSelected: Boolean, onClick: () -> Unit
 ) {
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant
-    val bgColor = if (isSelected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f) else Color.White
+    val borderColor =
+        if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant
+    val bgColor =
+        if (isSelected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f) else Color.White
 
     Row(
         modifier = modifier
@@ -336,14 +375,20 @@ fun LanguageCard(
                 .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(iconText, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                iconText, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
 
         Spacer(modifier = Modifier.width(16.dp))
 
         // Text Content
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                title, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(subtitle, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -358,120 +403,34 @@ fun LanguageCard(
 }
 
 @Composable
-fun LoginSheet(onNext: () -> Unit, onGoogleSignIn: () -> Unit, isLoading: Boolean) {
-    var phoneNumber by remember { mutableStateOf("") }
-    var otp by remember { mutableStateOf("") }
-
+fun LoginSheet(onGoogleSignIn: () -> Unit, isLoading: Boolean) {
     Column(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        // Phone Number Input
-        OutlinedTextField(
-            value = phoneNumber,
-            onValueChange = { phoneNumber = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Phone Number") },
-            leadingIcon = {
-                Text(
-                    "+91", modifier = Modifier.padding(start = 16.dp, end = 8.dp),
-                    fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface
-                )
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                focusedBorderColor = MaterialTheme.colorScheme.secondary
-            )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Custom 4-digit OTP Input
-        Text("Enter OTP", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            BasicTextField(
-                value = otp,
-                onValueChange = { if (it.length <= 4) otp = it },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f),
-                decorationBox = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        repeat(4) { index ->
-                            val char = when {
-                                index >= otp.length -> ""
-                                else -> otp[index].toString()
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp)
-                                    .border(
-                                        1.dp,
-                                        if (otp.length == index) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
-                                        RoundedCornerShape(32.dp)
-                                    )
-                                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(32.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = char, color = MaterialTheme.colorScheme.onSurface, fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(
-                onClick = { /* Request OTP */ },
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                modifier = Modifier.height(48.dp)
-            ) {
-                Text("Get OTP", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = onNext,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(100.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                .height(280.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Text(
-                "Continue", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp)
+                    .background(
+                        Color.Black.copy(alpha = 0.04f),
+                        shape = RoundedCornerShape(32.dp)
+                    )
+            )
+            Image(
+                painter = painterResource(id = R.drawable.login_svg2),
+                contentDescription = "Login Illustration",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(280.dp)
             )
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
-            Text(
-                "or", modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 14.sp
-            )
-            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedButton(
             onClick = onGoogleSignIn,
@@ -481,7 +440,9 @@ fun LoginSheet(onNext: () -> Unit, onGoogleSignIn: () -> Unit, isLoading: Boolea
                 .height(56.dp),
             shape = RoundedCornerShape(100.dp),
             colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            border = BorderStroke(
+                1.dp, MaterialTheme.colorScheme.outlineVariant
+            )
         ) {
             Box(
                 modifier = Modifier
@@ -489,57 +450,159 @@ fun LoginSheet(onNext: () -> Unit, onGoogleSignIn: () -> Unit, isLoading: Boolea
                     .background(MaterialTheme.colorScheme.secondary, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("G", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(
+                    "G", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
             }
             Spacer(modifier = Modifier.width(12.dp))
-            Text("Sign in with Google", color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
+            Text(
+                "Sign in with Google", color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp
+            )
         }
     }
 }
 
 @Composable
-fun InfoSheet(onDone: (String, String, String) -> Unit, isLoading: Boolean) {
+fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, isLoading: Boolean) {
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
+    var showErrorFirstName by remember { mutableStateOf(false) }
+    var showErrorLastName by remember { mutableStateOf(false) }
+    var showErrorPhone by remember { mutableStateOf(false) }
+
+    val continueShake = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+
+    fun triggerShake(animatable: Animatable<Float, AnimationVector1D>) {
+        coroutineScope.launch {
+            for (i in 0..2) {
+                animatable.animateTo(15f, animationSpec = tween(50))
+                animatable.animateTo(-15f, animationSpec = tween(50))
+            }
+            animatable.animateTo(0f, animationSpec = tween(50))
+        }
+    }
+
+    val email = FirebaseAuth.getInstance().currentUser?.email ?: "Unknown Email"
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "You are signed in as",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(50.dp))
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50.dp)),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = email,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.outlineVariant)
+            )
+
+            IconButton(
+                onClick = onLogout,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .aspectRatio(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                    contentDescription = "Log out",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(modifier = Modifier.height(24.dp))
+
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            OutlinedTextField(
-                value = firstName,
-                onValueChange = { firstName = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("First Name") },
-                shape = RoundedCornerShape(50.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedBorderColor = MaterialTheme.colorScheme.secondary
+            Column(modifier = Modifier.weight(1f)) {
+                OutlinedTextField(
+                    value = firstName,
+                    onValueChange = {
+                        firstName = it
+                        showErrorFirstName = false
+                    },
+                    isError = showErrorFirstName,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("First Name") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
+                    shape = RoundedCornerShape(50.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedBorderColor = MaterialTheme.colorScheme.secondary
+                    )
                 )
-            )
-            OutlinedTextField(
-                value = lastName,
-                onValueChange = { lastName = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Last Name") },
-                shape = RoundedCornerShape(50.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedBorderColor = MaterialTheme.colorScheme.secondary
+                if (showErrorFirstName) {
+                    Text("Enter first name", color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(start = 16.dp, top = 4.dp))
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                OutlinedTextField(
+                    value = lastName,
+                    onValueChange = {
+                        lastName = it
+                        showErrorLastName = false
+                    },
+                    isError = showErrorLastName,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Last Name") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
+                    shape = RoundedCornerShape(50.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedBorderColor = MaterialTheme.colorScheme.secondary
+                    )
                 )
-            )
+                if (showErrorLastName) {
+                    Text("Enter last name", color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(start = 16.dp, top = 4.dp))
+                }
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = phoneNumber,
-            onValueChange = { phoneNumber = it },
+            onValueChange = {
+                if (it.length <= 10) phoneNumber = it
+                showErrorPhone = false
+            },
+            isError = showErrorPhone,
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Phone Number") },
             leadingIcon = {
@@ -548,7 +611,9 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, isLoading: Boolean) {
                     fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface
                 )
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
             shape = RoundedCornerShape(50.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -559,18 +624,48 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, isLoading: Boolean) {
                 focusedBorderColor = MaterialTheme.colorScheme.secondary
             )
         )
+        if (showErrorPhone) {
+            Text(
+                text = if (phoneNumber.isEmpty()) "Enter phone number" else "Enter correct number",
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(32.dp))
         Button(
-            onClick = { onDone(firstName, lastName, phoneNumber) },
-            enabled = !isLoading && firstName.isNotBlank() && phoneNumber.isNotBlank(),
+            onClick = {
+                var hasError = false
+                if (firstName.isBlank()) {
+                    showErrorFirstName = true
+                    hasError = true
+                }
+                if (lastName.isBlank()) {
+                    showErrorLastName = true
+                    hasError = true
+                }
+                if (phoneNumber.length != 10) {
+                    showErrorPhone = true
+                    hasError = true
+                }
+                
+                if (hasError) {
+                    triggerShake(continueShake)
+                } else {
+                    onDone(firstName, lastName, phoneNumber)
+                }
+            },
+            enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
+                .offset(x = continueShake.value.dp)
                 .height(56.dp),
             shape = RoundedCornerShape(100.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
         ) {
             Text(
-                "Continue", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold
+                "Continue", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }

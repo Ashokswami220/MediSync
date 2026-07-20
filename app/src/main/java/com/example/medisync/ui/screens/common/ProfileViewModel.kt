@@ -5,11 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.UserRepository
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 sealed class ProfileState {
     object Loading : ProfileState()
@@ -89,5 +91,33 @@ class ProfileViewModel(
     
     fun resetUpdateState() {
         _updateState.value = ProfileUpdateState.Idle
+    }
+
+    fun deleteAccount(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val uid = authRepo.getCurrentUserSync()?.uid
+                if (uid != null) {
+                    FirebaseFirestore.getInstance().collection("users").document(uid).delete().await()
+                }
+                authRepo.getCurrentUserSync()?.delete()?.await()
+                authRepo.signOut()
+                onSuccess()
+            } catch (_: Exception) {
+                // Ignore errors or handle them gracefully
+            }
+        }
+    }
+
+    fun deleteData(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                // Don't delete user profile info (name, number)
+                // Just clear cache / collections (if there are subcollections, delete them here)
+                onSuccess()
+            } catch (_: Exception) {
+                // Ignore errors
+            }
+        }
     }
 }

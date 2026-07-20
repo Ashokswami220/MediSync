@@ -25,6 +25,9 @@ import com.example.medisync.ui.navigation.Routes
 import com.example.medisync.ui.theme.LocalAppearance
 import com.example.medisync.ui.theme.MediSyncTheme
 import com.example.medisync.utils.HapticHelper
+import com.example.medisync.utils.GlobalToastManager
+import com.example.medisync.ui.components.CustomToast
+import androidx.compose.ui.Alignment
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,14 +79,25 @@ class MainActivity : ComponentActivity() {
             }
             
             val startDest = if (onboardingCompleted == true) {
-                Routes.ROLE_DECIDE
+                Routes.MAIN_TABS
             } else {
                 Routes.CAROUSEL
             }
 
             CompositionLocalProvider(LocalAppearance provides appearanceState) {
                 MediSyncTheme(darkTheme = darkTheme) {
-                    NavApp(startDestination = startDest)
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        NavApp(startDestination = startDest)
+                        
+                        val toastState by GlobalToastManager.toastState.collectAsState()
+                        CustomToast(
+                            message = toastState.message,
+                            isVisible = toastState.isVisible,
+                            icon = toastState.icon,
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                            onDismiss = { GlobalToastManager.dismissToast() }
+                        )
+                    }
                 }
             }
         }
