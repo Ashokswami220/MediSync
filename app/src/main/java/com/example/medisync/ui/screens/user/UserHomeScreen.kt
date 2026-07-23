@@ -66,7 +66,10 @@ fun UserHomeScreen(
     onNavigateToReports: () -> Unit = {},
     selectedMember: String = "User",
     onMemberSelected: (String) -> Unit = {},
-    members: List<String> = emptyList()
+    members: List<String> = emptyList(),
+    bloodPressure: String = "",
+    bloodType: String = "",
+    bloodSugar: String = ""
 ) {
     val scrollState = rememberScrollState()
     val colorScheme = MaterialTheme.colorScheme
@@ -100,7 +103,10 @@ fun UserHomeScreen(
                     onCallUsClick = { showCallSheet = true },
                     onStatClick = { stat -> selectedHealthStat = stat },
                     context = context,
-                    colorScheme = colorScheme
+                    colorScheme = colorScheme,
+                    bloodPressure = bloodPressure,
+                    bloodType = bloodType,
+                    bloodSugar = bloodSugar
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -177,7 +183,10 @@ fun HealthStatsGrid(
     onCallUsClick: () -> Unit,
     onStatClick: (HealthStatDetails) -> Unit,
     context: Context,
-    colorScheme: ColorScheme
+    colorScheme: ColorScheme,
+    bloodPressure: String,
+    bloodType: String,
+    bloodSugar: String
 ) {
     Column(
         modifier = Modifier
@@ -325,7 +334,7 @@ fun HealthStatsGrid(
                     onStatClick(
                         HealthStatDetails(
                             title = "Blood Pressure",
-                            value = "120/80",
+                            value = bloodPressure.ifEmpty { "--/--" },
                             unit = "mmHg",
                             status = "Normal",
                             date = "28 Jun 2026",
@@ -369,7 +378,7 @@ fun HealthStatsGrid(
                 // 2. Huge Number + Unit
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        "120/80", fontSize = 36.sp, fontWeight = FontWeight.Bold,
+                        bloodPressure.ifEmpty { "--/--" }, fontSize = 36.sp, fontWeight = FontWeight.Bold,
                         color = colorScheme.onBackground,
                         lineHeight = 36.sp
                     )
@@ -413,7 +422,7 @@ fun HealthStatsGrid(
                         onStatClick(
                             HealthStatDetails(
                                 title = "Blood Type",
-                                value = "O+",
+                                value = bloodType.ifEmpty { "--" },
                                 unit = "",
                                 status = "Donor Eligible",
                                 date = "15 Jan 2026",
@@ -449,7 +458,7 @@ fun HealthStatsGrid(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        "O+", fontSize = 36.sp, fontWeight = FontWeight.Bold,
+                        bloodType.ifEmpty { "--" }, fontSize = 36.sp, fontWeight = FontWeight.Bold,
                         color = colorScheme.onBackground,
                         lineHeight = 36.sp
                     )
@@ -476,7 +485,7 @@ fun HealthStatsGrid(
                         onStatClick(
                             HealthStatDetails(
                                 title = "Blood Sugar",
-                                value = "95",
+                                value = bloodSugar.ifEmpty { "--" },
                                 unit = "mg/dL",
                                 status = "Normal",
                                 date = "28 Jun 2026",
@@ -512,7 +521,7 @@ fun HealthStatsGrid(
 
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            "95", fontSize = 36.sp, fontWeight = FontWeight.Bold,
+                            bloodSugar.ifEmpty { "--" }, fontSize = 36.sp, fontWeight = FontWeight.Bold,
                             color = colorScheme.onBackground,
                             lineHeight = 36.sp
                         )

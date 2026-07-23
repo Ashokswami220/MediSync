@@ -1,4 +1,10 @@
 package com.example.medisync.ui.screens.common
 
-class AboutUsScreen {
+import androidx.compose.runtime.Composable
+
+@Composable
+fun AboutUsScreen(
+    onBackClick: () -> Unit = {}
+) {
+
 }

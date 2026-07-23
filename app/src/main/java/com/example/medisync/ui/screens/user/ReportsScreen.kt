@@ -34,6 +34,15 @@ import androidx.compose.material3.ButtonDefaults.outlinedButtonColors
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import com.example.medisync.ui.components.CustomToast
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LoadingIndicatorDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material.pullrefresh.pullRefreshIndicatorTransform
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -49,8 +58,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -67,7 +76,7 @@ import java.util.Date
 import kotlin.time.Duration.Companion.milliseconds
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun UserReportsScreen(
     viewModel: ReportsViewModel = koinViewModel(),
@@ -80,7 +89,11 @@ fun UserReportsScreen(
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
 
-    val documents by viewModel.documents.collectAsState()
+    val reportsState by viewModel.reportsState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadDocuments()
+    }
 
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -89,12 +102,14 @@ fun UserReportsScreen(
     var selectedSort by remember { mutableStateOf("Newest First") }
 
     var isRefreshing by remember { mutableStateOf(false) }
+    var showToast by remember { mutableStateOf(false) }
 
     LaunchedEffect(isRefreshing) {
         if (isRefreshing) {
             viewModel.refresh()
-            kotlinx.coroutines.delay(1000.milliseconds)
+            kotlinx.coroutines.delay(3000.milliseconds)
             isRefreshing = false
+            showToast = true
         }
     }
 
@@ -128,9 +143,15 @@ fun UserReportsScreen(
         val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
         val isLoggedIn = currentUser != null
 
+        val pullRefreshState = rememberPullRefreshState(
+            refreshing = isRefreshing,
+            onRefresh = { isRefreshing = true }
+        )
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .pullRefresh(pullRefreshState)
         ) {
             Column(
                 modifier = Modifier
@@ -155,21 +176,82 @@ fun UserReportsScreen(
                         colorScheme = colorScheme
                     )
                 } else {
-                    val filteredDocuments = documents.filter { it.linkedMember == selectedMember }
-
-                    if (filteredDocuments.isEmpty()) {
-                        EmptyReportsState(colorScheme = colorScheme)
-                    } else {
-                        ReportsList(
-                            filteredDocuments = filteredDocuments,
-                            onNavigateToReportDetail = onNavigateToReportDetail,
-                            colorScheme = colorScheme
-                        )
+                    when (val state = reportsState) {
+                        is ReportsState.Loading -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                LoadingIndicator(
+                                    modifier = Modifier.size(60.dp),
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                                )
+                            }
+                        }
+                        is ReportsState.Empty -> {
+                            EmptyReportsState(colorScheme = colorScheme)
+                        }
+                        is ReportsState.Success -> {
+                            val filteredDocuments = state.documents.filter { it.linkedMember == selectedMember }
+                            if (filteredDocuments.isEmpty()) {
+                                EmptyReportsState(colorScheme = colorScheme)
+                            } else {
+                                ReportsList(
+                                    filteredDocuments = filteredDocuments,
+                                    onNavigateToReportDetail = onNavigateToReportDetail,
+                                    colorScheme = colorScheme
+                                )
+                            }
+                        }
+                        is ReportsState.Error -> {
+                            // Show error or empty state
+                            EmptyReportsState(colorScheme = colorScheme)
+                        }
                     }
                 }
 
                 // Add padding at the bottom for NavBar
                 Spacer(modifier = Modifier.height(120.dp))
+            }
+            
+            // Custom Pull to Refresh Indicator
+            if (pullRefreshState.progress > 0 || isRefreshing) {
+                val scale = if (isRefreshing) 1f else (pullRefreshState.progress * 1.2f).coerceIn(0f, 1.2f)
+                val alpha = if (isRefreshing) 1f else pullRefreshState.progress.coerceIn(0f, 1f)
+                
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .pullRefreshIndicatorTransform(pullRefreshState)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            this.alpha = alpha
+                        }
+                ) {
+                    LoadingIndicator(
+                        modifier = Modifier.size(60.dp),
+                        color = MaterialTheme.colorScheme.secondary,
+                        polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                    )
+                }
+            }
+            
+            // Custom Toast Overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 120.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomToast(
+                    message = "Reports updated",
+                    isVisible = showToast,
+                    onDismiss = { showToast = false }
+                )
             }
         }
     }
@@ -357,56 +439,32 @@ fun NotLoggedInState(
 
 @Composable
 fun EmptyReportsState(colorScheme: ColorScheme) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(480.dp)
+            .padding(top = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            // Left Side
-            Column(horizontalAlignment = Alignment.Start) {
-                Text(
-                    text = "Reports Are",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colorScheme.onSurface
-                )
-                Text(
-                    text = "Not Available",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colorScheme.onSurface
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(24.dp))
-            
-            // Divider
-            VerticalDivider(
-                modifier = Modifier.height(48.dp),
-                color = colorScheme.outlineVariant
-            )
-            
-            Spacer(modifier = Modifier.width(24.dp))
-            
-            // Right Side
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "Try changing",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = colorScheme.secondary
-                )
-                Text(
-                    text = "Member",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = colorScheme.secondary
-                )
-            }
-        }
+        Image(
+            painter = painterResource(id = R.drawable.no_doc),
+            contentDescription = "No reports",
+            modifier = Modifier.size(110.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "No Reports available",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            color = colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "Try changing member",
+            fontSize = 16.sp,
+            color = colorScheme.onSurfaceVariant
+        )
     }
 }
 

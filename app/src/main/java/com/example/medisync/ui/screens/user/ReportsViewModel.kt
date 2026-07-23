@@ -10,39 +10,52 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import com.google.firebase.auth.FirebaseAuth
 
+sealed class ReportsState {
+    object Loading : ReportsState()
+    data class Success(val documents: List<DocumentMetadata>) : ReportsState()
+    object Empty : ReportsState()
+    data class Error(val message: String) : ReportsState()
+}
+
 class ReportsViewModel(private val repository: DocumentRepository) : ViewModel() {
 
-    private val _documents = MutableStateFlow<List<DocumentMetadata>>(emptyList())
-    val documents: StateFlow<List<DocumentMetadata>> = _documents
+    private val _reportsState = MutableStateFlow<ReportsState>(ReportsState.Loading)
+    val reportsState: StateFlow<ReportsState> = _reportsState
 
-    init {
-        FirebaseAuth.getInstance()
-            .addAuthStateListener { auth ->
-                val userUid = auth.currentUser?.uid
-                if (userUid != null) {
-                    fetchDocuments(userUid)
-                } else {
-                    _documents.value = emptyList()
-                }
-            }
+    private var fetchJob: kotlinx.coroutines.Job? = null
+
+    fun loadDocuments() {
+        val userUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (userUid != null) {
+            fetchDocuments(userUid, showLoading = true)
+        } else {
+            _reportsState.value = ReportsState.Error("User not logged in")
+        }
     }
 
     fun refresh() {
         val userUid = FirebaseAuth.getInstance().currentUser?.uid
         if (userUid != null) {
-            fetchDocuments(userUid)
+            fetchDocuments(userUid, showLoading = false)
         }
     }
 
-    private fun fetchDocuments(userUid: String) {
-        viewModelScope.launch {
+    private fun fetchDocuments(userUid: String, showLoading: Boolean) {
+        fetchJob?.cancel()
+        fetchJob = viewModelScope.launch {
+            if (showLoading && _reportsState.value !is ReportsState.Success) {
+                _reportsState.value = ReportsState.Loading
+            }
             repository.getDocuments(userUid)
                 .catch { e ->
-                    // Handle error
-                    e.printStackTrace()
+                    _reportsState.value = ReportsState.Error(e.message ?: "Failed to load documents")
                 }
                 .collect { docs ->
-                    _documents.value = docs
+                    if (docs.isEmpty()) {
+                        _reportsState.value = ReportsState.Empty
+                    } else {
+                        _reportsState.value = ReportsState.Success(docs)
+                    }
                 }
         }
     }

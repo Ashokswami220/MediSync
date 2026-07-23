@@ -15,6 +15,7 @@ hiltNavigationCompose = "1.2.0"
 koinBom = "3.5.6"
 room = "2.6.1"
 ksp = "2.2.10-2.0.2"
+material = "1.14.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -45,6 +46,7 @@ koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compos
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

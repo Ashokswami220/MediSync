@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,13 +42,13 @@ import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.example.medisync.R
-import com.example.medisync.ui.components.WavyProgressIndicator
+
 import com.example.medisync.utils.HapticHelper
 
 
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ReportDetailScreen(
     reportName: String = "Report",
@@ -320,7 +321,7 @@ fun ZoomableReportImage(
             },
         contentAlignment = Alignment.Center
     ) {
-        @OptIn(ExperimentalMaterial3Api::class)
+        @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(fileUrl)
@@ -338,9 +339,37 @@ fun ZoomableReportImage(
                 ),
             loading = {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    WavyProgressIndicator(
-                        modifier = Modifier.size(64.dp),
-                        color = MaterialTheme.colorScheme.secondary
+                    LoadingIndicator(
+                        modifier = Modifier.size(60.dp),
+                        color = MaterialTheme.colorScheme.secondary,
+                        polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                    )
+                }
+            },
+            error = {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ErrorOutline,
+                        contentDescription = "Error",
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Document is missing or corrupted.",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Please contact Support.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

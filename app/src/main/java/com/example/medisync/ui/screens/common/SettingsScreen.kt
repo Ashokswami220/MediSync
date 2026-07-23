@@ -85,6 +85,7 @@ import org.koin.compose.koinInject
 fun SettingsScreen(
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToLogin: () -> Unit = {},
+    onNavigateToAboutUs: () -> Unit = {},
     onSignOut: () -> Unit = {},
     profileViewModel: ProfileViewModel = koinViewModel()
 ) {
@@ -376,7 +377,10 @@ fun SettingsScreen(
                         icon = Icons.Default.Info,
                         title = "About Us",
                         showArrow = true,
-                        onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) }
+                        onClick = { 
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            onNavigateToAboutUs()
+                        }
                     )
                 }
             }

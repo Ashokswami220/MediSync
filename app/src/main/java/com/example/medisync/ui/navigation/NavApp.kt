@@ -50,6 +50,7 @@ import com.example.medisync.ui.screens.auth.AuthFlowScreen
 import com.example.medisync.ui.screens.auth.AuthState
 import com.example.medisync.ui.screens.auth.AuthViewModel
 import com.example.medisync.ui.screens.auth.StandaloneLoginScreen
+import com.example.medisync.ui.screens.common.AboutUsScreen
 import com.example.medisync.ui.screens.common.EditProfileScreen
 import com.example.medisync.ui.screens.common.ProfileState
 import com.example.medisync.ui.screens.common.ProfileViewModel
@@ -111,7 +112,6 @@ fun NavApp(
 
     LaunchedEffect(Unit) {
         authViewModel.checkInitialAuthState()
-        profileViewModel.loadProfile()
     }
 
     LaunchedEffect(authState) {
@@ -144,6 +144,10 @@ fun NavApp(
             listOf("User")
         }
     }
+
+    val bloodPressure = (profileState as? ProfileState.Success)?.profile?.bloodPressure ?: ""
+    val bloodType = (profileState as? ProfileState.Success)?.profile?.bloodType ?: ""
+    val bloodSugar = (profileState as? ProfileState.Success)?.profile?.bloodSugar ?: ""
 
     var selectedMember by rememberSaveable(displayMembers) { 
         mutableStateOf(displayMembers.firstOrNull() ?: "User") 
@@ -333,7 +337,10 @@ fun NavApp(
                                                 },
                                                 selectedMember = selectedMember,
                                                 onMemberSelected = { selectedMember = it },
-                                                members = displayMembers
+                                                members = displayMembers,
+                                                bloodPressure = bloodPressure,
+                                                bloodType = bloodType,
+                                                bloodSugar = bloodSugar
                                             )
                                         }
 
@@ -354,7 +361,10 @@ fun NavApp(
                                                     },
                                                     selectedMember = selectedMember,
                                                     onMemberSelected = { selectedMember = it },
-                                                    members = displayMembers
+                                                    members = displayMembers,
+                                                    bloodPressure = bloodPressure,
+                                                    bloodType = bloodType,
+                                                    bloodSugar = bloodSugar
                                                 )
                                             }
                                         }
@@ -369,7 +379,10 @@ fun NavApp(
                                             },
                                             selectedMember = selectedMember,
                                             onMemberSelected = { selectedMember = it },
-                                            members = displayMembers
+                                            members = displayMembers,
+                                            bloodPressure = bloodPressure,
+                                            bloodType = bloodType,
+                                            bloodSugar = bloodSugar
                                         )
 
                                         Routes.USER_REPORTS -> UserReportsScreen(
@@ -392,6 +405,7 @@ fun NavApp(
                                                     Routes.EDIT_PROFILE
                                                 )
                                             },
+                                            onNavigateToAboutUs = { navigateToDest(Routes.ABOUT_US) },
                                             onNavigateToLogin = { navigateToDest(Routes.LOGIN) },
                                             onSignOut = {
                                                 coroutineScope.launch {
@@ -451,7 +465,7 @@ fun NavApp(
                     )
                 }
                 composable(route = Routes.ABOUT_US) {
-                    // AboutUsScreen(onBackClick = { navController.popBackStack() })
+                     AboutUsScreen(onBackClick = { navController.popBackStack() })
                 }
                 composable(route = Routes.EDIT_PROFILE) {
                     EditProfileScreen(onBackClick = { navController.popBackStack() })
