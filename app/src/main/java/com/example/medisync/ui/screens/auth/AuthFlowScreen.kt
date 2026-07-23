@@ -1,50 +1,95 @@
 package com.example.medisync.ui.screens.auth
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import kotlinx.coroutines.launch
-import android.widget.Toast
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.material.icons.automirrored.filled.Login
-import androidx.compose.ui.platform.LocalContext
-import org.koin.androidx.compose.koinViewModel
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
 import com.example.medisync.R
 import com.example.medisync.utils.GlobalToastManager
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
+
 
 enum class AuthStep(val title: String) {
     LANGUAGE("Choose an\nLanguage"),
@@ -78,8 +123,10 @@ fun AuthFlowScreen(
             }
 
             is AuthState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG)
-                    .show()
+                GlobalToastManager.showToast(
+                    message = state.message,
+                    icon = Icons.Default.Info
+                )
                 viewModel.resetState()
             }
 
@@ -94,7 +141,7 @@ fun AuthFlowScreen(
 
     BackHandler(enabled = currentStep != AuthStep.LANGUAGE) {
         if (currentStep == AuthStep.INFO) {
-            (context as? android.app.Activity)?.finishAffinity()
+            (context as? Activity)?.finishAffinity()
         } else {
             currentStep = when (currentStep) {
                 AuthStep.INFO -> AuthStep.LOGIN
@@ -444,6 +491,31 @@ fun LoginSheet(onGoogleSignIn: () -> Unit, isLoading: Boolean) {
                 1.dp, MaterialTheme.colorScheme.outlineVariant
             )
         ) {
+            GoogleSignInButtonContent(isLoading = isLoading)
+        }
+    }
+}
+
+@Composable
+fun GoogleSignInButtonContent(isLoading: Boolean) {
+    Box(contentAlignment = Alignment.Center) {
+        // The circular progress indicator behind/around the G
+        AnimatedVisibility(
+            visible = isLoading,
+            enter = fadeIn(tween(500)),
+            exit = fadeOut(tween(500))
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(36.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
             Box(
                 modifier = Modifier
                     .size(24.dp)
@@ -451,14 +523,33 @@ fun LoginSheet(onGoogleSignIn: () -> Unit, isLoading: Boolean) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "G", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold,
+                    "G", color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                "Sign in with Google", color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp
-            )
+
+            AnimatedVisibility(
+                visible = !isLoading,
+                enter = expandHorizontally(
+                    expandFrom = Alignment.Start,
+                    animationSpec = tween(500)
+                ) + fadeIn(tween(500)),
+                exit = shrinkHorizontally(
+                    shrinkTowards = Alignment.Start,
+                    animationSpec = tween(500)
+                ) + fadeOut(tween(500))
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        "Sign in with Google",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 16.sp,
+                        maxLines = 1
+                    )
+                }
+            }
         }
     }
 }
@@ -478,7 +569,7 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
 
     fun triggerShake(animatable: Animatable<Float, AnimationVector1D>) {
         coroutineScope.launch {
-            for (i in 0..2) {
+            repeat(3) {
                 animatable.animateTo(15f, animationSpec = tween(50))
                 animatable.animateTo(-15f, animationSpec = tween(50))
             }
@@ -552,7 +643,8 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                     placeholder = { Text("First Name") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }),
                     shape = RoundedCornerShape(50.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -564,7 +656,10 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                     )
                 )
                 if (showErrorFirstName) {
-                    Text("Enter first name", color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(start = 16.dp, top = 4.dp))
+                    Text(
+                        "Enter first name", color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp, modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
                 }
             }
             Column(modifier = Modifier.weight(1f)) {
@@ -579,7 +674,8 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                     placeholder = { Text("Last Name") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }),
                     shape = RoundedCornerShape(50.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -591,7 +687,10 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                     )
                 )
                 if (showErrorLastName) {
-                    Text("Enter last name", color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(start = 16.dp, top = 4.dp))
+                    Text(
+                        "Enter last name", color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp, modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
                 }
             }
         }
@@ -612,7 +711,9 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                 )
             },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number, imeAction = ImeAction.Done
+            ),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
             shape = RoundedCornerShape(50.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -648,7 +749,7 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                     showErrorPhone = true
                     hasError = true
                 }
-                
+
                 if (hasError) {
                     triggerShake(continueShake)
                 } else {

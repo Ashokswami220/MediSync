@@ -65,7 +65,7 @@ fun AppearanceBottomSheet(
 
             appearances.forEach { appearance ->
                 val isSelected = appearance == currentAppearance
-                
+
                 val icon = when (appearance) {
                     "Light" -> Icons.Default.LightMode
                     "Dark" -> Icons.Default.DarkMode
@@ -77,7 +77,7 @@ fun AppearanceBottomSheet(
                     animationSpec = tween(durationMillis = 300),
                     label = "cornerRadiusAnimation"
                 )
-                
+
                 val animatedBackgroundColor by animateColorAsState(
                     targetValue = if (isSelected) colorScheme.secondary else colorScheme.surfaceVariant,
                     animationSpec = tween(durationMillis = 300),
@@ -100,9 +100,9 @@ fun AppearanceBottomSheet(
                         contentDescription = null,
                         tint = if (isSelected) colorScheme.onSecondary else colorScheme.onSurfaceVariant
                     )
-                    
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    
+
                     Text(
                         text = appearance,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
@@ -110,7 +110,7 @@ fun AppearanceBottomSheet(
                         color = if (isSelected) colorScheme.onSecondary else colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
-                    
+
                     if (isSelected) {
                         Icon(
                             imageVector = Icons.Default.Check,

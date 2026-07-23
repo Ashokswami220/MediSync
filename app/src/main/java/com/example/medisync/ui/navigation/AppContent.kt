@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -80,7 +81,7 @@ fun GlassNavBar(
     currentRoute: String,
     onNavigate: (String) -> Unit,
     hazeState: HazeState,
-    onUploadButtonPositioned: (androidx.compose.ui.geometry.Offset) -> Unit = {},
+    onUploadButtonPositioned: (Offset) -> Unit = {},
 ) {
     val separatedItem = if (role == UserRole.ADMIN) {
         NavItem(Routes.UPLOAD_DATA, Icons.Default.Upload, "Upload")
@@ -379,7 +380,7 @@ fun GlassNavBar(
                     .aspectRatio(1f)
                     .fillMaxHeight()
                     .onGloballyPositioned { coords ->
-                        val center = coords.localToRoot(androidx.compose.ui.geometry.Offset(coords.size.width / 2f, coords.size.height / 2f))
+                        val center = coords.localToRoot(Offset(coords.size.width / 2f, coords.size.height / 2f))
                         onUploadButtonPositioned(center)
                     }
                     .clip(CircleShape)
@@ -438,7 +439,10 @@ fun GlassNavBar(
 fun UserHomeTopBar(
     modifier: Modifier = Modifier,
     scrollFraction: Float = 0f,
-    onBellClick: () -> Unit = {}
+    onBellClick: () -> Unit = {},
+    selectedMember: String = "User",
+    onMemberSelected: (String) -> Unit = {},
+    members: List<String> = emptyList()
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -512,15 +516,14 @@ fun UserHomeTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Person
-                var selectedMember by remember { mutableStateOf("Ashok") }
                 val currentUser = FirebaseAuth.getInstance().currentUser
                 val isLoggedIn = currentUser != null
 
                 if (isLoggedIn) {
                     MemberSwitcher(
                         selectedMember = selectedMember,
-                        onMemberSelected = { selectedMember = it }
+                        onMemberSelected = onMemberSelected,
+                        members = members
                     )
                 }
 
@@ -557,6 +560,9 @@ fun TopBar(
     onSearchActiveChange: (Boolean) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
     showSearchIcon: Boolean = true,
+    selectedMember: String = "User",
+    onMemberSelected: (String) -> Unit = {},
+    members: List<String> = emptyList(),
     extraActions: @Composable RowScope.() -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -642,14 +648,14 @@ fun TopBar(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     if (showName) {
-                        var selectedMember by remember { mutableStateOf("Ashok") }
                         val currentUser = FirebaseAuth.getInstance().currentUser
                         val isLoggedIn = currentUser != null
 
                         if (isLoggedIn) {
                             MemberSwitcher(
                                 selectedMember = selectedMember,
-                                onMemberSelected = { selectedMember = it }
+                                onMemberSelected = onMemberSelected,
+                                members = members
                             )
                         }
                     }

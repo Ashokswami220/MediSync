@@ -1,57 +1,172 @@
 package com.example.medisync.ui.screens.admin
 
-import androidx.compose.foundation.background
+import com.example.medisync.utils.GlobalToastManager
+import android.content.Intent
+import android.content.Intent.ACTION_DIAL
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
+import com.example.medisync.model.DocumentMetadata
+import com.example.medisync.model.UserProfile
+import com.example.medisync.ui.components.AddMemberDialog
+import com.example.medisync.ui.components.ClearAdminDataDialog
+import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.components.MemberSwitcher
 import com.example.medisync.utils.HapticHelper
-import androidx.core.net.toUri
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import org.koin.androidx.compose.koinViewModel
+
+
+
 
 @Composable
 fun UserDetailScreen(
-    userName: String = "Ashok",
+    userUid: String,
+    viewModel: UserDetailViewModel = koinViewModel(),
     onBackClick: () -> Unit = {},
-    onNavigateToReportDetail: () -> Unit = {}
+    onNavigateToReportDetail: (String, String) -> Unit = { _, _ -> }
 ) {
-    val members = listOf(userName, "John Doe", "Jane Doe")
-    var selectedMember by remember { mutableStateOf(members[0]) }
+    LaunchedEffect(userUid) {
+        viewModel.loadUser(userUid)
+    }
+
+    val userProfile by viewModel.userProfile.collectAsState()
+    val documents by viewModel.documents.collectAsState()
+
+    val userName = userProfile?.firstName ?: "User"
+    val members = userProfile?.members?.ifEmpty { listOf(userName) } ?: listOf(userName)
+    
+    // Automatically set the self member at top
+    val displayMembers = listOf(userName) + members.filter { it != userName }
+    var selectedMember by remember(displayMembers) { mutableStateOf(displayMembers[0]) }
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showClearDataDialog by remember { mutableStateOf(false) }
+    var showUploadDialog by remember { mutableStateOf(false) }
+    var showAddMemberDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             UserDetailTopBar(
                 userName = userName,
-                onBackClick = onBackClick
+                onBackClick = onBackClick,
+                onDeleteClick = { showDeleteDialog = true },
+                onClearDataClick = { showClearDataDialog = true }
             )
         },
         bottomBar = {
             UserDetailBottomBar(
                 selectedMember = selectedMember,
-                onMemberSelected = { selectedMember = it }
+                onMemberSelected = { selectedMember = it },
+                onAddMemberClick = { showAddMemberDialog = true },
+                onUploadClick = { showUploadDialog = true },
+                members = displayMembers
             )
         }
     ) { paddingValues ->
         UserDetailReportsList(
             selectedMember = selectedMember,
+            userProfile = userProfile,
+            documents = documents.filter { 
+                if (selectedMember == userProfile?.firstName) {
+                    it.linkedMember == userProfile?.firstName || it.linkedMember.isEmpty() || it.linkedMember.contains("(Self)")
+                } else {
+                    it.linkedMember == selectedMember
+                }
+            }.reversed(),
             onNavigateToReportDetail = onNavigateToReportDetail,
+            onDeleteReport = { docId ->
+                viewModel.deleteReport(docId) { success, msg ->
+                    GlobalToastManager.showToast(message = msg)
+                }
+            },
             paddingValues = paddingValues
+        )
+    }
+
+    if (showAddMemberDialog) {
+        AddMemberDialog(
+            onDismiss = { showAddMemberDialog = false },
+            onSave = { memberName ->
+                viewModel.addMember(userUid, memberName) { success, msg ->
+                    GlobalToastManager.showToast(message = msg)
+                    if (success) {
+                        showAddMemberDialog = false
+                    }
+                }
+            }
+        )
+    }
+
+    if (showUploadDialog) {
+        AnimatedVisibility(
+            visible = showUploadDialog,
+            enter = fadeIn(animationSpec = tween(300)),
+            exit = fadeOut(animationSpec = tween(300))
+        ) {
+            UploadDataDialog(
+                onDismiss = { showUploadDialog = false },
+                buttonCenter = Offset.Zero,
+                preselectedUser = userProfile
+            )
+        }
+    }
+
+    if (showDeleteDialog) {
+        DeleteUsersDialog(
+            userCount = 1,
+            onConfirm = {
+                viewModel.deleteUser(userUid) { success, msg ->
+                    GlobalToastManager.showToast(message = msg)
+                    if (success) {
+                        onBackClick()
+                    }
+                }
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+
+    if (showClearDataDialog) {
+        ClearAdminDataDialog(
+            userCount = 1,
+            onConfirm = {
+                viewModel.clearUserData(userUid) { success, msg ->
+                    GlobalToastManager.showToast(message = msg)
+                }
+            },
+            onDismiss = { showClearDataDialog = false }
         )
     }
 }
@@ -60,7 +175,9 @@ fun UserDetailScreen(
 @Composable
 fun UserDetailTopBar(
     userName: String,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onClearDataClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -110,8 +227,8 @@ fun UserDetailTopBar(
             },
             actions = {
                 val dialIntent = remember {
-                    android.content.Intent(
-                        android.content.Intent.ACTION_DIAL,
+                    Intent(
+                        ACTION_DIAL,
                         "tel:1234567890".toUri()
                     )
                 }
@@ -154,7 +271,10 @@ fun UserDetailTopBar(
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Delete Users", color = colorScheme.error) },
-                                onClick = { showTopMenu = false },
+                                onClick = { 
+                                    showTopMenu = false 
+                                    onDeleteClick()
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.Delete, contentDescription = null,
@@ -164,7 +284,10 @@ fun UserDetailTopBar(
                             )
                             DropdownMenuItem(
                                 text = { Text("Clear Data", color = colorScheme.error) },
-                                onClick = { showTopMenu = false },
+                                onClick = { 
+                                    showTopMenu = false
+                                    onClearDataClick()
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.ClearAll, contentDescription = null,
@@ -187,10 +310,12 @@ fun UserDetailTopBar(
 @Composable
 fun UserDetailBottomBar(
     selectedMember: String,
-    onMemberSelected: (String) -> Unit
+    onMemberSelected: (String) -> Unit,
+    onAddMemberClick: () -> Unit,
+    onUploadClick: () -> Unit,
+    members: List<String>
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val context = LocalContext.current
 
     Row(
         modifier = Modifier
@@ -211,44 +336,83 @@ fun UserDetailBottomBar(
             icon = Icons.Default.ArrowDropDown,
             popupAlignment = Alignment.BottomStart,
             popupOffsetY = -20,
-            chatStyle = true
+            chatStyle = true,
+            members = members
         )
 
-        // Bottom Right: Upload Button
-        FloatingActionButton(
-            onClick = { HapticHelper.trigger(context, HapticHelper.Type.MEDIUM) },
-            containerColor = colorScheme.secondary,
-            contentColor = colorScheme.onSecondary,
-            shape = CircleShape
-        ) {
-            Icon(imageVector = Icons.Default.Upload, contentDescription = "Upload")
+        // Bottom Right: Actions
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FloatingActionButton(
+                onClick = onAddMemberClick,
+                containerColor = colorScheme.surfaceVariant,
+                contentColor = colorScheme.onSurfaceVariant,
+                shape = CircleShape
+            ) {
+                Icon(imageVector = Icons.Default.PersonAdd, contentDescription = "Add Member")
+            }
+            FloatingActionButton(
+                onClick = onUploadClick,
+                containerColor = colorScheme.secondary,
+                contentColor = colorScheme.onSecondary,
+                shape = CircleShape
+            ) {
+                Icon(imageVector = Icons.Default.Upload, contentDescription = "Upload")
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserDetailReportsList(
     selectedMember: String,
-    onNavigateToReportDetail: () -> Unit,
+    userProfile: UserProfile?,
+    documents: List<DocumentMetadata>,
+    onNavigateToReportDetail: (String, String) -> Unit,
+    onDeleteReport: (String) -> Unit,
     paddingValues: PaddingValues
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
+    
+    val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
-    val reports = listOf(
-        Triple("Comprehensive Metabolic Panel", "Oct 24, 2026 • Lab Results", Icons.Default.Science),
-        Triple("Chest X-Ray", "Oct 12, 2026 • Imaging", Icons.Default.MedicalInformation),
-        Triple("Prescription Renewal", "Sep 30, 2026 • Clinical Notes", Icons.Default.Science)
-    )
+    if (documents.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colorScheme.background)
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No reports found for $selectedMember",
+                color = colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
+
+    var showInfoSheet by remember { mutableStateOf<DocumentMetadata?>(null) }
+    var reportMenuExpandedFor by remember { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(documents.size) {
+        if (documents.isNotEmpty()) {
+            listState.scrollToItem(documents.size - 1)
+        }
+    }
 
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .background(colorScheme.background)
             .padding(paddingValues)
     ) {
-        items(reports.size) { index ->
-            val report = reports[index]
+        items(documents.size) { index ->
+            val report = documents[index]
+            val displayTime = dateFormatter.format(Date(report.uploadedAt))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -269,7 +433,7 @@ fun UserDetailReportsList(
                     modifier = Modifier
                         .clickable {
                             HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            onNavigateToReportDetail()
+                            onNavigateToReportDetail(report.documentName, report.fileUrl)
                         }
                 ) {
                     Row(
@@ -284,39 +448,126 @@ fun UserDetailReportsList(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                report.third, contentDescription = null,
+                                Icons.Default.MedicalInformation, contentDescription = null,
                                 tint = colorScheme.onSurfaceVariant
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                report.first, fontWeight = FontWeight.SemiBold,
+                                report.documentName, fontWeight = FontWeight.SemiBold,
                                 fontSize = 16.sp,
                                 color = colorScheme.onBackground
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                "${report.second} • $selectedMember", fontSize = 13.sp,
+                                "$displayTime • $selectedMember", fontSize = 13.sp,
                                 color = colorScheme.onSurfaceVariant
                             )
                         }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50)) // fully rounded
-                                .clickable { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) }
-                                .padding(horizontal = 8.dp, vertical = 16.dp), // more vertical padding, less horizontal
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "More options",
-                                tint = colorScheme.onSurfaceVariant
-                            )
+                        Box {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50)) // fully rounded
+                                    .clickable { 
+                                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                        reportMenuExpandedFor = report.id
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 16.dp), // more vertical padding, less horizontal
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "More options",
+                                    tint = colorScheme.onSurfaceVariant
+                                )
+                            }
+                            MaterialTheme(
+                                colorScheme = MaterialTheme.colorScheme,
+                                shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(12.dp))
+                            ) {
+                                DropdownMenu(
+                                    expanded = reportMenuExpandedFor == report.id,
+                                    onDismissRequest = { reportMenuExpandedFor = null },
+                                    modifier = Modifier.background(colorScheme.surface).width(140.dp)
+                                ) {
+                                DropdownMenuItem(
+                                    text = { Text("Info") },
+                                    onClick = {
+                                        reportMenuExpandedFor = null
+                                        showInfoSheet = report
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Info, contentDescription = null, tint = colorScheme.onSurface)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Delete", color = colorScheme.error) },
+                                    onClick = {
+                                        reportMenuExpandedFor = null
+                                        onDeleteReport(report.id)
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Delete, contentDescription = null, tint = colorScheme.error)
+                                    }
+                                )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    if (showInfoSheet != null) {
+        val report = showInfoSheet!!
+        ModalBottomSheet(
+            onDismissRequest = { showInfoSheet = null },
+            containerColor = colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Report Info",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                val dt = Date(report.uploadedAt)
+                val dateFmt = SimpleDateFormat("MMM dd, yyyy", LocalLocale.current.platformLocale)
+                val timeFmt = SimpleDateFormat("hh:mm a", LocalLocale.current.platformLocale)
+
+                InfoRow("File Name", report.documentName, colorScheme)
+                Spacer(modifier = Modifier.height(8.dp))
+                InfoRow("Date", dateFmt.format(dt), colorScheme)
+                Spacer(modifier = Modifier.height(8.dp))
+                InfoRow("Time", timeFmt.format(dt), colorScheme)
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                val emailDisplay = if (report.uploaderEmail.isNotEmpty()) report.uploaderEmail else "Not Available"
+                InfoRow("Uploaded by Mail", emailDisplay, colorScheme)
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                InfoRow("Uploaded by Name", report.linkedUser, colorScheme)
+                
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun InfoRow(label: String, value: String, colorScheme: ColorScheme) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, color = colorScheme.onSurfaceVariant, fontSize = 14.sp)
+        Text(text = value, color = colorScheme.onSurface, fontWeight = FontWeight.Medium, fontSize = 14.sp)
     }
 }

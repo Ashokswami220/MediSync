@@ -241,8 +241,8 @@ private val highContrastDarkColorScheme = darkColorScheme(
     surfaceContainerHighest = surfaceContainerHighestDarkHighContrast,
 )
 
-val LocalAppearance = staticCompositionLocalOf<MutableState<String>> { 
-    error("No Appearance State Provided") 
+val LocalAppearance = staticCompositionLocalOf<MutableState<String>> {
+    error("No Appearance State Provided")
 }
 
 @Composable

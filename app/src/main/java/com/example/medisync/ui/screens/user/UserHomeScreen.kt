@@ -62,8 +62,11 @@ import androidx.compose.material.icons.filled.Notifications
 
 @Composable
 fun UserHomeScreen(
-    onNavigateToReportDetail: () -> Unit = {},
-    onNavigateToReports: () -> Unit = {}
+    onNavigateToReportDetail: (String, String) -> Unit = { _, _ -> },
+    onNavigateToReports: () -> Unit = {},
+    selectedMember: String = "User",
+    onMemberSelected: (String) -> Unit = {},
+    members: List<String> = emptyList()
 ) {
     val scrollState = rememberScrollState()
     val colorScheme = MaterialTheme.colorScheme
@@ -132,7 +135,10 @@ fun UserHomeScreen(
                     message = "No new notifications",
                     icon = Icons.Default.Notifications
                 )
-            }
+            },
+            selectedMember = selectedMember,
+            onMemberSelected = onMemberSelected,
+            members = members
         )
 
         if (showCallSheet) {
@@ -527,7 +533,7 @@ fun HealthStatsGrid(
 
 @Composable
 fun RecentReportsSection(
-    onNavigateToReportDetail: () -> Unit,
+    onNavigateToReportDetail: (String, String) -> Unit,
     onNavigateToReports: () -> Unit,
     colorScheme: ColorScheme
 ) {
@@ -588,7 +594,7 @@ fun RecentReportsSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(colorScheme.surface)
-                        .clickable { onNavigateToReportDetail() }
+                        .clickable { onNavigateToReportDetail(report.title, "") }
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),

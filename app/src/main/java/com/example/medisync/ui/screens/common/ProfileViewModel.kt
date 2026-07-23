@@ -47,7 +47,8 @@ class ProfileViewModel(
             try {
                 val currentUser = authRepo.getCurrentUserSync()
                 if (currentUser != null) {
-                    val profile = userRepo.getUserProfile(currentUser.uid).first()
+                    val profile = userRepo.getUserProfile(currentUser.uid)
+                        .first()
                     if (profile != null) {
                         _profileState.value = ProfileState.Success(profile)
                     } else {
@@ -84,11 +85,12 @@ class ProfileViewModel(
                     _updateState.value = ProfileUpdateState.Error("User not logged in.")
                 }
             } catch (e: Exception) {
-                _updateState.value = ProfileUpdateState.Error(e.message ?: "Failed to update profile")
+                _updateState.value =
+                    ProfileUpdateState.Error(e.message ?: "Failed to update profile")
             }
         }
     }
-    
+
     fun resetUpdateState() {
         _updateState.value = ProfileUpdateState.Idle
     }
@@ -98,9 +100,15 @@ class ProfileViewModel(
             try {
                 val uid = authRepo.getCurrentUserSync()?.uid
                 if (uid != null) {
-                    FirebaseFirestore.getInstance().collection("users").document(uid).delete().await()
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(uid)
+                        .delete()
+                        .await()
                 }
-                authRepo.getCurrentUserSync()?.delete()?.await()
+                authRepo.getCurrentUserSync()
+                    ?.delete()
+                    ?.await()
                 authRepo.signOut()
                 onSuccess()
             } catch (_: Exception) {

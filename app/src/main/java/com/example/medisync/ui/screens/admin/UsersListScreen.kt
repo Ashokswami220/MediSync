@@ -1,46 +1,53 @@
 package com.example.medisync.ui.screens.admin
 
+import com.example.medisync.utils.GlobalToastManager
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.material.icons.filled.Check
-import androidx.activity.compose.BackHandler
-import com.example.medisync.utils.HapticHelper
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ClearAll
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.ui.components.ClearAdminDataDialog
+import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.navigation.TopBar
+import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.foundation.ExperimentalFoundationApi
+
+
 
 data class UserAdminModel(
+    val uid: String,
     val name: String,
     val lastReportName: String,
     val lastReportTime: String,
-    val hasViewed: Boolean
+    val hasViewed: Boolean,
+    val timestamp: Long = 0L
 )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -59,7 +66,23 @@ fun UserListScreen(
     val users by viewModel.usersState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     
+    val sortedUsers = remember(users, selectedFilter, searchQuery) {
+        var result = users
+        if (searchQuery.isNotBlank()) {
+            result = result.filter { it.name.contains(searchQuery, ignoreCase = true) }
+        }
+        when (selectedFilter) {
+            "A-Z" -> result.sortedBy { it.name }
+            "Z-A" -> result.sortedByDescending { it.name }
+            "Oldest first" -> result.sortedBy { it.timestamp }
+            "Newest first", "Default" -> result.sortedByDescending { it.timestamp }
+            else -> result
+        }
+    }
+    
     val selectedUsers = remember { mutableStateListOf<String>() }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showClearDataDialog by remember { mutableStateOf(false) }
 
     if (selectedUsers.isNotEmpty()) {
         BackHandler {
@@ -81,7 +104,9 @@ fun UserListScreen(
         if (selectedUsers.isNotEmpty()) {
             SelectionTopBar(
                 selectedCount = selectedUsers.size,
-                onClearSelection = { selectedUsers.clear() }
+                onClearSelection = { selectedUsers.clear() },
+                onDeleteClick = { showDeleteDialog = true },
+                onClearDataClick = { showClearDataDialog = true }
             )
         } else {
             TopBar(
@@ -159,8 +184,8 @@ fun UserListScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
         ) {
-            items(users) { user ->
-                val isSelected = selectedUsers.contains(user.name)
+            items(sortedUsers) { user ->
+                val isSelected = selectedUsers.contains(user.uid)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -168,15 +193,15 @@ fun UserListScreen(
                         .combinedClickable(
                             onClick = {
                                 if (selectedUsers.isNotEmpty()) {
-                                    if (isSelected) selectedUsers.remove(user.name)
-                                    else selectedUsers.add(user.name)
+                                    if (isSelected) selectedUsers.remove(user.uid)
+                                    else selectedUsers.add(user.uid)
                                 } else {
-                                    onNavigateToUserDetail(user.name)
+                                    onNavigateToUserDetail(user.uid)
                                 }
                             },
                             onLongClick = {
-                                if (isSelected) selectedUsers.remove(user.name)
-                                else selectedUsers.add(user.name)
+                                if (isSelected) selectedUsers.remove(user.uid)
+                                else selectedUsers.add(user.uid)
                             }
                         )
                         .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -266,12 +291,44 @@ fun UserListScreen(
         }
         }
     }
+
+    if (showDeleteDialog) {
+        DeleteUsersDialog(
+            userCount = selectedUsers.size,
+            onConfirm = {
+                viewModel.deleteSelectedUsers(selectedUsers.toList()) { success, msg ->
+                    GlobalToastManager.showToast(message = msg)
+                    if (success) {
+                        selectedUsers.clear()
+                    }
+                }
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+
+    if (showClearDataDialog) {
+        ClearAdminDataDialog(
+            userCount = selectedUsers.size,
+            onConfirm = {
+                viewModel.clearDataForSelectedUsers(selectedUsers.toList()) { success, msg ->
+                    GlobalToastManager.showToast(message = msg)
+                    if (success) {
+                        selectedUsers.clear()
+                    }
+                }
+            },
+            onDismiss = { showClearDataDialog = false }
+        )
+    }
 }
 
 @Composable
 fun SelectionTopBar(
     selectedCount: Int,
-    onClearSelection: () -> Unit
+    onClearSelection: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onClearDataClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -330,12 +387,18 @@ fun SelectionTopBar(
                     ) {
                         DropdownMenuItem(
                             text = { Text("Delete Users", color = colorScheme.error) },
-                            onClick = { showSelectionMenu = false },
+                            onClick = { 
+                                showSelectionMenu = false
+                                onDeleteClick() 
+                            },
                             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = colorScheme.error) }
                         )
                         DropdownMenuItem(
                             text = { Text("Clear Data", color = colorScheme.error) },
-                            onClick = { showSelectionMenu = false },
+                            onClick = { 
+                                showSelectionMenu = false
+                                onClearDataClick() 
+                            },
                             leadingIcon = { Icon(Icons.Default.ClearAll, contentDescription = null, tint = colorScheme.error) }
                         )
                     }

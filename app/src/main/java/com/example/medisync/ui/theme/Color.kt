@@ -1,4 +1,5 @@
 package com.example.medisync.ui.theme
+
 import androidx.compose.ui.graphics.Color
 
 val primaryLight = Color(0xFF00478D)

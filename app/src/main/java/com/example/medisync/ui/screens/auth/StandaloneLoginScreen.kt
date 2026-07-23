@@ -1,18 +1,43 @@
 package com.example.medisync.ui.screens.auth
 
-import android.widget.Toast
-import com.example.medisync.utils.GlobalToastManager
+import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,7 +45,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.utils.GlobalToastManager
 import org.koin.androidx.compose.koinViewModel
+
+
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -29,8 +57,10 @@ fun StandaloneLoginScreen(
     onLoginSuccess: () -> Unit,
     viewModel: AuthViewModel = koinViewModel()
 ) {
-    var currentStep by remember { 
-        mutableStateOf(if (viewModel.authState.value is AuthState.NeedsInfo) AuthStep.INFO else AuthStep.LOGIN) 
+    var currentStep by remember {
+        mutableStateOf(
+            if (viewModel.authState.value is AuthState.NeedsInfo) AuthStep.INFO else AuthStep.LOGIN
+        )
     }
     val context = LocalContext.current
     val authState by viewModel.authState.collectAsState()
@@ -51,8 +81,10 @@ fun StandaloneLoginScreen(
             }
 
             is AuthState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG)
-                    .show()
+                GlobalToastManager.showToast(
+                    message = state.message,
+                    icon = Icons.Default.Info
+                )
                 viewModel.resetState()
             }
 
@@ -67,7 +99,7 @@ fun StandaloneLoginScreen(
 
     BackHandler(enabled = true) {
         if (currentStep == AuthStep.INFO) {
-            (context as? android.app.Activity)?.finishAffinity()
+            (context as? Activity)?.finishAffinity()
         } else {
             onNavigateBack()
         }

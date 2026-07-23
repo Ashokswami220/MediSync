@@ -2,27 +2,38 @@ package com.example.medisync.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
 import com.example.medisync.utils.HapticHelper
 
 @Composable
@@ -35,47 +46,57 @@ fun MemberSwitcher(
     icon: ImageVector = Icons.Default.ExpandMore,
     popupAlignment: Alignment = Alignment.TopCenter,
     popupOffsetY: Int = 0,
-    chatStyle: Boolean = false
+    chatStyle: Boolean = false,
+    enabled: Boolean = true,
+    members: List<String> = emptyList(),
+    triggerContent: (@Composable (expanded: Boolean, onClick: () -> Unit) -> Unit)? = null
 ) {
     var expandedMenu by remember { mutableStateOf(false) }
-    val members = listOf("Ashok", "John Doe", "Jane Doe")
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
 
     Box(modifier = modifier) {
-        // The trigger button
-        Box(
-            modifier = Modifier
-                .alpha(if (expandedMenu) 0f else 1f)
-                .clip(RoundedCornerShape(if (chatStyle) 24.dp else 50.dp))
-                .background(containerColor)
-                .clickable {
+        if (triggerContent != null) {
+            triggerContent(expandedMenu) {
+                if (enabled) {
                     HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                     expandedMenu = true
                 }
-                .padding(
-                    horizontal = 16.dp, 
-                    vertical = if (chatStyle) 14.dp else 8.dp
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            }
+        } else {
+            // The default trigger button
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(if (chatStyle) 24.dp else 50.dp))
+                    .background(containerColor)
+                    .clickable(enabled = enabled) {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        expandedMenu = true
+                    }
+                    .padding(
+                        horizontal = 16.dp,
+                        vertical = if (chatStyle) 14.dp else 8.dp
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = selectedMember, 
-                    fontWeight = FontWeight.Medium,
-                    fontSize = if (chatStyle) 16.sp else 14.sp, 
-                    color = contentColor,
-                    modifier = Modifier
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    imageVector = icon,
-                    contentDescription = "Expand", 
-                    tint = contentColor,
-                    modifier = if (chatStyle) Modifier else Modifier.size(16.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedMember,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = if (chatStyle) 16.sp else 14.sp,
+                        color = contentColor,
+                        modifier = Modifier
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = "Expand",
+                        tint = contentColor,
+                        modifier = if (chatStyle) Modifier else Modifier.size(16.dp)
+                    )
+                }
             }
         }
 

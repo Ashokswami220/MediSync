@@ -11,9 +11,13 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+import com.example.medisync.data.local.room.MediSyncDatabase
+import androidx.room.withTransaction
+
 class UserRepositoryImpl(
-    firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
-    private val userDao: UserDao
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val userDao: UserDao,
+    private val db: MediSyncDatabase
 ) : UserRepository {
 
     private val usersCollection = firestore.collection("users")
@@ -58,8 +62,10 @@ class UserRepositoryImpl(
             try {
                 val snapshot = usersCollection.get().await()
                 val profiles = snapshot.toObjects(UserProfile::class.java)
-                userDao.deleteAllUsers()
-                userDao.insertUsers(profiles.map { UserEntity.fromUserProfile(it) })
+                db.withTransaction {
+                    userDao.deleteAllUsers()
+                    userDao.insertUsers(profiles.map { UserEntity.fromUserProfile(it) })
+                }
             } catch (_: Exception) {
                 // Network errors are ignored here, relying on offline Room cache
             }
@@ -68,6 +74,23 @@ class UserRepositoryImpl(
         // 2. Continually emit from Room Database (Single Source of Truth)
         userDao.getAllUsers().collect { entities ->
             send(entities.map { it.toUserProfile() })
+        }
+    }
+
+    override suspend fun deleteUsers(uids: List<String>): Result<Unit> {
+        return try {
+            val batch = firestore.batch()
+            uids.forEach { uid ->
+                batch.delete(usersCollection.document(uid))
+            }
+            batch.commit().await()
+            
+            db.withTransaction {
+                userDao.deleteUsersByUids(uids)
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

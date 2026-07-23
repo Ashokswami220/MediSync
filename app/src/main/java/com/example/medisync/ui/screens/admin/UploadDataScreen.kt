@@ -1,267 +1,539 @@
 package com.example.medisync.ui.screens.admin
 
+import com.example.medisync.model.UserRole
+import com.example.medisync.utils.GlobalToastManager
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.EnterExitState.Visible
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cloudinary.android.MediaManager
+import com.cloudinary.android.callback.ErrorInfo
+import com.cloudinary.android.callback.UploadCallback
+import com.example.medisync.data.repository.DocumentRepository
+import com.example.medisync.model.UserProfile
+import com.example.medisync.repo.UserRepository
+import com.example.medisync.ui.components.MemberSwitcher
+import com.example.medisync.utils.UploadManager
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnimatedVisibilityScope.UploadDataDialog(
     onDismiss: () -> Unit,
-    buttonCenter: Offset
+    buttonCenter: Offset,
+    preselectedUser: UserProfile? = null
 ) {
-    // 1. Calculate the exact center of the screen
-    val configuration = LocalConfiguration.current
-    val density = LocalDensity.current
-    val screenCenter = remember(configuration, density) {
-        with(density) {
-            Offset(
-                x = (configuration.screenWidthDp.dp).toPx() / 2f,
-                y = (configuration.screenHeightDp.dp).toPx() / 2f
-            )
-        }
+    BackHandler { onDismiss() }
+
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val repository: DocumentRepository = koinInject()
+    val userRepository: UserRepository = koinInject()
+    
+    val users by userRepository.getAllUsers().collectAsState(initial = emptyList())
+
+    var docName by remember { mutableStateOf("") }
+    var selectedUser by remember { mutableStateOf<UserProfile?>(preselectedUser) }
+    var selectedMember by remember { mutableStateOf("") }
+    var showUserSelectionDialog by remember { mutableStateOf(false) }
+
+    var uploadState by remember { mutableStateOf("normal") } // "normal", "uploading", "success", "error"
+    var uploadProgress by remember { mutableFloatStateOf(0f) }
+    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+    var uploadedFileUrl by remember { mutableStateOf("") }
+
+    val windowInfo = LocalWindowInfo.current
+    val screenCenter = remember(windowInfo) {
+        val size = windowInfo.containerSize
+        Offset(
+            x = size.width / 2f,
+            y = size.height / 2f
+        )
     }
 
-    // 2. Hook into AnimatedVisibilityScope's state to drive our custom animation
     val animationProgress by transition.animateFloat(
         transitionSpec = { tween(400, easing = FastOutSlowInEasing) },
         label = "MacMinimizeAnimation"
     ) { state ->
-        if (state == androidx.compose.animation.EnterExitState.Visible) 1f else 0f
+        if (state == Visible) 1f else 0f
     }
 
-    // Backdrop shadow/dimming is handled by NavApp's fadeIn, but we add a clickable box to dismiss
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.5f))
-            .clickable(onClick = onDismiss),
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {}
+            ),
         contentAlignment = Alignment.Center
     ) {
-        // Main Dialog Card
         Box(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
                 .fillMaxWidth()
-                // 3. Dynamic graphicsLayer
                 .graphicsLayer {
-                    // Map progress 0..1 to scale 0.05..1
                     val scale = 0.05f + (0.95f * animationProgress)
                     scaleX = scale
                     scaleY = scale
                     alpha = animationProgress
-
-                    // Translate from the Button Center to the Screen Center
                     translationX = (buttonCenter.x - screenCenter.x) * (1f - animationProgress)
                     translationY = (buttonCenter.y - screenCenter.y) * (1f - animationProgress)
                 }
-                .shadow(16.dp, RoundedCornerShape(16.dp))
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surface) // Solid surface background
-                .clickable(enabled = false, onClick = {}) // Prevent dismiss when clicking inside
+                .shadow(16.dp, RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.background)
+                .clickable(enabled = false, onClick = {}) // Prevent dismiss
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp)
+                    .padding(16.dp)
             ) {
-                // Top bar with title and close button
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Upload Document",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                            .size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Form content
+                // Form content (Inner Container)
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(color = Color.Black.copy(alpha = 0.06f))
+                        .padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // 1. Upload Doc Card
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
-                            .border(1.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
-                            .clickable { /* Select file logic */ },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Default.CloudUpload,
-                                contentDescription = "Upload",
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                "Tap to select a document",
-                                color = MaterialTheme.colorScheme.secondary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
-                            )
+                    UploadDocCard(
+                        uploadState = uploadState,
+                        selectedFileUri = selectedFileUri,
+                        onFileSelected = { uri ->
+                            selectedFileUri = uri
+                            uploadState = "ready"
+                        },
+                        onRemoveFile = {
+                            selectedFileUri = null
+                            uploadState = "normal"
                         }
-                    }
-                    
-                    // 2. Name the doc
-                    var docName by remember { mutableStateOf("") }
-                    OutlinedTextField(
-                        value = docName,
-                        onValueChange = { docName = it },
-                        label = { Text("Document Name") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.secondary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                        )
                     )
-                    
-                    // 3. User select card (Dropdown)
-                    var selectedUser by remember { mutableStateOf("") }
-                    var userDropdownExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = userDropdownExpanded,
-                        onExpandedChange = { userDropdownExpanded = !userDropdownExpanded }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedUser.ifEmpty { "Select User" },
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("User") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = userDropdownExpanded) },
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.secondary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                            )
+
+                    DocumentNameField(docName = docName, onDocNameChange = { docName = it })
+
+                    if (preselectedUser == null) {
+                        SelectUserCard(
+                            selectedUser = selectedUser,
+                            onShowDialog = { showUserSelectionDialog = true }
                         )
-                        ExposedDropdownMenu(
-                            expanded = userDropdownExpanded,
-                            onDismissRequest = { userDropdownExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("John Doe") },
-                                onClick = { selectedUser = "John Doe"; userDropdownExpanded = false }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Jane Smith") },
-                                onClick = { selectedUser = "Jane Smith"; userDropdownExpanded = false }
-                            )
-                        }
                     }
-                    
-                    // 4. Member select (Dropdown)
-                    var selectedMember by remember { mutableStateOf("") }
-                    var memberDropdownExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = memberDropdownExpanded,
-                        onExpandedChange = { memberDropdownExpanded = !memberDropdownExpanded }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedMember.ifEmpty { "Select Member (Optional)" },
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Member") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = memberDropdownExpanded) },
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.secondary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = memberDropdownExpanded,
-                            onDismissRequest = { memberDropdownExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Self") },
-                                onClick = { selectedMember = "Self"; memberDropdownExpanded = false }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Spouse") },
-                                onClick = { selectedMember = "Spouse"; memberDropdownExpanded = false }
-                            )
-                        }
-                    }
+
+                    val dynamicMembers = selectedUser?.let { user ->
+                        listOf(user.firstName) + user.members
+                    } ?: emptyList()
+
+                    SelectMemberCard(
+                        selectedMember = selectedMember,
+                        selectedUser = selectedUser,
+                        members = dynamicMembers,
+                        onMemberSelected = { selectedMember = it }
+                    )
                 }
-                
-                Spacer(modifier = Modifier.height(28.dp))
-                
-                // Action Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                    ) {
-                        Text("Cancel", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                UploadActionButtons(
+                    onDismiss = onDismiss,
+                    onUpload = {
+                        if (selectedFileUri == null) {
+                            GlobalToastManager.showToast(
+                                message = "Please select a document",
+                                icon = Icons.Default.Info
+                            )
+                            return@UploadActionButtons
+                        }
+                        if (docName.isEmpty() || selectedUser == null || selectedMember.isEmpty()) {
+                            GlobalToastManager.showToast(
+                                message = "Please fill all fields",
+                                icon = Icons.Default.Info
+                            )
+                            return@UploadActionButtons
+                        }
+                        
+                        val uName = "${selectedUser?.firstName} ${selectedUser?.lastName}".trim()
+                        val uUid = selectedUser?.uid ?: ""
+                        val cleanMember = selectedMember
+                        
+                        UploadManager.startUpload(
+                            context = context,
+                            fileUri = selectedFileUri!!,
+                            docName = docName,
+                            uName = uName,
+                            uUid = uUid,
+                            cleanMember = cleanMember,
+                            repository = repository
+                        )
+                        
+                        onDismiss()
                     }
-                    
-                    Button(
-                        onClick = { /* Handle Upload */ },
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = showUserSelectionDialog,
+            enter = fadeIn(animationSpec = tween(300)),
+            exit = fadeOut(animationSpec = tween(300))
+        ) {
+            UserSelectionDialog(
+                users = users.filter { it.role != UserRole.ADMIN },
+                onDismiss = { showUserSelectionDialog = false },
+                onUserSelected = { 
+                    selectedUser = it 
+                    selectedMember = "" // reset member when user changes
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun UploadDocCard(
+    uploadState: String,
+    selectedFileUri: Uri?,
+    onFileSelected: (Uri) -> Unit,
+    onRemoveFile: () -> Unit
+) {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { onFileSelected(it) }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                if (uploadState == "normal") Color.Transparent else MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+            )
+            .border(
+                1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                RoundedCornerShape(20.dp)
+            )
+            .clickable(enabled = uploadState == "normal") { launcher.launch("*/*") },
+        contentAlignment = Alignment.Center
+    ) {
+        if (uploadState == "ready" && selectedFileUri != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left Preview / Icon
+                Box(
+                    modifier = Modifier
+                        .size(70.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.Transparent)
+                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .clickable {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(selectedFileUri, context.contentResolver.getType(selectedFileUri) ?: "*/*")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                GlobalToastManager.showToast(
+                                    message = "No app to view this document",
+                                    icon = Icons.Default.Info
+                                )
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.InsertDriveFile,
+                        contentDescription = "Document Preview",
+                        modifier = Modifier.size(36.dp),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Right Text and Remove
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Document Selected",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = onRemoveFile,
+                        modifier = Modifier.height(32.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("Upload", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Remove",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.CloudUpload,
+                    contentDescription = "Upload",
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    "Tap to select a document",
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DocumentNameField(docName: String, onDocNameChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = docName,
+        onValueChange = onDocNameChange,
+        label = { Text("Document Name") },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.secondary,
+            focusedLabelColor = MaterialTheme.colorScheme.secondary,
+            cursorColor = MaterialTheme.colorScheme.secondary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        )
+    )
+}
+
+@Composable
+fun SelectUserCard(selectedUser: UserProfile?, onShowDialog: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onShowDialog() }
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (selectedUser == null) {
+                Column {
+                    Text(
+                        text = "Select User",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "User",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "${selectedUser.firstName} ${selectedUser.lastName}".trim(),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+            Icon(
+                imageVector = Icons.Default.ExpandMore,
+                contentDescription = "Select User",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun SelectMemberCard(selectedMember: String, selectedUser: UserProfile?, members: List<String>, onMemberSelected: (String) -> Unit) {
+    val isEnabled = selectedUser != null
+    
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .border(
+                width = 1.dp, 
+                color = MaterialTheme.colorScheme.outline.copy(alpha = if (isEnabled) 0.5f else 0.2f), 
+                shape = CircleShape
+            )
+            .clip(CircleShape)
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Member",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isEnabled) 1f else 0.5f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Member",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isEnabled) 1f else 0.5f)
+            )
+        }
+        
+        MemberSwitcher(
+            selectedMember = selectedMember,
+            onMemberSelected = onMemberSelected,
+            enabled = isEnabled,
+            members = members,
+            popupAlignment = Alignment.BottomEnd,
+            triggerContent = { expandedMenu, onExpand ->
+                Box(
+                    modifier = Modifier
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = if (isEnabled) 0.5f else 0.2f),
+                            shape = CircleShape
+                        )
+                        .clip(CircleShape)
+                        .clickable(enabled = isEnabled, onClick = onExpand)
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = selectedMember.ifEmpty { "Select" },
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isEnabled) 1f else 0.5f)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.ExpandMore,
+                            contentDescription = "Expand",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isEnabled) 1f else 0.5f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun UploadActionButtons(onDismiss: () -> Unit, onUpload: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        OutlinedButton(
+            onClick = onDismiss,
+            modifier = Modifier.weight(1f).height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        ) {
+            Text(
+                "Cancel", fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Button(
+            onClick = onUpload,
+            modifier = Modifier.weight(1f).height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+        ) {
+            Text("Upload", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
         }
     }
 }

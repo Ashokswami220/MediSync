@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medisync.model.UserProfile
@@ -41,7 +42,8 @@ class AuthViewModel(
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     // Using Web Client ID from google-services.json
-    private val webClientId = "590270466349-6esu0sc0ec33tcnhvc8g4ag5qpqdjev7.apps.googleusercontent.com"
+    private val webClientId =
+        "590270466349-6esu0sc0ec33tcnhvc8g4ag5qpqdjev7.apps.googleusercontent.com"
 
     fun checkInitialAuthState() {
         if (_authState.value != AuthState.Idle) return
@@ -94,13 +96,16 @@ class AuthViewModel(
                 if (credential is CustomCredential &&
                     credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
                 ) {
-                    val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                    val googleIdTokenCredential =
+                        GoogleIdTokenCredential.createFrom(credential.data)
                     val idToken = googleIdTokenCredential.idToken
-                    
+
                     // Auth with Firebase
                     val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
-                    val authResult = FirebaseAuth.getInstance().signInWithCredential(firebaseCredential).await()
-                    
+                    val authResult = FirebaseAuth.getInstance()
+                        .signInWithCredential(firebaseCredential)
+                        .await()
+
                     val user = authResult.user
                     if (user != null) {
                         checkIfUserNeedsInfo(user.uid)
@@ -110,6 +115,9 @@ class AuthViewModel(
                 } else {
                     _authState.value = AuthState.Error("Unexpected credential type.")
                 }
+            } catch (e: GetCredentialCancellationException) {
+                Log.e("AuthViewModel", "User cancelled Google Sign In", e)
+                _authState.value = AuthState.Error("You cancelled the selector")
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Google Sign In Failed", e)
                 _authState.value = AuthState.Error(e.localizedMessage ?: "Unknown error occurred")
@@ -119,14 +127,15 @@ class AuthViewModel(
 
     private suspend fun checkIfUserNeedsInfo(uid: String) {
         try {
-            val profile = userRepo.getUserProfile(uid).first()
+            val profile = userRepo.getUserProfile(uid)
+                .first()
             if (profile == null || profile.firstName.isEmpty() || profile.phoneNumber.isEmpty()) {
                 _authState.value = AuthState.NeedsInfo
             } else {
                 _authState.value = AuthState.Success
             }
         } catch (e: Exception) {
-             _authState.value = AuthState.Error(e.message ?: "Failed to read user data")
+            _authState.value = AuthState.Error(e.message ?: "Failed to read user data")
         }
     }
 
@@ -137,7 +146,8 @@ class AuthViewModel(
                 val currentUser = authRepo.getCurrentUserSync()
                 if (currentUser != null) {
                     // Try to fetch existing to preserve roles, Blood type, etc.
-                    val existingProfile = userRepo.getUserProfile(currentUser.uid).first()
+                    val existingProfile = userRepo.getUserProfile(currentUser.uid)
+                        .first()
                     val newProfile = existingProfile?.copy(
                         firstName = firstName,
                         lastName = lastName,
@@ -148,7 +158,7 @@ class AuthViewModel(
                         lastName = lastName,
                         phoneNumber = phoneNumber
                     )
-                    
+
                     val result = userRepo.createUserProfile(newProfile)
                     if (result.isSuccess) {
                         _authState.value = AuthState.Success

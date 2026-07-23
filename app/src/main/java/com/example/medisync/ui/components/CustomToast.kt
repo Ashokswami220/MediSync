@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -36,7 +35,6 @@ fun CustomToast(
     message: String,
     isVisible: Boolean,
     modifier: Modifier = Modifier,
-    bottomPadding: Dp = 105.dp,
     icon: ImageVector = Icons.Default.Info,
     durationMillis: Long = 4000L,
     onDismiss: () -> Unit
@@ -52,7 +50,7 @@ fun CustomToast(
         visible = isVisible,
         enter = expandHorizontally(expandFrom = Alignment.CenterHorizontally) + fadeIn(),
         exit = shrinkHorizontally(shrinkTowards = Alignment.CenterHorizontally) + fadeOut(),
-        modifier = modifier.padding(bottom = bottomPadding)
+        modifier = modifier
     ) {
         Box(
             modifier = Modifier

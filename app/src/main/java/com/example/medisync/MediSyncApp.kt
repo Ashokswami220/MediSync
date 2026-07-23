@@ -16,7 +16,11 @@ class MediSyncApp : Application() {
             modules(appModule)
         }
 
-        // Initialize Cloudinary with only the public cloud_name
-        MediaManager.init(this, mapOf("cloud_name" to "era9rd7s"))
+        val config = mapOf(
+            "cloud_name" to BuildConfig.CLOUDINARY_CLOUD_NAME,
+            "api_key" to BuildConfig.CLOUDINARY_API_KEY,
+            "api_secret" to BuildConfig.CLOUDINARY_API_SECRET
+        )
+        MediaManager.init(this, config)
     }
 }
