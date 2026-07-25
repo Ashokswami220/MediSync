@@ -1,6 +1,5 @@
 package com.example.medisync.ui.screens.common
 
-import com.example.medisync.utils.GlobalToastManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -57,6 +56,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.utils.GlobalToastManager
 import com.google.firebase.auth.FirebaseAuth
 import org.koin.androidx.compose.koinViewModel
 
@@ -73,6 +73,7 @@ fun EditProfileScreen(
     var name by remember { mutableStateOf("") }
     var number by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var avatarUrl by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         email = FirebaseAuth.getInstance().currentUser?.email ?: ""
@@ -87,6 +88,7 @@ fun EditProfileScreen(
             val p = (profileState as ProfileState.Success).profile
             name = "${p.firstName} ${p.lastName}".trim()
             number = p.phoneNumber
+            avatarUrl = p.avatarUrl
         }
     }
 
@@ -167,21 +169,11 @@ fun EditProfileScreen(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(colorScheme.secondary.copy(alpha = 0.2f))
-                        .border(1.5.dp, colorScheme.outlineVariant, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Profile",
-                        tint = colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
+                com.example.medisync.ui.components.UserAvatar(
+                    avatarUrl = avatarUrl,
+                    size = 100.dp,
+                    borderWidth = 1.5.dp
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))

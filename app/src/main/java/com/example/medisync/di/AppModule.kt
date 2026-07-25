@@ -7,6 +7,7 @@ import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.AuthRepositoryImpl
 import com.example.medisync.repo.UserRepository
 import com.example.medisync.repo.UserRepositoryImpl
+import com.example.medisync.ui.screens.admin.AdminUserProfileViewModel
 import com.example.medisync.ui.screens.admin.UserDetailViewModel
 import com.example.medisync.ui.screens.admin.UserListViewModel
 import com.example.medisync.ui.screens.auth.AuthViewModel
@@ -42,10 +43,11 @@ val appModule = module {
     single { DocumentRepository(get()) }
 
     // ViewModels
-    viewModel { AuthViewModel(get(), get(), androidContext()) }
+    viewModel { AuthViewModel(get(), get(), androidContext() as android.app.Application) }
     viewModel { ProfileViewModel(get(), get()) }
     viewModel { UploadViewModel() }
     viewModel { UserListViewModel(get(), get()) }
     viewModel { UserDetailViewModel(get(), get()) }
+    viewModel { AdminUserProfileViewModel(get()) }
     viewModel { ReportsViewModel(get()) }
 }

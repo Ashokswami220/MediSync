@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -28,7 +27,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -52,7 +50,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -100,6 +97,7 @@ fun SettingsScreen(
     var name by remember { mutableStateOf("Guest") }
     var number by remember { mutableStateOf("Tap to login") }
     var email by remember { mutableStateOf("") }
+    var avatarUrl by remember { mutableStateOf("") }
 
     LaunchedEffect(profileState) {
         if (profileState is ProfileState.Success) {
@@ -107,6 +105,7 @@ fun SettingsScreen(
             name = "${p.firstName} ${p.lastName}".trim()
             number = p.phoneNumber
             email = currentUser?.email ?: ""
+            avatarUrl = p.avatarUrl
         }
     }
 
@@ -167,21 +166,10 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(20.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clip(CircleShape)
-                            .background(colorScheme.secondary.copy(alpha = 0.2f))
-                            .border(1.dp, colorScheme.outlineVariant, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile",
-                            tint = colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                    com.example.medisync.ui.components.UserAvatar(
+                        avatarUrl = avatarUrl,
+                        size = 64.dp
+                    )
                     Spacer(modifier = Modifier.width(20.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(

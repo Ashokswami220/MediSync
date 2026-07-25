@@ -1,11 +1,9 @@
 package com.example.medisync.ui.screens.auth
 
-import android.content.Context
 import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medisync.model.UserProfile
@@ -21,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.example.medisync.R
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -34,17 +33,12 @@ sealed class AuthState {
 class AuthViewModel(
     private val authRepo: AuthRepository,
     private val userRepo: UserRepository,
-    private val context: Context
+    private val application: android.app.Application
 ) : ViewModel() {
 
-    private val credentialManager = CredentialManager.create(context)
+    private val credentialManager = CredentialManager.create(application)
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
-
-    // Using Web Client ID from google-services.json
-    private val webClientId =
-        "590270466349-6esu0sc0ec33tcnhvc8g4ag5qpqdjev7.apps.googleusercontent.com"
-
     fun checkInitialAuthState() {
         if (_authState.value != AuthState.Idle) return
         viewModelScope.launch {
@@ -52,7 +46,7 @@ class AuthViewModel(
             try {
                 val currentUser = authRepo.getCurrentUserSync()
                 if (currentUser != null) {
-                    checkIfUserNeedsInfo(currentUser.uid)
+                    checkIfUserNeedsInfo(currentUser)
                 } else {
                     _authState.value = AuthState.LoggedOut
                 }
@@ -79,7 +73,7 @@ class AuthViewModel(
             try {
                 val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
                     .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId(webClientId)
+                    .setServerClientId(application.getString(R.string.default_web_client_id))
                     .setAutoSelectEnabled(false)
                     .build()
 
@@ -89,7 +83,7 @@ class AuthViewModel(
 
                 val result = credentialManager.getCredential(
                     request = request,
-                    context = context,
+                    context = application,
                 )
 
                 val credential = result.credential
@@ -108,16 +102,22 @@ class AuthViewModel(
 
                     val user = authResult.user
                     if (user != null) {
-                        checkIfUserNeedsInfo(user.uid)
+                        checkIfUserNeedsInfo(user)
                     } else {
                         _authState.value = AuthState.Error("Firebase Auth failed.")
                     }
                 } else {
                     _authState.value = AuthState.Error("Unexpected credential type.")
                 }
-            } catch (e: GetCredentialCancellationException) {
+            } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
                 Log.e("AuthViewModel", "User cancelled Google Sign In", e)
                 _authState.value = AuthState.Error("You cancelled the selector")
+            } catch (e: androidx.credentials.exceptions.NoCredentialException) {
+                Log.e("AuthViewModel", "No credentials available", e)
+                _authState.value = AuthState.Error("Credentials not available, please try again.")
+            } catch (e: androidx.credentials.exceptions.GetCredentialException) {
+                Log.e("AuthViewModel", "Credential Manager Error", e)
+                _authState.value = AuthState.Error(e.localizedMessage ?: "Google Sign In Failed")
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Google Sign In Failed", e)
                 _authState.value = AuthState.Error(e.localizedMessage ?: "Unknown error occurred")
@@ -125,13 +125,23 @@ class AuthViewModel(
         }
     }
 
-    private suspend fun checkIfUserNeedsInfo(uid: String) {
+    private suspend fun checkIfUserNeedsInfo(user: com.google.firebase.auth.FirebaseUser) {
         try {
-            val profile = userRepo.getUserProfile(uid)
+            val profile = userRepo.getUserProfile(user.uid)
                 .first()
             if (profile == null || profile.firstName.isEmpty() || profile.phoneNumber.isEmpty()) {
                 _authState.value = AuthState.NeedsInfo
             } else {
+                val updates = mutableMapOf<String, Any>()
+                if (profile.email.isEmpty() && !user.email.isNullOrEmpty()) {
+                    updates["email"] = user.email!!
+                }
+                if (profile.avatarUrl.isEmpty() && user.photoUrl != null) {
+                    updates["avatarUrl"] = user.photoUrl.toString()
+                }
+                if (updates.isNotEmpty()) {
+                    userRepo.updateUserProfile(user.uid, updates)
+                }
                 _authState.value = AuthState.Success
             }
         } catch (e: Exception) {
@@ -151,12 +161,16 @@ class AuthViewModel(
                     val newProfile = existingProfile?.copy(
                         firstName = firstName,
                         lastName = lastName,
-                        phoneNumber = phoneNumber
+                        phoneNumber = phoneNumber,
+                        email = currentUser.email ?: existingProfile.email,
+                        avatarUrl = currentUser.photoUrl?.toString() ?: existingProfile.avatarUrl
                     ) ?: UserProfile(
                         uid = currentUser.uid,
                         firstName = firstName,
                         lastName = lastName,
-                        phoneNumber = phoneNumber
+                        phoneNumber = phoneNumber,
+                        email = currentUser.email ?: "",
+                        avatarUrl = currentUser.photoUrl?.toString() ?: ""
                     )
 
                     val result = userRepo.createUserProfile(newProfile)

@@ -46,6 +46,7 @@ import com.example.medisync.ui.screens.admin.AdminHomeScreen
 import com.example.medisync.ui.screens.admin.UploadDataDialog
 import com.example.medisync.ui.screens.admin.UserDetailScreen
 import com.example.medisync.ui.screens.admin.UserListScreen
+import com.example.medisync.ui.screens.admin.UserProfileScreen
 import com.example.medisync.ui.screens.auth.AuthFlowScreen
 import com.example.medisync.ui.screens.auth.AuthState
 import com.example.medisync.ui.screens.auth.AuthViewModel
@@ -350,6 +351,10 @@ fun NavApp(
                                                     onNavigateToUserDetail = { uid ->
                                                         selectedUserUid = uid
                                                         navigateToDest(Routes.USER_DETAIL)
+                                                    },
+                                                    onNavigateToUserProfile = { uid ->
+                                                        selectedUserUid = uid
+                                                        navigateToDest(Routes.ADMIN_USER_PROFILE)
                                                     }
                                                 )
                                             } else {
@@ -412,6 +417,7 @@ fun NavApp(
                                                     settingsManager.setUserRole("USER")
                                                     activeRole = UserRole.USER
                                                 }
+                                                authViewModel.signOut()
                                                 navController.navigate(Routes.LOGIN) {
                                                     popUpTo(navController.graph.id) {
                                                         inclusive = true
@@ -451,7 +457,20 @@ fun NavApp(
                                 navigateToDest(
                                     Routes.REPORT_DETAIL
                                 )
+                            },
+                            onTopBarClick = {
+                                navigateToDest(Routes.ADMIN_USER_PROFILE)
                             }
+                        )
+                    } else {
+                        LaunchedEffect(Unit) { navController.popBackStack() }
+                    }
+                }
+                composable(route = Routes.ADMIN_USER_PROFILE) {
+                    if (currentRole == UserRole.ADMIN) {
+                        UserProfileScreen(
+                            userUid = selectedUserUid,
+                            onBackClick = { navController.popBackStack() }
                         )
                     } else {
                         LaunchedEffect(Unit) { navController.popBackStack() }

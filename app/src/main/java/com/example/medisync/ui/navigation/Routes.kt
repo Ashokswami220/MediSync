@@ -7,6 +7,7 @@ object Routes {
     const val UPLOAD_DATA = "upload_data_screen"
     const val USER_LIST = "user_list_screen"
     const val USER_DETAIL = "user_detail_screen"
+    const val ADMIN_USER_PROFILE = "admin_user_profile_screen"
 
     // Auth Screens
     const val AUTH_FLOW = "auth_flow_screen"

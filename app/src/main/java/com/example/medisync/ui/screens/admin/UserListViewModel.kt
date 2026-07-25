@@ -28,17 +28,12 @@ class UserListViewModel(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    init {
-        FirebaseAuth.getInstance().addAuthStateListener { auth ->
-            if (auth.currentUser != null) {
-                fetchUsers()
-            } else {
-                _usersState.value = emptyList()
-            }
-        }
-    }
+    private var isFetchingStarted = false
 
-    private fun fetchUsers() {
+    fun fetchUsers() {
+        if (isFetchingStarted) return
+        isFetchingStarted = true
+        _isLoading.value = true
         viewModelScope.launch {
             val usersFlow = userRepository.getAllUsers()
                 .catch { _ ->
@@ -59,17 +54,17 @@ class UserListViewModel(
                     
                     val fullName = "${profile.firstName} ${profile.lastName}".trim()
                     
-                    val lastReportName = latestDoc?.documentName ?: "No Reports Yet"
-                    val lastReportTimeMs = latestDoc?.uploadedAt ?: profile.accountCreatedTime
-                    val displayTime = formatTime(lastReportTimeMs)
-                    
                     UserAdminModel(
                         uid = profile.uid,
                         name = fullName.ifEmpty { "Unknown User" },
-                        lastReportName = lastReportName,
-                        lastReportTime = displayTime,
+                        lastReportName = latestDoc?.documentName ?: "No Reports Yet",
+                        lastReportTime = if (latestDoc != null) {
+                            val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                            formatter.format(Date(latestDoc.uploadedAt))
+                        } else "",
                         hasViewed = false, // Default to false
-                        timestamp = lastReportTimeMs // Store timestamp for sorting
+                        timestamp = latestDoc?.uploadedAt ?: profile.accountCreatedTime,
+                        avatarUrl = profile.avatarUrl
                     )
                 }
                 

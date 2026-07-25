@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material3.ButtonDefaults.outlinedButtonColors
@@ -556,6 +557,12 @@ fun ReportsList(
                             color = colorScheme.onSurfaceVariant
                         )
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "View Details",
+                        tint = colorScheme.onSurfaceVariant
+                    )
                 }
                 HorizontalDivider(
                     color = colorScheme.outlineVariant.copy(alpha = 0.5f)

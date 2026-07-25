@@ -12,5 +12,6 @@ data class UserProfile(
     val members: List<String> = emptyList(),
     val accountCreatedTime: Long = System.currentTimeMillis(),
     val avatarUrl: String = "",
+    val email: String = "",
     val documents: List<String> = emptyList()
 )

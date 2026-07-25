@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package com.example.medisync.ui.screens.admin
 
 import com.example.medisync.utils.GlobalToastManager
@@ -11,6 +12,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Check
@@ -35,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.ui.components.ClearAdminDataDialog
 import com.example.medisync.ui.components.DeleteUsersDialog
+import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.ui.navigation.TopBar
 import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
@@ -47,13 +51,15 @@ data class UserAdminModel(
     val lastReportName: String,
     val lastReportTime: String,
     val hasViewed: Boolean,
-    val timestamp: Long = 0L
+    val timestamp: Long = 0L,
+    val avatarUrl: String = ""
 )
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UserListScreen(
     onNavigateToUserDetail: (String) -> Unit = {},
+    onNavigateToUserProfile: (String) -> Unit = {},
     viewModel: UserListViewModel = koinViewModel()
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -65,6 +71,16 @@ fun UserListScreen(
     
     val users by viewModel.usersState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        viewModel.fetchUsers()
+    }
+    
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            com.example.medisync.utils.GlobalToastManager.showToast("Data is updating...")
+        }
+    }
     
     val sortedUsers = remember(users, selectedFilter, searchQuery) {
         var result = users
@@ -173,7 +189,7 @@ fun UserListScreen(
 
         if (isLoading && users.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                LoadingIndicator(polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons)
             }
         } else if (users.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -207,35 +223,33 @@ fun UserListScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // User Avatar
-                    Box(modifier = Modifier.size(50.dp)) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                                .background(colorScheme.secondary.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "User",
-                                tint = colorScheme.onSurfaceVariant
+                    // User Avatar with larger clickable area
+                    Box(
+                        modifier = Modifier
+                            .clickable { onNavigateToUserProfile(user.uid) }
+                            .padding(end = 12.dp, top = 8.dp, bottom = 8.dp)
+                    ) {
+                        Box(modifier = Modifier.size(50.dp)) {
+                            UserAvatar(
+                                avatarUrl = user.avatarUrl,
+                                size = 50.dp,
+                                borderWidth = 0.dp
                             )
-                        }
-                        if (isSelected) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = "Selected",
-                                tint = colorScheme.secondary,
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .size(20.dp)
-                                    .background(Color.White, CircleShape)
-                            )
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Selected",
+                                    tint = colorScheme.secondary,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .size(20.dp)
+                                        .background(Color.White, CircleShape)
+                                )
+                            }
                         }
                     }
                     
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     
                     // Name and Subtitle
                     Column(

@@ -4,7 +4,6 @@ import com.example.medisync.model.UserRole
 import com.example.medisync.utils.GlobalToastManager
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,17 +24,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -46,15 +43,11 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cloudinary.android.MediaManager
-import com.cloudinary.android.callback.ErrorInfo
-import com.cloudinary.android.callback.UploadCallback
 import com.example.medisync.data.repository.DocumentRepository
 import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.UserRepository
 import com.example.medisync.ui.components.MemberSwitcher
 import com.example.medisync.utils.UploadManager
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 
@@ -69,7 +62,6 @@ fun AnimatedVisibilityScope.UploadDataDialog(
     BackHandler { onDismiss() }
 
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     val repository: DocumentRepository = koinInject()
     val userRepository: UserRepository = koinInject()
     
@@ -292,7 +284,7 @@ fun UploadDocCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.InsertDriveFile,
+                        imageVector = Icons.AutoMirrored.Filled.InsertDriveFile,
                         contentDescription = "Document Preview",
                         modifier = Modifier.size(36.dp),
                         tint = MaterialTheme.colorScheme.secondary

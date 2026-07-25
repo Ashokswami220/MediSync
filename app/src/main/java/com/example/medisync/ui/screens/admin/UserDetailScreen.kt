@@ -37,10 +37,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.example.medisync.model.DocumentMetadata
 import com.example.medisync.model.UserProfile
-import com.example.medisync.ui.components.AddMemberDialog
+import com.example.medisync.ui.components.AddMemberBottomSheet
 import com.example.medisync.ui.components.ClearAdminDataDialog
 import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.components.MemberSwitcher
+import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.utils.HapticHelper
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -55,7 +56,8 @@ fun UserDetailScreen(
     userUid: String,
     viewModel: UserDetailViewModel = koinViewModel(),
     onBackClick: () -> Unit = {},
-    onNavigateToReportDetail: (String, String) -> Unit = { _, _ -> }
+    onNavigateToReportDetail: (String, String) -> Unit = { _, _ -> },
+    onTopBarClick: () -> Unit = {}
 ) {
     LaunchedEffect(userUid) {
         viewModel.loadUser(userUid)
@@ -80,9 +82,11 @@ fun UserDetailScreen(
         topBar = {
             UserDetailTopBar(
                 userName = userName,
+                avatarUrl = userProfile?.avatarUrl,
                 onBackClick = onBackClick,
                 onDeleteClick = { showDeleteDialog = true },
-                onClearDataClick = { showClearDataDialog = true }
+                onClearDataClick = { showClearDataDialog = true },
+                onTopBarClick = onTopBarClick
             )
         },
         bottomBar = {
@@ -116,7 +120,7 @@ fun UserDetailScreen(
     }
 
     if (showAddMemberDialog) {
-        AddMemberDialog(
+        AddMemberBottomSheet(
             onDismiss = { showAddMemberDialog = false },
             onSave = { memberName ->
                 viewModel.addMember(userUid, memberName) { success, msg ->
@@ -175,9 +179,11 @@ fun UserDetailScreen(
 @Composable
 fun UserDetailTopBar(
     userName: String,
+    avatarUrl: String?,
     onBackClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onClearDataClick: () -> Unit
+    onClearDataClick: () -> Unit,
+    onTopBarClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -187,20 +193,20 @@ fun UserDetailTopBar(
         TopAppBar(
             modifier = Modifier.padding(horizontal = 4.dp),
             title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.5f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "User",
-                            tint = Color.White
-                        )
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onTopBarClick() }
+                        .padding(vertical = 8.dp, horizontal = 4.dp)
+                ) {
+                    UserAvatar(
+                        avatarUrl = avatarUrl,
+                        size = 40.dp,
+                        iconTint = Color.White,
+                        backgroundColor = Color.Black.copy(alpha = 0.5f),
+                        borderWidth = 0.dp
+                    )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = userName,
@@ -549,7 +555,7 @@ fun UserDetailReportsList(
                 InfoRow("Time", timeFmt.format(dt), colorScheme)
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                val emailDisplay = if (report.uploaderEmail.isNotEmpty()) report.uploaderEmail else "Not Available"
+                val emailDisplay = report.uploaderEmail.ifEmpty { "Not Available" }
                 InfoRow("Uploaded by Mail", emailDisplay, colorScheme)
                 
                 Spacer(modifier = Modifier.height(8.dp))

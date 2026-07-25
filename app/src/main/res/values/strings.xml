@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">MediSync</string>
+    <string name="default_web_client_id" translatable="false">590270466349-6esu0sc0ec33tcnhvc8g4ag5qpqdjev7.apps.googleusercontent.com</string>
 </resources>
