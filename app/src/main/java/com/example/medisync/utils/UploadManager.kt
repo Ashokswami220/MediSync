@@ -6,8 +6,10 @@ import java.io.FileOutputStream
 import android.content.Context
 import android.net.Uri
 import com.cloudinary.android.MediaManager
+import com.google.firebase.auth.FirebaseAuth
 import com.cloudinary.android.callback.ErrorInfo
 import com.cloudinary.android.callback.UploadCallback
+import android.webkit.MimeTypeMap
 import com.example.medisync.data.repository.DocumentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,10 +67,10 @@ object UploadManager {
                 if (fileUri.scheme == "content") {
                     val mimeType = contentResolver.getType(fileUri)
                     if (mimeType != null) {
-                        extension = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: ""
+                        extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: ""
                     }
                 } else if (fileUri.scheme == "file") {
-                    extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(fileUri.toString())
+                    extension = MimeTypeMap.getFileExtensionFromUrl(fileUri.toString())
                 }
                 if (extension.isEmpty()) {
                     extension = if (fileUri.toString().contains(".pdf")) "pdf" else "jpg"
@@ -114,7 +116,7 @@ object UploadManager {
                                 val resourceType =
                                     resultData?.get("resource_type") as? String ?: "image"
                                 val uploaderEmail =
-                                    com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email
+                                    FirebaseAuth.getInstance().currentUser?.email
                                         ?: ""
 
                                 CoroutineScope(Dispatchers.IO).launch {

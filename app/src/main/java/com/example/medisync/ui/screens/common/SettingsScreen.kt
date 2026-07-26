@@ -40,6 +40,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
+import com.example.medisync.ui.components.UserAvatar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -162,7 +163,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(20.dp)
                 ) {
-                    com.example.medisync.ui.components.UserAvatar(
+                    UserAvatar(
                         avatarUrl = avatarUrl,
                         size = 64.dp
                     )

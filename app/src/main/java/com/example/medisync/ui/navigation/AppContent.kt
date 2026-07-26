@@ -1,5 +1,6 @@
 package com.example.medisync.ui.navigation
 
+import kotlin.math.abs
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
@@ -161,7 +162,7 @@ fun GlassNavBar(
         var nearestDist = Float.MAX_VALUE
         tabOffsets.forEach { (idx, offsetX) ->
             val tabCenter = offsetX + (tabWidths[idx] ?: 0f) / 2f
-            val dist = kotlin.math.abs(x - tabCenter)
+            val dist = abs(x - tabCenter)
             if (dist < nearestDist) {
                 nearestDist = dist
                 nearestIdx = idx
@@ -171,7 +172,7 @@ fun GlassNavBar(
     }
 
     // ── Pill transition stretch/bulge effect ──
-    val distanceToTarget = kotlin.math.abs(pillX - snapTargetX)
+    val distanceToTarget = abs(pillX - snapTargetX)
     val isTransitioning = isDragging || distanceToTarget > 2f
     val pillScale by animateFloatAsState(
         targetValue = if (isTransitioning) 1.25f else 1.0f,

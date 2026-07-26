@@ -38,6 +38,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.example.medisync.ui.components.UserAvatar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -169,7 +170,7 @@ fun EditProfileScreen(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                com.example.medisync.ui.components.UserAvatar(
+                UserAvatar(
                     avatarUrl = avatarUrl,
                     size = 100.dp,
                     borderWidth = 1.5.dp

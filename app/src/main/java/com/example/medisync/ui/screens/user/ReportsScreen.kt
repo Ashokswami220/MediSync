@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.ui.navigation.TopBar
 import com.example.medisync.utils.HapticHelper
+import com.google.firebase.auth.FirebaseAuth
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -143,7 +144,7 @@ fun UserReportsScreen(
             members = members
         )
 
-        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        val currentUser = FirebaseAuth.getInstance().currentUser
         val isLoggedIn = currentUser != null
 
         val pullRefreshState = rememberPullRefreshState(

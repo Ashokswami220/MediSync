@@ -86,6 +86,15 @@ import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color as AndroidColor
+import android.net.Uri
+import android.os.Environment
+import android.os.ParcelFileDescriptor
+import androidx.compose.ui.unit.IntSize
+import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 import java.io.File
 import java.io.IOException
@@ -141,8 +150,8 @@ fun ReportDetailScreen(
                             .header("User-Agent", "Mozilla/5.0")
                             .build()
                         val client = OkHttpClient.Builder()
-                            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-                            .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                            .connectTimeout(30, TimeUnit.SECONDS)
+                            .readTimeout(60, TimeUnit.SECONDS)
                             .build()
                         val response = client.newCall(request)
                             .execute()
@@ -169,8 +178,8 @@ fun ReportDetailScreen(
 
                     localPdfFile = pdfFile
 
-                    val fileDescriptor = android.os.ParcelFileDescriptor.open(
-                        pdfFile, android.os.ParcelFileDescriptor.MODE_READ_ONLY
+                    val fileDescriptor = ParcelFileDescriptor.open(
+                        pdfFile, ParcelFileDescriptor.MODE_READ_ONLY
                     )
                     val renderer = PdfRenderer(fileDescriptor)
                     totalPages = renderer.pageCount
@@ -550,7 +559,7 @@ fun ReportDetailBottomControls(
                     if (originalFileUrl.isNotEmpty()) {
                         try {
                             val downloadManager = context.getSystemService(
-                                android.content.Context.DOWNLOAD_SERVICE
+                                Context.DOWNLOAD_SERVICE
                             ) as DownloadManager
 
                             val safeOriginalUrl =
@@ -573,7 +582,7 @@ fun ReportDetailBottomControls(
                                         DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
                                     )
                                     .setDestinationInExternalPublicDir(
-                                        android.os.Environment.DIRECTORY_DOWNLOADS,
+                                        Environment.DIRECTORY_DOWNLOADS,
                                         sanitizedFileName
                                     )
                                     .setAllowedOverMetered(true)
@@ -631,7 +640,7 @@ fun ZoomableReportImage(
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
-    var componentSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    var componentSize by remember { mutableStateOf(IntSize.Zero) }
 
     Box(
         modifier = modifier
@@ -765,14 +774,14 @@ fun PdfPageImage(
                     )
 
                     if (pageFile.exists()) {
-                        renderedPageUri = android.net.Uri.fromFile(pageFile)
+                        renderedPageUri = Uri.fromFile(pageFile)
                             .toString()
                         isLoading = false
                         return@withContext
                     }
 
-                    val fileDescriptor = android.os.ParcelFileDescriptor.open(
-                        pdfFile, android.os.ParcelFileDescriptor.MODE_READ_ONLY
+                    val fileDescriptor = ParcelFileDescriptor.open(
+                        pdfFile, ParcelFileDescriptor.MODE_READ_ONLY
                     )
                     val renderer = PdfRenderer(fileDescriptor)
 
@@ -789,8 +798,8 @@ fun PdfPageImage(
                     }
 
                     val bitmap = createBitmap(renderWidth, renderHeight)
-                    val canvas = android.graphics.Canvas(bitmap)
-                    canvas.drawColor(android.graphics.Color.WHITE)
+                    val canvas = Canvas(bitmap)
+                    canvas.drawColor(AndroidColor.WHITE)
 
                     page.render(
                         bitmap, null, null,
@@ -802,11 +811,11 @@ fun PdfPageImage(
 
                     pageFile.outputStream()
                         .use { out ->
-                            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
                         }
                     bitmap.recycle()
 
-                    renderedPageUri = android.net.Uri.fromFile(pageFile)
+                    renderedPageUri = Uri.fromFile(pageFile)
                         .toString()
                 } catch (e: Exception) {
                     e.printStackTrace()

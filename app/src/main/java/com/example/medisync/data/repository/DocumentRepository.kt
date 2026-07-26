@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.Dispatchers
 
 
 
@@ -132,7 +133,7 @@ class DocumentRepository(private val firestore: FirebaseFirestore) {
 
         if (!publicId.isNullOrEmpty()) {
             try {
-                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                withContext(Dispatchers.IO) {
                     get().cloudinary.uploader().destroy(
                         publicId,
                         mapOf("resource_type" to resourceType)

@@ -71,6 +71,12 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.graphics.BitmapFactory
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.pdf.PdfDocument
+import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
 import com.example.medisync.data.repository.DocumentRepository
 import com.example.medisync.model.UserProfile
 import com.example.medisync.model.UserRole
@@ -299,16 +305,16 @@ fun UploadDocCard(
 
         if (isAllImages) {
             GlobalToastManager.showToast("Processing images to PDF...", Icons.Default.Info)
-            coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            coroutineScope.launch(Dispatchers.IO) {
                 try {
-                    val pdfDocument = android.graphics.pdf.PdfDocument()
+                    val pdfDocument = PdfDocument()
                     uris.forEachIndexed { index, uri ->
                         var inSampleSize = 1
                         context.contentResolver.openInputStream(uri)
                             ?.use { stream ->
-                                val options = android.graphics.BitmapFactory.Options()
+                                val options = BitmapFactory.Options()
                                 options.inJustDecodeBounds = true
-                                android.graphics.BitmapFactory.decodeStream(stream, null, options)
+                                BitmapFactory.decodeStream(stream, null, options)
                                 val maxDim = 2000
                                 if (options.outHeight > maxDim || options.outWidth > maxDim) {
                                     val halfHeight = options.outHeight / 2
@@ -321,15 +327,15 @@ fun UploadDocCard(
 
                         val bitmap = context.contentResolver.openInputStream(uri)
                             ?.use { stream ->
-                                val options = android.graphics.BitmapFactory.Options()
+                                val options = BitmapFactory.Options()
                                 options.inSampleSize = inSampleSize
-                                android.graphics.BitmapFactory.decodeStream(stream, null, options)
+                                BitmapFactory.decodeStream(stream, null, options)
                             }
 
                         if (bitmap != null) {
                             val a4Width = 595f
                             val a4Height = 842f
-                            val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(
+                            val pageInfo = PdfDocument.PageInfo.Builder(
                                 a4Width.toInt(), a4Height.toInt(), index + 1
                             )
                                 .create()
@@ -342,11 +348,11 @@ fun UploadDocCard(
                             val left = (a4Width - scaledWidth) / 2f
                             val top = (a4Height - scaledHeight) / 2f
 
-                            val destRect = android.graphics.RectF(
+                            val destRect = RectF(
                                 left, top, left + scaledWidth, top + scaledHeight
                             )
-                            val paint = android.graphics.Paint(
-                                android.graphics.Paint.FILTER_BITMAP_FLAG or android.graphics.Paint.ANTI_ALIAS_FLAG
+                            val paint = Paint(
+                                Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG
                             )
                             page.canvas.drawBitmap(bitmap, null, destRect, paint)
 
@@ -363,8 +369,8 @@ fun UploadDocCard(
                         .use { pdfDocument.writeTo(it) }
                     pdfDocument.close()
 
-                    withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        val pdfUri = androidx.core.content.FileProvider.getUriForFile(
+                    withContext(Dispatchers.Main) {
+                        val pdfUri = FileProvider.getUriForFile(
                             context,
                             "${context.packageName}.fileprovider",
                             pdfFile
@@ -372,7 +378,7 @@ fun UploadDocCard(
                         onFileSelected(pdfUri)
                     }
                 } catch (_: Exception) {
-                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    withContext(Dispatchers.Main) {
                         GlobalToastManager.showToast("Failed to process images", Icons.Default.Info)
                     }
                 }

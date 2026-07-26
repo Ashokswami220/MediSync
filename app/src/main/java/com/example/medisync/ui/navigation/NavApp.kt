@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -67,6 +68,7 @@ import com.example.medisync.ui.screens.onboarding.CarouselScreen
 import com.example.medisync.ui.screens.user.UserHomeScreen
 import com.example.medisync.ui.screens.user.UserReportsScreen
 import com.example.medisync.utils.UploadManager
+import com.example.medisync.utils.GlobalToastManager
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
@@ -540,9 +542,9 @@ fun NavApp(
                             if (mode == DeleteActionMode.ACCOUNT) {
                                 profileViewModel.deleteAccount { success, msg ->
                                     if (success) {
-                                        com.example.medisync.utils.GlobalToastManager.showToast(
+                                        GlobalToastManager.showToast(
                                             message = msg,
-                                            icon = androidx.compose.material.icons.Icons.Default.Delete
+                                            icon = Icons.Default.Delete
                                         )
                                         coroutineScope.launch {
                                             settingsManager.setUserRole("USER")
@@ -554,9 +556,9 @@ fun NavApp(
                                             }
                                         }
                                     } else {
-                                        com.example.medisync.utils.GlobalToastManager.showToast(
+                                        GlobalToastManager.showToast(
                                             message = msg,
-                                            icon = androidx.compose.material.icons.Icons.Default.Error
+                                            icon = Icons.Default.Error
                                         )
                                     }
                                     onResult(success)
@@ -564,15 +566,15 @@ fun NavApp(
                             } else {
                                 profileViewModel.deleteData { success, msg ->
                                     if (success) {
-                                        com.example.medisync.utils.GlobalToastManager.showToast(
+                                        GlobalToastManager.showToast(
                                             message = msg,
-                                            icon = androidx.compose.material.icons.Icons.Default.Delete
+                                            icon = Icons.Default.Delete
                                         )
                                         navController.popBackStack()
                                     } else {
-                                        com.example.medisync.utils.GlobalToastManager.showToast(
+                                        GlobalToastManager.showToast(
                                             message = msg,
-                                            icon = androidx.compose.material.icons.Icons.Default.Error
+                                            icon = Icons.Default.Error
                                         )
                                     }
                                     onResult(success)
