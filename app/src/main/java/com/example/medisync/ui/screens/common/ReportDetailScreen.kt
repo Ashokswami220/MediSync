@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -78,13 +79,18 @@ import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import java.io.File
 import java.io.IOException
 import java.net.URL
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -107,9 +113,21 @@ fun ReportDetailScreen(
     var isLoadingPdf by remember { mutableStateOf(isPdf) }
 
     LaunchedEffect(fileUrl) {
+        if (fileUrl.isEmpty()) return@LaunchedEffect
+        
+        val timeoutJob = launch {
+            delay(5000.milliseconds)
+            withContext(Main) {
+                GlobalToastManager.showToast(
+                    message = "Taking longer than usual. Please wait...",
+                    icon = Icons.Default.Info
+                )
+            }
+        }
+
         if (isPdf) {
             isLoadingPdf = true
-            withContext(kotlinx.coroutines.Dispatchers.IO) {
+            withContext(IO) {
                 try {
                     val safeUrl = if (fileUrl.startsWith("http://")) fileUrl.replace(
                         "http://", "https://"
@@ -122,7 +140,10 @@ fun ReportDetailScreen(
                             .url(safeUrl)
                             .header("User-Agent", "Mozilla/5.0")
                             .build()
-                        val client = OkHttpClient()
+                        val client = OkHttpClient.Builder()
+                            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                            .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                            .build()
                         val response = client.newCall(request)
                             .execute()
 
@@ -161,6 +182,7 @@ fun ReportDetailScreen(
             }
             isLoadingPdf = false
         }
+        timeoutJob.cancel()
     }
 
 
@@ -441,7 +463,7 @@ fun ReportDetailBottomControls(
                 onClick = {
                     HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                     if (originalFileUrl.isNotEmpty()) {
-                        com.example.medisync.utils.GlobalToastManager.showToast(
+                        GlobalToastManager.showToast(
                             message = "Preparing file for sharing...",
                             icon = Icons.Default.Share
                         )
@@ -457,7 +479,7 @@ fun ReportDetailBottomControls(
                                     .apply { mkdirs() }
                                 val tempFile = File(sharedDir, finalFileName)
 
-                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                withContext(IO) {
                                     if (isPdf && localPdfFile != null && localPdfFile.exists()) {
                                         localPdfFile.inputStream()
                                             .use { input ->
@@ -502,7 +524,7 @@ fun ReportDetailBottomControls(
                                 }
                                 context.startActivity(Intent.createChooser(intent, "Share Report"))
                             } catch (_: Exception) {
-                                com.example.medisync.utils.GlobalToastManager.showToast(
+                                GlobalToastManager.showToast(
                                     message = "Failed to prepare file",
                                     icon = Icons.Default.ErrorOutline
                                 )
@@ -558,12 +580,12 @@ fun ReportDetailBottomControls(
                                     .setAllowedOverRoaming(true)
 
                             downloadManager.enqueue(request)
-                            com.example.medisync.utils.GlobalToastManager.showToast(
+                            GlobalToastManager.showToast(
                                 message = "Downloading $reportName...",
                                 icon = Icons.Default.Download
                             )
                         } catch (e: Exception) {
-                            com.example.medisync.utils.GlobalToastManager.showToast(
+                            GlobalToastManager.showToast(
                                 message = "Failed to download: ${e.localizedMessage}",
                                 icon = Icons.Default.ErrorOutline
                             )
@@ -658,7 +680,7 @@ fun ZoomableReportImage(
             },
         contentAlignment = Alignment.Center
     ) {
-        @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+        @OptIn( ExperimentalMaterial3ExpressiveApi::class)
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(fileUrl)
@@ -675,6 +697,13 @@ fun ZoomableReportImage(
                     translationY = offset.y
                 ),
             loading = {
+                LaunchedEffect(Unit) {
+                    delay(5000.milliseconds)
+                    GlobalToastManager.showToast(
+                        message = "Taking longer than usual. Please wait...",
+                        icon = Icons.Default.Info
+                    )
+                }
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     LoadingIndicator(
                         modifier = Modifier.size(60.dp),
@@ -714,7 +743,7 @@ fun ZoomableReportImage(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn( ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PdfPageImage(
     pdfFile: File?,
@@ -728,7 +757,7 @@ fun PdfPageImage(
     LaunchedEffect(pdfFile, pageIndex) {
         if (pdfFile != null && pdfFile.exists()) {
             isLoading = true
-            withContext(kotlinx.coroutines.Dispatchers.IO) {
+            withContext(IO) {
                 try {
                     val pageFile = File(
                         context.cacheDir,
