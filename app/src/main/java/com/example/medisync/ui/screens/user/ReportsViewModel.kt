@@ -4,13 +4,13 @@ import kotlinx.coroutines.Job
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.medisync.data.repository.DocumentRepository
+import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.model.DocumentMetadata
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import com.google.firebase.auth.FirebaseAuth
+import com.example.medisync.repo.AuthRepository
 
 sealed class ReportsState {
     object Loading : ReportsState()
@@ -19,7 +19,10 @@ sealed class ReportsState {
     data class Error(val message: String) : ReportsState()
 }
 
-class ReportsViewModel(private val repository: DocumentRepository) : ViewModel() {
+class ReportsViewModel(
+    private val repository: DocumentRepository,
+    private val authRepo: AuthRepository
+) : ViewModel() {
 
     private val _reportsState = MutableStateFlow<ReportsState>(ReportsState.Loading)
     val reportsState: StateFlow<ReportsState> = _reportsState
@@ -27,7 +30,7 @@ class ReportsViewModel(private val repository: DocumentRepository) : ViewModel()
     private var fetchJob: Job? = null
 
     fun loadDocuments() {
-        val userUid = FirebaseAuth.getInstance().currentUser?.uid
+        val userUid = authRepo.getCurrentUserUid()
         if (userUid != null) {
             fetchDocuments(userUid, showLoading = true)
         } else {
@@ -36,7 +39,7 @@ class ReportsViewModel(private val repository: DocumentRepository) : ViewModel()
     }
 
     fun refresh() {
-        val userUid = FirebaseAuth.getInstance().currentUser?.uid
+        val userUid = authRepo.getCurrentUserUid()
         if (userUid != null) {
             fetchDocuments(userUid, showLoading = false)
         }

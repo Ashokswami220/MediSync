@@ -17,14 +17,12 @@ import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.UserRepository
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -101,11 +99,7 @@ class AuthViewModel(
 
                     // Auth with Firebase
                     val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
-                    val authResult = FirebaseAuth.getInstance()
-                        .signInWithCredential(firebaseCredential)
-                        .await()
-
-                    val user = authResult.user
+                    val user = authRepo.signInWithCredential(firebaseCredential)
                     if (user != null) {
                         checkIfUserNeedsInfo(user)
                     } else {

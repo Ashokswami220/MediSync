@@ -2,9 +2,9 @@ package com.example.medisync.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.medisync.data.repository.DocumentRepository
+import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.repo.UserRepository
-import com.google.firebase.auth.FirebaseAuth
+import com.example.medisync.repo.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +17,8 @@ import java.util.Locale
 
 class UserListViewModel(
     private val userRepository: UserRepository,
-    private val documentRepository: DocumentRepository
+    private val documentRepository: DocumentRepository,
+    private val authRepo: AuthRepository
 ) : ViewModel() {
 
     private val _usersState = MutableStateFlow<List<UserAdminModel>>(emptyList())
@@ -43,7 +44,7 @@ class UserListViewModel(
                 val sortedDocs = docs.sortedByDescending { it.uploadedAt }
 
                 // Map profiles
-                val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                val currentUserId = authRepo.getCurrentUserUid()
                 val adminModels = profiles
                     .filter { it.uid != currentUserId }
                     .map { profile ->

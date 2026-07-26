@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.UserRepository
-import com.example.medisync.data.repository.DocumentRepository
+import com.example.medisync.repo.DocumentRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

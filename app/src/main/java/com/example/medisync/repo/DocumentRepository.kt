@@ -1,4 +1,4 @@
-package com.example.medisync.data.repository
+package com.example.medisync.repo
 
 import kotlinx.coroutines.withContext
 import com.google.firebase.firestore.Query

@@ -2,7 +2,7 @@ package com.example.medisync.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.medisync.data.repository.DocumentRepository
+import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.model.DocumentMetadata
 import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.UserRepository

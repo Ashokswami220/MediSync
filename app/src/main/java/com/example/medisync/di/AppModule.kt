@@ -2,7 +2,7 @@ package com.example.medisync.di
 
 import android.app.Application
 
-import com.example.medisync.data.repository.DocumentRepository
+import com.example.medisync.repo.DocumentRepository
 import androidx.room.Room
 import com.example.medisync.data.local.room.MediSyncDatabase
 import com.example.medisync.repo.AuthRepository
@@ -46,8 +46,8 @@ val appModule = module {
     // ViewModels
     viewModel { AuthViewModel(get(), get(), androidContext() as Application) }
     viewModel { ProfileViewModel(get(), get(), get()) }
-    viewModel { UserListViewModel(get(), get()) }
+    viewModel { UserListViewModel(get(), get(), get()) }
     viewModel { UserDetailViewModel(get(), get()) }
     viewModel { AdminUserProfileViewModel(get()) }
-    viewModel { ReportsViewModel(get()) }
+    viewModel { ReportsViewModel(get(), get()) }
 }

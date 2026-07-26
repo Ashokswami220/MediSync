@@ -77,7 +77,7 @@ import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
-import com.example.medisync.data.repository.DocumentRepository
+import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.model.UserProfile
 import com.example.medisync.model.UserRole
 import com.example.medisync.repo.UserRepository
