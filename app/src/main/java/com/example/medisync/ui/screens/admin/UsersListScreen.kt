@@ -69,16 +69,6 @@ import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
 
 
-data class UserAdminModel(
-    val uid: String,
-    val name: String,
-    val lastReportName: String,
-    val lastReportTime: String,
-    val hasViewed: Boolean,
-    val timestamp: Long = 0L,
-    val avatarUrl: String = ""
-)
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UserListScreen(

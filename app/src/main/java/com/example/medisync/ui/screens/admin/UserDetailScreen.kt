@@ -66,6 +66,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
@@ -112,6 +114,7 @@ fun UserDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showUploadDialog by remember { mutableStateOf(false) }
+    var uploadButtonCenter by remember { mutableStateOf(Offset.Zero) }
     var showAddMemberDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -131,6 +134,7 @@ fun UserDetailScreen(
                 onMemberSelected = { selectedMember = it },
                 onAddMemberClick = { showAddMemberDialog = true },
                 onUploadClick = { showUploadDialog = true },
+                onUploadButtonPositioned = { uploadButtonCenter = it },
                 members = displayMembers
             )
         }
@@ -179,7 +183,7 @@ fun UserDetailScreen(
     ) {
         UploadDataDialog(
             onDismiss = { showUploadDialog = false },
-            buttonCenter = Offset.Zero,
+            buttonCenter = uploadButtonCenter,
             preselectedUser = userProfile
         )
     }
@@ -356,6 +360,7 @@ fun UserDetailBottomBar(
     onMemberSelected: (String) -> Unit,
     onAddMemberClick: () -> Unit,
     onUploadClick: () -> Unit,
+    onUploadButtonPositioned: (Offset) -> Unit,
     members: List<String>
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -397,7 +402,11 @@ fun UserDetailBottomBar(
                 onClick = onUploadClick,
                 containerColor = colorScheme.secondary,
                 contentColor = colorScheme.onSecondary,
-                shape = CircleShape
+                shape = CircleShape,
+                modifier = Modifier.onGloballyPositioned { coordinates ->
+                    val bounds = coordinates.boundsInWindow()
+                    onUploadButtonPositioned(bounds.center)
+                }
             ) {
                 Icon(imageVector = Icons.Default.Upload, contentDescription = "Upload")
             }

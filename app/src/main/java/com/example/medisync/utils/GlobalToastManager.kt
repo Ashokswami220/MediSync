@@ -10,17 +10,23 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlin.time.Duration.Companion.milliseconds
 
 object GlobalToastManager {
     private val _toastState = MutableStateFlow(ToastState())
     val toastState: StateFlow<ToastState> = _toastState.asStateFlow()
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var toastJob: Job? = null
+
     fun showToast(
         message: String, icon: ImageVector = Icons.Default.Info, durationMillis: Long = 3000L
     ) {
         _toastState.value = ToastState(isVisible = true, message = message, icon = icon)
-        CoroutineScope(Dispatchers.Main).launch {
+        toastJob?.cancel()
+        toastJob = scope.launch {
             delay(durationMillis.milliseconds)
             dismissToast()
         }

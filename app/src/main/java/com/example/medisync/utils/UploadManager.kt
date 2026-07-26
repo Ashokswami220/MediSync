@@ -17,10 +17,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.SupervisorJob
 import kotlin.time.Duration.Companion.milliseconds
 
-
 object UploadManager {
+    
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     enum class UploadState {
         IDLE, UPLOADING, SUCCESS, ERROR
@@ -56,7 +58,7 @@ object UploadManager {
             targetUid = uUid
         )
 
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             var tempFile: File? = null
             try {
                 // Copy the content URI to a temporary file to avoid SecurityExceptions with WorkManager
@@ -84,9 +86,23 @@ object UploadManager {
                     }
                 }
 
+                // Check file size limit (10 MB = 10 * 1024 * 1024 bytes)
+                if (tempFile.length() > 10 * 1024 * 1024) {
+                    tempFile.delete()
+                    _uploadStatus.value = _uploadStatus.value.copy(
+                        state = UploadState.ERROR,
+                        errorMsg = "File is too large (Maximum allowed is 10MB)"
+                    )
+                    scope.launch(Dispatchers.Main) {
+                        delay(4000L.milliseconds)
+                        dismiss()
+                    }
+                    return@launch
+                }
+
                 val safeUri = Uri.fromFile(tempFile)
 
-                val progressJob = CoroutineScope(Dispatchers.IO).launch {
+                val progressJob = scope.launch {
                     var fakeProgress = 0f
                     while (fakeProgress < 0.9f) {
                         delay(300.milliseconds)
@@ -119,7 +135,7 @@ object UploadManager {
                                     FirebaseAuth.getInstance().currentUser?.email
                                         ?: ""
 
-                                CoroutineScope(Dispatchers.IO).launch {
+                                scope.launch {
                                     try {
                                         repository.saveDocumentMetadata(
                                             documentName = docName,
@@ -166,7 +182,7 @@ object UploadManager {
                                     state = UploadState.ERROR,
                                     errorMsg = e.message ?: "Crash inside onSuccess"
                                 )
-                                CoroutineScope(Dispatchers.Main).launch {
+                                scope.launch(Dispatchers.Main) {
                                     delay(4000L.milliseconds)
                                     dismiss()
                                 }
@@ -176,11 +192,18 @@ object UploadManager {
                         override fun onError(requestId: String?, error: ErrorInfo?) {
                             progressJob.cancel()
                             tempFile.delete()
+                            val rawError = error?.description ?: "Upload failed"
+                            val friendlyError = if (rawError.contains("file size too large", ignoreCase = true)) {
+                                "File is too large (Maximum allowed is 10MB)"
+                            } else {
+                                rawError
+                            }
+                            
                             _uploadStatus.value = _uploadStatus.value.copy(
                                 state = UploadState.ERROR,
-                                errorMsg = error?.description ?: "Upload failed"
+                                errorMsg = friendlyError
                             )
-                            CoroutineScope(Dispatchers.Main).launch {
+                            scope.launch(Dispatchers.Main) {
                                 delay(4000L.milliseconds)
                                 dismiss()
                             }
@@ -200,7 +223,7 @@ object UploadManager {
                     state = UploadState.ERROR,
                     errorMsg = e.message ?: "Failed to dispatch upload"
                 )
-                CoroutineScope(Dispatchers.Main).launch {
+                scope.launch(Dispatchers.Main) {
                     delay(4000L.milliseconds)
                     dismiss()
                 }

@@ -15,6 +15,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+data class UserAdminModel(
+    val uid: String,
+    val name: String,
+    val lastReportName: String,
+    val lastReportTime: String,
+    val hasViewed: Boolean,
+    val timestamp: Long = 0L,
+    val avatarUrl: String = ""
+)
+
 class UserListViewModel(
     private val userRepository: UserRepository,
     private val documentRepository: DocumentRepository,
@@ -81,11 +91,7 @@ class UserListViewModel(
         }
     }
 
-    private fun formatTime(millis: Long): String {
-        if (millis <= 0) return "Unknown"
-        val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-        return formatter.format(Date(millis))
-    }
+
 
     fun deleteSelectedUsers(uids: List<String>, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
