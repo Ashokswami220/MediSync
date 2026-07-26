@@ -47,6 +47,19 @@ class UserRepositoryImpl(
         awaitClose { listenerRegistration.remove() }
     }
 
+    override suspend fun getUserProfileSync(uid: String): Result<UserProfile?> {
+        return try {
+            val snapshot = usersCollection.document(uid).get().await()
+            if (snapshot.exists()) {
+                Result.success(snapshot.toObject(UserProfile::class.java))
+            } else {
+                Result.success(null)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun updateUserProfile(uid: String, updates: Map<String, Any>): Result<Unit> {
         return try {
             usersCollection.document(uid).update(updates).await()

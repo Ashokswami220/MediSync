@@ -1,5 +1,7 @@
 package com.example.medisync.ui.screens.user
 
+import kotlinx.coroutines.Job
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medisync.data.repository.DocumentRepository
@@ -22,7 +24,7 @@ class ReportsViewModel(private val repository: DocumentRepository) : ViewModel()
     private val _reportsState = MutableStateFlow<ReportsState>(ReportsState.Loading)
     val reportsState: StateFlow<ReportsState> = _reportsState
 
-    private var fetchJob: kotlinx.coroutines.Job? = null
+    private var fetchJob: Job? = null
 
     fun loadDocuments() {
         val userUid = FirebaseAuth.getInstance().currentUser?.uid

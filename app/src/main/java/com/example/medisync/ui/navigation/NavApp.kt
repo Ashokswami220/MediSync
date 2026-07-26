@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -39,6 +40,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import com.example.medisync.ui.screens.common.DeleteActionScreen
+import com.example.medisync.ui.screens.common.DeleteActionMode
 import com.example.medisync.data.SettingsManager
 import com.example.medisync.model.UserRole
 import com.example.medisync.ui.components.UploadProgressToast
@@ -167,10 +172,14 @@ fun NavApp(
                 startDestination = startDestination,
                 modifier = Modifier.fillMaxSize(),
                 enterTransition = {
-                    slideInHorizontally(
-                        initialOffsetX = { it },
-                        animationSpec = tween(ANIM_DURATION, easing = ANIM_EASING)
-                    )
+                    if (targetState.destination.route == Routes.MAIN_TABS) {
+                        fadeIn(animationSpec = tween(ANIM_DURATION))
+                    } else {
+                        slideInHorizontally(
+                            initialOffsetX = { it },
+                            animationSpec = tween(ANIM_DURATION, easing = ANIM_EASING)
+                        )
+                    }
                 },
                 exitTransition = {
                     if (targetState.destination.route == Routes.LOGIN) {
@@ -185,6 +194,8 @@ fun NavApp(
                 popEnterTransition = {
                     if (initialState.destination.route == Routes.LOGIN) {
                         EnterTransition.None
+                    } else if (targetState.destination.route == Routes.MAIN_TABS) {
+                        fadeIn(animationSpec = tween(ANIM_DURATION))
                     } else {
                         slideInHorizontally(
                             initialOffsetX = { -it / 3 },
@@ -204,17 +215,26 @@ fun NavApp(
                 composable(
                     route = Routes.CAROUSEL,
                     exitTransition = {
-                        if (targetState.destination.route == Routes.AUTH_FLOW) {
-                            slideOutVertically(
-                                targetOffsetY = { height -> -height / 5 },
-                                animationSpec = tween(600)
-                            ) + fadeOut(tween(600))
-                        } else {
-                            slideOutHorizontally(
-                                targetOffsetX = { width -> -width / 3 }, animationSpec = tween(
-                                    ANIM_DURATION, easing = ANIM_EASING
+                        when (targetState.destination.route) {
+                            Routes.AUTH_FLOW -> {
+                                slideOutVertically(
+                                    targetOffsetY = { height -> -height / 5 },
+                                    animationSpec = tween(600)
+                                ) + fadeOut(tween(600))
+                            }
+                            Routes.MAIN_TABS -> {
+                                slideOutHorizontally(
+                                    targetOffsetX = { -it / 3 },
+                                    animationSpec = tween(ANIM_DURATION, easing = ANIM_EASING)
                                 )
-                            )
+                            }
+                            else -> {
+                                slideOutHorizontally(
+                                    targetOffsetX = { width -> -width / 3 }, animationSpec = tween(
+                                        ANIM_DURATION, easing = ANIM_EASING
+                                    )
+                                )
+                            }
                         }
                     },
                     popEnterTransition = {
@@ -251,9 +271,16 @@ fun NavApp(
                         )
                     },
                     exitTransition = {
-                        slideOutVertically(
-                            targetOffsetY = { height -> -height }, animationSpec = tween(600)
-                        ) + fadeOut(tween(600))
+                        if (targetState.destination.route == Routes.MAIN_TABS) {
+                            slideOutHorizontally(
+                                targetOffsetX = { -it / 3 },
+                                animationSpec = tween(ANIM_DURATION, easing = ANIM_EASING)
+                            )
+                        } else {
+                            slideOutVertically(
+                                targetOffsetY = { height -> -height }, animationSpec = tween(600)
+                            ) + fadeOut(tween(600))
+                        }
                     }
                 ) {
                     val context = LocalContext.current
@@ -265,13 +292,18 @@ fun NavApp(
                             coroutineScope.launch {
                                 settingsManager.setOnboardingCompleted(true)
                             }
-                            navigateToDest(Routes.MAIN_TABS)
+                            navController.navigate(Routes.MAIN_TABS) {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                            }
                         }
                     )
                 }
 
                 // ================== MAIN TABS ===================
                 composable(route = Routes.MAIN_TABS) {
+                    LaunchedEffect(Unit) {
+                        profileViewModel.loadProfile()
+                    }
                     var currentTabRoute by rememberSaveable {
                         mutableStateOf(
                             if (currentRole == UserRole.ADMIN) Routes.ADMIN_HOME else Routes.USER_HOME
@@ -338,11 +370,12 @@ fun NavApp(
                                                 },
                                                 selectedMember = selectedMember,
                                                 onMemberSelected = { selectedMember = it },
-                                                members = displayMembers,
-                                                bloodPressure = bloodPressure,
-                                                bloodType = bloodType,
-                                                bloodSugar = bloodSugar
-                                            )
+                                                    members = displayMembers,
+                                                    bloodPressure = bloodPressure,
+                                                    bloodType = bloodType,
+                                                    bloodSugar = bloodSugar,
+                                                    onRefreshProfile = { profileViewModel.loadProfile() }
+                                                )
                                         }
 
                                         Routes.USER_LIST -> {
@@ -369,7 +402,8 @@ fun NavApp(
                                                     members = displayMembers,
                                                     bloodPressure = bloodPressure,
                                                     bloodType = bloodType,
-                                                    bloodSugar = bloodSugar
+                                                    bloodSugar = bloodSugar,
+                                                    onRefreshProfile = { profileViewModel.loadProfile() }
                                                 )
                                             }
                                         }
@@ -387,7 +421,8 @@ fun NavApp(
                                             members = displayMembers,
                                             bloodPressure = bloodPressure,
                                             bloodType = bloodType,
-                                            bloodSugar = bloodSugar
+                                            bloodSugar = bloodSugar,
+                                            onRefreshProfile = { profileViewModel.loadProfile() }
                                         )
 
                                         Routes.USER_REPORTS -> UserReportsScreen(
@@ -409,6 +444,9 @@ fun NavApp(
                                                 navigateToDest(
                                                     Routes.EDIT_PROFILE
                                                 )
+                                            },
+                                            onNavigateToDeleteAction = { mode ->
+                                                navigateToDest("${Routes.DELETE_ACTION}/${mode.name}")
                                             },
                                             onNavigateToAboutUs = { navigateToDest(Routes.ABOUT_US) },
                                             onNavigateToLogin = { navigateToDest(Routes.LOGIN) },
@@ -490,6 +528,38 @@ fun NavApp(
                     EditProfileScreen(onBackClick = { navController.popBackStack() })
                 }
                 composable(
+                    route = "${Routes.DELETE_ACTION}/{mode}",
+                    arguments = listOf(navArgument("mode") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val modeString = backStackEntry.arguments?.getString("mode") ?: "ACCOUNT"
+                    val mode = try { DeleteActionMode.valueOf(modeString) } catch (_: Exception) { DeleteActionMode.ACCOUNT }
+                    DeleteActionScreen(
+                        mode = mode,
+                        onComplete = {
+                            if (mode == DeleteActionMode.ACCOUNT) {
+                                profileViewModel.deleteAccount {
+                                    coroutineScope.launch {
+                                        settingsManager.setUserRole("USER")
+                                    }
+                                    navController.navigate(Routes.LOGIN) {
+                                        popUpTo(navController.graph.id) {
+                                            inclusive = true
+                                        }
+                                    }
+                                }
+                            } else {
+                                profileViewModel.deleteData {
+                                    com.example.medisync.utils.GlobalToastManager.showToast(
+                                        message = "Data clear process completed",
+                                        icon = androidx.compose.material.icons.Icons.Default.Delete
+                                    )
+                                    navController.popBackStack()
+                                }
+                            }
+                        }
+                    )
+                }
+                composable(
                     route = Routes.LOGIN,
                     enterTransition = {
                         slideInVertically(
@@ -502,33 +572,42 @@ fun NavApp(
                         )
                     },
                     exitTransition = {
-                        slideOutVertically(
-                            targetOffsetY = { height -> -height }, animationSpec = tween(600)
-                        ) + fadeOut(tween(600))
+                        if (targetState.destination.route == Routes.MAIN_TABS) {
+                            slideOutHorizontally(
+                                targetOffsetX = { -it / 3 },
+                                animationSpec = tween(ANIM_DURATION, easing = ANIM_EASING)
+                            )
+                        } else {
+                            slideOutVertically(
+                                targetOffsetY = { height -> -height }, animationSpec = tween(600)
+                            ) + fadeOut(tween(600))
+                        }
                     }
                 ) {
                     val context = LocalContext.current
                     val coroutineScope = rememberCoroutineScope()
                     val settingsManager = remember { SettingsManager(context) }
 
-                    StandaloneLoginScreen(
-                        viewModel = authViewModel,
-                        onNavigateBack = {
-                            if (navController.previousBackStackEntry == null) {
+                        StandaloneLoginScreen(
+                            viewModel = authViewModel,
+                            onNavigateBack = {
+                                if (navController.previousBackStackEntry == null) {
+                                    navController.navigate(Routes.MAIN_TABS) {
+                                        popUpTo(navController.graph.id) { inclusive = true }
+                                    }
+                                } else {
+                                    navController.popBackStack()
+                                }
+                            },
+                            onLoginSuccess = {
+                                coroutineScope.launch {
+                                    settingsManager.setOnboardingCompleted(true)
+                                }
                                 navController.navigate(Routes.MAIN_TABS) {
                                     popUpTo(navController.graph.id) { inclusive = true }
                                 }
-                            } else {
-                                navController.popBackStack()
                             }
-                        },
-                        onLoginSuccess = {
-                            coroutineScope.launch {
-                                settingsManager.setOnboardingCompleted(true)
-                            }
-                            navigateToDest(Routes.MAIN_TABS)
-                        }
-                    )
+                        )
                 }
             }
 

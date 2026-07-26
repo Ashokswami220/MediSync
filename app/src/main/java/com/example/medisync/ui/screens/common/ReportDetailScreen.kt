@@ -1,10 +1,14 @@
 package com.example.medisync.ui.screens.common
 
+import android.app.DownloadManager
 import android.content.Intent
-import android.content.Intent.ACTION_VIEW
+import android.graphics.pdf.PdfRenderer
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -42,10 +48,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,18 +64,29 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.FileProvider.getUriForFile
+import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.example.medisync.utils.HapticHelper
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import java.io.File
+import java.io.IOException
+import java.net.URL
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ReportDetailScreen(
     reportName: String = "Report",
@@ -77,12 +97,86 @@ fun ReportDetailScreen(
     val context = LocalContext.current
 
     var isFullScreen by remember { mutableStateOf(false) }
+    var currentPage by remember { mutableIntStateOf(1) }
+    var totalPages by remember { mutableIntStateOf(1) }
 
-    // If it's a PDF on Cloudinary, we can preview the first page as a JPG
-    val previewUrl = if (fileUrl.endsWith(".pdf", ignoreCase = true)) {
-        fileUrl.replace(".pdf", ".jpg", ignoreCase = true)
+    val isPdf = fileUrl.contains(".pdf", ignoreCase = true)
+
+    var localPdfFile by remember { mutableStateOf<File?>(null) }
+    var renderedPageUri by remember { mutableStateOf<String?>(null) }
+    var isLoadingPdf by remember { mutableStateOf(isPdf) }
+
+    LaunchedEffect(fileUrl) {
+        if (isPdf) {
+            isLoadingPdf = true
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val safeUrl = if (fileUrl.startsWith("http://")) fileUrl.replace(
+                        "http://", "https://"
+                    ) else fileUrl
+                    val pdfFile =
+                        File(context.cacheDir, "temp_view_report_${fileUrl.hashCode()}.pdf")
+
+                    if (!pdfFile.exists()) {
+                        val request = okhttp3.Request.Builder()
+                            .url(safeUrl)
+                            .header("User-Agent", "Mozilla/5.0")
+                            .build()
+                        val client = OkHttpClient()
+                        val response = client.newCall(request)
+                            .execute()
+
+                        if (!response.isSuccessful) {
+                            throw IOException(
+                                "Failed to download PDF: HTTP ${response.code}"
+                            )
+                        }
+
+                        response.body?.byteStream()
+                            ?.use { input ->
+                                pdfFile.outputStream()
+                                    .use { output ->
+                                        input.copyTo(output)
+                                    }
+                            }
+                    }
+
+                    if (pdfFile.length() == 0L) {
+                        pdfFile.delete()
+                        throw IOException("Downloaded PDF is empty")
+                    }
+
+                    localPdfFile = pdfFile
+
+                    val fileDescriptor = android.os.ParcelFileDescriptor.open(
+                        pdfFile, android.os.ParcelFileDescriptor.MODE_READ_ONLY
+                    )
+                    val renderer = PdfRenderer(fileDescriptor)
+                    totalPages = renderer.pageCount
+                    renderer.close()
+                    fileDescriptor.close()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            isLoadingPdf = false
+        }
+    }
+
+
+    @OptIn(ExperimentalFoundationApi::class)
+    val pagerState =
+        rememberPagerState(pageCount = { totalPages })
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(pagerState.currentPage) {
+        currentPage = pagerState.currentPage + 1
+    }
+
+    val displayUrl = if (isPdf) {
+        renderedPageUri ?: ""
     } else {
-        fileUrl
+        if (fileUrl.startsWith("http://")) fileUrl.replace("http://", "https://") else fileUrl
     }
 
     Scaffold(
@@ -146,20 +240,76 @@ fun ReportDetailScreen(
                 .background(colorScheme.surfaceContainerLowest)
         ) {
 
-            ZoomableReportImage(
-                fileUrl = previewUrl,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(colorScheme.background)
-            )
+            if (isLoadingPdf) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .background(colorScheme.background),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LoadingIndicator(
+                        color = MaterialTheme.colorScheme.secondary,
+                        polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                    )
+                }
+            } else if (isPdf && localPdfFile != null) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .background(colorScheme.background)
+                ) { page ->
+                    PdfPageImage(
+                        pdfFile = localPdfFile,
+                        pageIndex = page,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            } else {
+                ZoomableReportImage(
+                    fileUrl = displayUrl,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .background(colorScheme.background)
+                )
+            }
 
             HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(12.dp))
 
             // Bottom Controls
             ReportDetailBottomControls(
-                fileUrl = fileUrl,
+                originalFileUrl = fileUrl,
+                localPdfFile = localPdfFile,
+                reportName = reportName,
+                isPdf = isPdf,
+                currentPage = currentPage,
+                totalPages = totalPages,
+                onPreviousPage = {
+                    if (isPdf) {
+                        if (pagerState.currentPage > 0) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                            }
+                        }
+                    } else if (currentPage > 1) {
+                        currentPage--
+                    }
+                },
+                onNextPage = {
+                    if (isPdf) {
+                        if (pagerState.currentPage < totalPages - 1) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
+                        }
+                    } else if (currentPage < totalPages) {
+                        currentPage++
+                    }
+                },
                 onFullScreenClick = { isFullScreen = true }
             )
 
@@ -173,10 +323,24 @@ fun ReportDetailScreen(
                             .fillMaxSize()
                             .background(Color.Black)
                     ) {
-                        ZoomableReportImage(
-                            fileUrl = previewUrl,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        if (isPdf && localPdfFile != null) {
+                            @OptIn(ExperimentalFoundationApi::class)
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxSize()
+                            ) { page ->
+                                PdfPageImage(
+                                    pdfFile = localPdfFile,
+                                    pageIndex = page,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        } else {
+                            ZoomableReportImage(
+                                fileUrl = displayUrl,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
 
                         // Fullscreen Exit Button
                         IconButton(
@@ -204,11 +368,19 @@ fun ReportDetailScreen(
 
 @Composable
 fun ReportDetailBottomControls(
-    fileUrl: String,
+    originalFileUrl: String,
+    localPdfFile: File?,
+    reportName: String,
+    isPdf: Boolean,
+    currentPage: Int,
+    totalPages: Int,
+    onPreviousPage: () -> Unit,
+    onNextPage: () -> Unit,
     onFullScreenClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     Row(
         modifier = Modifier
@@ -221,32 +393,44 @@ fun ReportDetailBottomControls(
         // Left: Page Navigation
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
-                onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
+                onClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    onPreviousPage()
+                },
+                enabled = currentPage > 1,
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.ChevronLeft,
                     contentDescription = "Previous Page",
                     modifier = Modifier.size(24.dp),
-                    tint = colorScheme.onSurfaceVariant
+                    tint = if (currentPage > 1) colorScheme.onSurfaceVariant else colorScheme.onSurfaceVariant.copy(
+                        alpha = 0.5f
+                    )
                 )
             }
             Text(
-                text = "1/1",
+                text = if (isPdf) "Page $currentPage of $totalPages" else "1/1",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 4.dp)
             )
             IconButton(
-                onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT) },
+                onClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    onNextPage()
+                },
+                enabled = isPdf,
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = "Next Page",
                     modifier = Modifier.size(24.dp),
-                    tint = colorScheme.onSurfaceVariant
+                    tint = if (isPdf) colorScheme.onSurfaceVariant else colorScheme.onSurfaceVariant.copy(
+                        alpha = 0.5f
+                    )
                 )
             }
         }
@@ -256,7 +440,75 @@ fun ReportDetailBottomControls(
             IconButton(
                 onClick = {
                     HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                    /* TODO: Share */
+                    if (originalFileUrl.isNotEmpty()) {
+                        com.example.medisync.utils.GlobalToastManager.showToast(
+                            message = "Preparing file for sharing...",
+                            icon = Icons.Default.Share
+                        )
+                        coroutineScope.launch {
+                            try {
+                                val extension = if (isPdf) ".pdf" else ".jpg"
+                                val finalFileName = if (reportName.endsWith(
+                                        extension, ignoreCase = true
+                                    )
+                                ) reportName else "$reportName$extension"
+
+                                val sharedDir = File(context.cacheDir, "shared_reports")
+                                    .apply { mkdirs() }
+                                val tempFile = File(sharedDir, finalFileName)
+
+                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    if (isPdf && localPdfFile != null && localPdfFile.exists()) {
+                                        localPdfFile.inputStream()
+                                            .use { input ->
+                                                tempFile.outputStream()
+                                                    .use { output ->
+                                                        input.copyTo(output)
+                                                    }
+                                            }
+                                    } else {
+                                        val safeUrl = if (originalFileUrl.startsWith(
+                                                "http://"
+                                            )
+                                        ) originalFileUrl.replace(
+                                            "http://", "https://"
+                                        ) else originalFileUrl
+                                        URL(safeUrl)
+                                            .openStream()
+                                            .use { input ->
+                                                tempFile.outputStream()
+                                                    .use { output ->
+                                                        input.copyTo(output)
+                                                    }
+                                            }
+                                    }
+                                }
+
+                                val uri = getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    tempFile
+                                )
+
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = if (extension.equals(
+                                            ".pdf", ignoreCase = true
+                                        )
+                                    ) "application/pdf" else "image/*"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    putExtra(Intent.EXTRA_SUBJECT, reportName)
+                                    putExtra(Intent.EXTRA_TEXT, reportName)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(intent, "Share Report"))
+                            } catch (_: Exception) {
+                                com.example.medisync.utils.GlobalToastManager.showToast(
+                                    message = "Failed to prepare file",
+                                    icon = Icons.Default.ErrorOutline
+                                )
+                            }
+                        }
+                    }
                 },
                 modifier = Modifier
                     .size(48.dp)
@@ -273,10 +525,49 @@ fun ReportDetailBottomControls(
             IconButton(
                 onClick = {
                     HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                    if (fileUrl.isNotEmpty()) {
-                        val intent = Intent(ACTION_VIEW)
-                        intent.data = fileUrl.toUri()
-                        context.startActivity(intent)
+                    if (originalFileUrl.isNotEmpty()) {
+                        try {
+                            val downloadManager = context.getSystemService(
+                                android.content.Context.DOWNLOAD_SERVICE
+                            ) as DownloadManager
+
+                            val safeOriginalUrl =
+                                if (originalFileUrl.startsWith("http://")) originalFileUrl.replace(
+                                    "http://", "https://"
+                                ) else originalFileUrl
+                            val extension = if (isPdf) ".pdf" else ".jpg"
+                            val finalFileName = if (reportName.endsWith(
+                                    extension, ignoreCase = true
+                                )
+                            ) reportName else "$reportName$extension"
+                            val sanitizedFileName = finalFileName.replace("/", "_")
+                                .replace("\\", "_")
+
+                            val request =
+                                DownloadManager.Request(safeOriginalUrl.toUri())
+                                    .setTitle(reportName)
+                                    .setDescription("Downloading $reportName")
+                                    .setNotificationVisibility(
+                                        DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                                    )
+                                    .setDestinationInExternalPublicDir(
+                                        android.os.Environment.DIRECTORY_DOWNLOADS,
+                                        sanitizedFileName
+                                    )
+                                    .setAllowedOverMetered(true)
+                                    .setAllowedOverRoaming(true)
+
+                            downloadManager.enqueue(request)
+                            com.example.medisync.utils.GlobalToastManager.showToast(
+                                message = "Downloading $reportName...",
+                                icon = Icons.Default.Download
+                            )
+                        } catch (e: Exception) {
+                            com.example.medisync.utils.GlobalToastManager.showToast(
+                                message = "Failed to download: ${e.localizedMessage}",
+                                icon = Icons.Default.ErrorOutline
+                            )
+                        }
                     }
                 },
                 modifier = Modifier
@@ -318,22 +609,50 @@ fun ZoomableReportImage(
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    var componentSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
 
     Box(
         modifier = modifier
             .clipToBounds()
+            .onSizeChanged { componentSize = it }
             .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 5f)
-                    if (scale > 1f) {
-                        val maxX = (size.width * (scale - 1)) / 2f
-                        val maxY = (size.height * (scale - 1)) / 2f
-                        offset = Offset(
-                            x = (offset.x + pan.x).coerceIn(-maxX, maxX),
-                            y = (offset.y + pan.y).coerceIn(-maxY, maxY)
-                        )
-                    } else {
-                        offset = Offset.Zero
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitFirstDown()
+                        do {
+                            val event = awaitPointerEvent()
+                            val zoom = event.calculateZoom()
+                            val pan = event.calculatePan()
+
+                            scale = (scale * zoom).coerceIn(1f, 5f)
+
+                            if (scale > 1f) {
+                                val maxX = (componentSize.width * (scale - 1)) / 2f
+                                val maxY = (componentSize.height * (scale - 1)) / 2f
+
+                                val originalX = offset.x
+                                offset = Offset(
+                                    x = (offset.x + pan.x).coerceIn(-maxX, maxX),
+                                    y = (offset.y + pan.y).coerceIn(-maxY, maxY)
+                                )
+
+                                // Consume event to prevent Pager from scrolling, unless we hit the horizontal edge
+                                val hitHorizontalEdge =
+                                    (offset.x == originalX && pan.x != 0f && zoom == 1f)
+                                if (!hitHorizontalEdge) {
+                                    event.changes.forEach {
+                                        if (it.positionChanged()) it.consume()
+                                    }
+                                }
+                            } else {
+                                offset = Offset.Zero
+                                if (zoom != 1f) {
+                                    event.changes.forEach {
+                                        if (it.positionChanged()) it.consume()
+                                    }
+                                }
+                            }
+                        } while (event.changes.any { it.pressed })
                     }
                 }
             },
@@ -391,6 +710,97 @@ fun ZoomableReportImage(
                     )
                 }
             }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun PdfPageImage(
+    pdfFile: File?,
+    pageIndex: Int, // 0-indexed
+    modifier: Modifier = Modifier
+) {
+    var renderedPageUri by remember(pdfFile, pageIndex) { mutableStateOf<String?>(null) }
+    var isLoading by remember(pdfFile, pageIndex) { mutableStateOf(true) }
+    val context = LocalContext.current
+
+    LaunchedEffect(pdfFile, pageIndex) {
+        if (pdfFile != null && pdfFile.exists()) {
+            isLoading = true
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val pageFile = File(
+                        context.cacheDir,
+                        "${pdfFile.nameWithoutExtension}_page_${pageIndex + 1}.png"
+                    )
+
+                    if (pageFile.exists()) {
+                        renderedPageUri = android.net.Uri.fromFile(pageFile)
+                            .toString()
+                        isLoading = false
+                        return@withContext
+                    }
+
+                    val fileDescriptor = android.os.ParcelFileDescriptor.open(
+                        pdfFile, android.os.ParcelFileDescriptor.MODE_READ_ONLY
+                    )
+                    val renderer = PdfRenderer(fileDescriptor)
+
+                    val safePageIndex = pageIndex.coerceIn(0, renderer.pageCount - 1)
+                    val page = renderer.openPage(safePageIndex)
+
+                    var renderWidth = page.width * 2
+                    var renderHeight = page.height * 2
+                    val maxDim = 2500f
+                    if (renderWidth > maxDim || renderHeight > maxDim) {
+                        val scale = (maxDim / renderWidth).coerceAtMost(maxDim / renderHeight)
+                        renderWidth = (renderWidth * scale).toInt()
+                        renderHeight = (renderHeight * scale).toInt()
+                    }
+
+                    val bitmap = createBitmap(renderWidth, renderHeight)
+                    val canvas = android.graphics.Canvas(bitmap)
+                    canvas.drawColor(android.graphics.Color.WHITE)
+
+                    page.render(
+                        bitmap, null, null,
+                        PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
+                    )
+                    page.close()
+                    renderer.close()
+                    fileDescriptor.close()
+
+                    pageFile.outputStream()
+                        .use { out ->
+                            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+                        }
+                    bitmap.recycle()
+
+                    renderedPageUri = android.net.Uri.fromFile(pageFile)
+                        .toString()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            isLoading = false
+        }
+    }
+
+    if (isLoading) {
+        Box(
+            modifier = modifier.background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            LoadingIndicator(
+                color = MaterialTheme.colorScheme.secondary,
+                polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+            )
+        }
+    } else {
+        ZoomableReportImage(
+            fileUrl = renderedPageUri ?: "",
+            modifier = modifier.background(MaterialTheme.colorScheme.background)
         )
     }
 }

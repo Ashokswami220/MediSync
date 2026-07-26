@@ -1,5 +1,9 @@
 package com.example.medisync.data.repository
 
+import kotlinx.coroutines.withContext
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.DocumentSnapshot
+
 import com.cloudinary.android.MediaManager.get
 import com.example.medisync.model.DocumentMetadata
 import com.google.firebase.firestore.FirebaseFirestore
@@ -45,7 +49,7 @@ class DocumentRepository(private val firestore: FirebaseFirestore) {
     }
     
     fun getDocuments(userUid: String? = null): Flow<List<DocumentMetadata>> = callbackFlow {
-        var query: com.google.firebase.firestore.Query = firestore.collection("uploaded_documents")
+        var query: Query = firestore.collection("uploaded_documents")
             
         if (userUid != null) {
             query = query.whereEqualTo("linkedUserUid", userUid)
@@ -101,7 +105,7 @@ class DocumentRepository(private val firestore: FirebaseFirestore) {
         }
     }
 
-    private suspend fun destroyFromCloudinary(doc: com.google.firebase.firestore.DocumentSnapshot) {
+    private suspend fun destroyFromCloudinary(doc: DocumentSnapshot) {
         var publicId = doc.getString("publicId")
         var resourceType = doc.getString("resourceType") ?: "image"
         
@@ -128,7 +132,7 @@ class DocumentRepository(private val firestore: FirebaseFirestore) {
 
         if (!publicId.isNullOrEmpty()) {
             try {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
                     get().cloudinary.uploader().destroy(
                         publicId,
                         mapOf("resource_type" to resourceType)

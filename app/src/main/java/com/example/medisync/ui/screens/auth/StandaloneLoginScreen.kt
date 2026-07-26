@@ -72,7 +72,6 @@ fun StandaloneLoginScreen(
                     message = "You have successfully logged in",
                     icon = Icons.AutoMirrored.Filled.Login
                 )
-                viewModel.resetState()
                 onLoginSuccess()
             }
 
@@ -148,7 +147,7 @@ fun StandaloneLoginScreen(
 
                 StandaloneSheetsStack(
                     currentStep = currentStep,
-                    onGoogleSignIn = { viewModel.signInWithGoogle() },
+                    onGoogleSignIn = { viewModel.signInWithGoogle(context) },
                     onCompleteProfile = { f, l, p -> viewModel.completeProfile(f, l, p) },
                     onLogout = { viewModel.signOut() },
                     isLoading = authState is AuthState.Loading

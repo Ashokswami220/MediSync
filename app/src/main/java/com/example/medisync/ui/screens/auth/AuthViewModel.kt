@@ -1,25 +1,30 @@
 package com.example.medisync.ui.screens.auth
 
+import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medisync.R
 import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.UserRepository
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import com.example.medisync.R
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -33,7 +38,7 @@ sealed class AuthState {
 class AuthViewModel(
     private val authRepo: AuthRepository,
     private val userRepo: UserRepository,
-    private val application: android.app.Application
+    private val application: Application
 ) : ViewModel() {
 
     private val credentialManager = CredentialManager.create(application)
@@ -67,7 +72,7 @@ class AuthViewModel(
         }
     }
 
-    fun signInWithGoogle() {
+    fun signInWithGoogle(context: Context) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             try {
@@ -83,7 +88,7 @@ class AuthViewModel(
 
                 val result = credentialManager.getCredential(
                     request = request,
-                    context = application,
+                    context = context,
                 )
 
                 val credential = result.credential
@@ -109,13 +114,13 @@ class AuthViewModel(
                 } else {
                     _authState.value = AuthState.Error("Unexpected credential type.")
                 }
-            } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
+            } catch (e: GetCredentialCancellationException) {
                 Log.e("AuthViewModel", "User cancelled Google Sign In", e)
                 _authState.value = AuthState.Error("You cancelled the selector")
-            } catch (e: androidx.credentials.exceptions.NoCredentialException) {
+            } catch (e: NoCredentialException) {
                 Log.e("AuthViewModel", "No credentials available", e)
                 _authState.value = AuthState.Error("Credentials not available, please try again.")
-            } catch (e: androidx.credentials.exceptions.GetCredentialException) {
+            } catch (e: GetCredentialException) {
                 Log.e("AuthViewModel", "Credential Manager Error", e)
                 _authState.value = AuthState.Error(e.localizedMessage ?: "Google Sign In Failed")
             } catch (e: Exception) {
@@ -125,10 +130,10 @@ class AuthViewModel(
         }
     }
 
-    private suspend fun checkIfUserNeedsInfo(user: com.google.firebase.auth.FirebaseUser) {
+    private suspend fun checkIfUserNeedsInfo(user: FirebaseUser) {
         try {
-            val profile = userRepo.getUserProfile(user.uid)
-                .first()
+            val result = userRepo.getUserProfileSync(user.uid)
+            val profile = result.getOrNull()
             if (profile == null || profile.firstName.isEmpty() || profile.phoneNumber.isEmpty()) {
                 _authState.value = AuthState.NeedsInfo
             } else {
@@ -156,8 +161,8 @@ class AuthViewModel(
                 val currentUser = authRepo.getCurrentUserSync()
                 if (currentUser != null) {
                     // Try to fetch existing to preserve roles, Blood type, etc.
-                    val existingProfile = userRepo.getUserProfile(currentUser.uid)
-                        .first()
+                    val existingResult = userRepo.getUserProfileSync(currentUser.uid)
+                    val existingProfile = existingResult.getOrNull()
                     val newProfile = existingProfile?.copy(
                         firstName = firstName,
                         lastName = lastName,

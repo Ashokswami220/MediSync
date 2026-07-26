@@ -10,6 +10,9 @@ interface UserRepository {
     /** Fetches a user profile by UID and observes it for changes. */
     fun getUserProfile(uid: String): Flow<UserProfile?>
 
+    /** Fetches a user profile by UID synchronously from the server. */
+    suspend fun getUserProfileSync(uid: String): Result<UserProfile?>
+
     /** Updates specific fields in an existing user profile. */
     suspend fun updateUserProfile(uid: String, updates: Map<String, Any>): Result<Unit>
 

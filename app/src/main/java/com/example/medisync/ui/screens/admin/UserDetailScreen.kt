@@ -1,6 +1,5 @@
 package com.example.medisync.ui.screens.admin
 
-import com.example.medisync.utils.GlobalToastManager
 import android.content.Intent
 import android.content.Intent.ACTION_DIAL
 import androidx.compose.animation.AnimatedVisibility
@@ -10,19 +9,58 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ClearAll
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MedicalInformation
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.outlined.Call
-import androidx.compose.material3.*
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.runtime.*
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,19 +74,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.example.medisync.model.DocumentMetadata
-import com.example.medisync.model.UserProfile
 import com.example.medisync.ui.components.AddMemberBottomSheet
 import com.example.medisync.ui.components.ClearAdminDataDialog
 import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.components.MemberSwitcher
 import com.example.medisync.ui.components.UserAvatar
+import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
+import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import org.koin.androidx.compose.koinViewModel
-
-
 
 
 @Composable
@@ -68,7 +104,7 @@ fun UserDetailScreen(
 
     val userName = userProfile?.firstName ?: "User"
     val members = userProfile?.members?.ifEmpty { listOf(userName) } ?: listOf(userName)
-    
+
     // Automatically set the self member at top
     val displayMembers = listOf(userName) + members.filter { it != userName }
     var selectedMember by remember(displayMembers) { mutableStateOf(displayMembers[0]) }
@@ -101,17 +137,19 @@ fun UserDetailScreen(
     ) { paddingValues ->
         UserDetailReportsList(
             selectedMember = selectedMember,
-            userProfile = userProfile,
-            documents = documents.filter { 
+            documents = documents.filter {
                 if (selectedMember == userProfile?.firstName) {
-                    it.linkedMember == userProfile?.firstName || it.linkedMember.isEmpty() || it.linkedMember.contains("(Self)")
+                    it.linkedMember == userProfile?.firstName || it.linkedMember.isEmpty() || it.linkedMember.contains(
+                        "(Self)"
+                    )
                 } else {
                     it.linkedMember == selectedMember
                 }
-            }.reversed(),
+            }
+                .reversed(),
             onNavigateToReportDetail = onNavigateToReportDetail,
             onDeleteReport = { docId ->
-                viewModel.deleteReport(docId) { success, msg ->
+                viewModel.deleteReport(docId) { _, msg ->
                     GlobalToastManager.showToast(message = msg)
                 }
             },
@@ -133,18 +171,16 @@ fun UserDetailScreen(
         )
     }
 
-    if (showUploadDialog) {
-        AnimatedVisibility(
-            visible = showUploadDialog,
-            enter = fadeIn(animationSpec = tween(300)),
-            exit = fadeOut(animationSpec = tween(300))
-        ) {
-            UploadDataDialog(
-                onDismiss = { showUploadDialog = false },
-                buttonCenter = Offset.Zero,
-                preselectedUser = userProfile
-            )
-        }
+    AnimatedVisibility(
+        visible = showUploadDialog,
+        enter = fadeIn(animationSpec = tween(300)),
+        exit = fadeOut(animationSpec = tween(300))
+    ) {
+        UploadDataDialog(
+            onDismiss = { showUploadDialog = false },
+            buttonCenter = Offset.Zero,
+            preselectedUser = userProfile
+        )
     }
 
     if (showDeleteDialog) {
@@ -166,7 +202,7 @@ fun UserDetailScreen(
         ClearAdminDataDialog(
             userCount = 1,
             onConfirm = {
-                viewModel.clearUserData(userUid) { success, msg ->
+                viewModel.clearUserData(userUid) { _, msg ->
                     GlobalToastManager.showToast(message = msg)
                 }
             },
@@ -277,8 +313,8 @@ fun UserDetailTopBar(
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Delete Users", color = colorScheme.error) },
-                                onClick = { 
-                                    showTopMenu = false 
+                                onClick = {
+                                    showTopMenu = false
                                     onDeleteClick()
                                 },
                                 leadingIcon = {
@@ -290,7 +326,7 @@ fun UserDetailTopBar(
                             )
                             DropdownMenuItem(
                                 text = { Text("Clear Data", color = colorScheme.error) },
-                                onClick = { 
+                                onClick = {
                                     showTopMenu = false
                                     onClearDataClick()
                                 },
@@ -372,7 +408,6 @@ fun UserDetailBottomBar(
 @Composable
 fun UserDetailReportsList(
     selectedMember: String,
-    userProfile: UserProfile?,
     documents: List<DocumentMetadata>,
     onNavigateToReportDetail: (String, String) -> Unit,
     onDeleteReport: (String) -> Unit,
@@ -380,7 +415,7 @@ fun UserDetailReportsList(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
-    
+
     val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
     if (documents.isEmpty()) {
@@ -403,9 +438,12 @@ fun UserDetailReportsList(
     var reportMenuExpandedFor by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
 
+    var lastSeenDocCount by rememberSaveable { mutableIntStateOf(0) }
+
     LaunchedEffect(documents.size) {
-        if (documents.isNotEmpty()) {
+        if (documents.isNotEmpty() && documents.size != lastSeenDocCount) {
             listState.scrollToItem(documents.size - 1)
+            lastSeenDocCount = documents.size
         }
     }
 
@@ -443,7 +481,9 @@ fun UserDetailReportsList(
                         }
                 ) {
                     Row(
-                        modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+                        modifier = Modifier.padding(
+                            start = 12.dp, top = 12.dp, bottom = 12.dp, end = 4.dp
+                        ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -475,11 +515,13 @@ fun UserDetailReportsList(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(50)) // fully rounded
-                                    .clickable { 
+                                    .clickable {
                                         HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                                         reportMenuExpandedFor = report.id
                                     }
-                                    .padding(horizontal = 8.dp, vertical = 16.dp), // more vertical padding, less horizontal
+                                    .padding(
+                                        horizontal = 8.dp, vertical = 16.dp
+                                    ), // more vertical padding, less horizontal
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -490,33 +532,43 @@ fun UserDetailReportsList(
                             }
                             MaterialTheme(
                                 colorScheme = MaterialTheme.colorScheme,
-                                shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(12.dp))
+                                shapes = MaterialTheme.shapes.copy(
+                                    extraSmall = RoundedCornerShape(12.dp)
+                                )
                             ) {
                                 DropdownMenu(
                                     expanded = reportMenuExpandedFor == report.id,
                                     onDismissRequest = { reportMenuExpandedFor = null },
-                                    modifier = Modifier.background(colorScheme.surface).width(140.dp)
+                                    modifier = Modifier
+                                        .background(colorScheme.surface)
+                                        .width(140.dp)
                                 ) {
-                                DropdownMenuItem(
-                                    text = { Text("Info") },
-                                    onClick = {
-                                        reportMenuExpandedFor = null
-                                        showInfoSheet = report
-                                    },
-                                    leadingIcon = {
-                                        Icon(Icons.Default.Info, contentDescription = null, tint = colorScheme.onSurface)
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Delete", color = colorScheme.error) },
-                                    onClick = {
-                                        reportMenuExpandedFor = null
-                                        onDeleteReport(report.id)
-                                    },
-                                    leadingIcon = {
-                                        Icon(Icons.Default.Delete, contentDescription = null, tint = colorScheme.error)
-                                    }
-                                )
+                                    DropdownMenuItem(
+                                        text = { Text("Info") },
+                                        onClick = {
+                                            reportMenuExpandedFor = null
+                                            showInfoSheet = report
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.Info, contentDescription = null,
+                                                tint = colorScheme.onSurface
+                                            )
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Delete", color = colorScheme.error) },
+                                        onClick = {
+                                            reportMenuExpandedFor = null
+                                            onDeleteReport(report.id)
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.Delete, contentDescription = null,
+                                                tint = colorScheme.error
+                                            )
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -554,13 +606,13 @@ fun UserDetailReportsList(
                 Spacer(modifier = Modifier.height(8.dp))
                 InfoRow("Time", timeFmt.format(dt), colorScheme)
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 val emailDisplay = report.uploaderEmail.ifEmpty { "Not Available" }
                 InfoRow("Uploaded by Mail", emailDisplay, colorScheme)
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
                 InfoRow("Uploaded by Name", report.linkedUser, colorScheme)
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
@@ -574,6 +626,9 @@ fun InfoRow(label: String, value: String, colorScheme: ColorScheme) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = label, color = colorScheme.onSurfaceVariant, fontSize = 14.sp)
-        Text(text = value, color = colorScheme.onSurface, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+        Text(
+            text = value, color = colorScheme.onSurface, fontWeight = FontWeight.Medium,
+            fontSize = 14.sp
+        )
     }
 }

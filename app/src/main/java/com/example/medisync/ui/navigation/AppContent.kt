@@ -436,13 +436,14 @@ fun GlassNavBar(
 }
 
 @Composable
-fun UserHomeTopBar(
+fun HomeTopBar(
     modifier: Modifier = Modifier,
     scrollFraction: Float = 0f,
     onBellClick: () -> Unit = {},
     selectedMember: String = "User",
     onMemberSelected: (String) -> Unit = {},
-    members: List<String> = emptyList()
+    members: List<String> = emptyList(),
+    showMemberSwitcher: Boolean = true
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -519,7 +520,7 @@ fun UserHomeTopBar(
                 val currentUser = FirebaseAuth.getInstance().currentUser
                 val isLoggedIn = currentUser != null
 
-                if (isLoggedIn) {
+                if (isLoggedIn && showMemberSwitcher) {
                     MemberSwitcher(
                         selectedMember = selectedMember,
                         onMemberSelected = onMemberSelected,

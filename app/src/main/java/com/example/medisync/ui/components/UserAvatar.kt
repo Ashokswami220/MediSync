@@ -22,9 +22,9 @@ import coil.compose.AsyncImage
 
 @Composable
 fun UserAvatar(
+    modifier: Modifier = Modifier,
     avatarUrl: String?,
     size: Dp = 50.dp,
-    modifier: Modifier = Modifier,
     iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     backgroundColor: Color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
     borderColor: Color = MaterialTheme.colorScheme.outlineVariant,

@@ -115,7 +115,6 @@ fun AuthFlowScreen(
                     message = "You have successfully logged in",
                     icon = Icons.AutoMirrored.Filled.Login
                 )
-                viewModel.resetState()
                 onNavigateNext()
             }
 
@@ -197,7 +196,7 @@ fun AuthFlowScreen(
                 AuthSheetsStack(
                     currentStep = currentStep,
                     onStepChange = { currentStep = it },
-                    onGoogleSignIn = { viewModel.signInWithGoogle() },
+                    onGoogleSignIn = { viewModel.signInWithGoogle(context) },
                     onCompleteProfile = { f, l, p -> viewModel.completeProfile(f, l, p) },
                     onLogout = { viewModel.signOut() },
                     isLoading = authState is AuthState.Loading

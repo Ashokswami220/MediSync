@@ -1,5 +1,8 @@
 package com.example.medisync.utils
 
+import java.io.File
+import java.io.FileOutputStream
+
 import android.content.Context
 import android.net.Uri
 import com.cloudinary.android.MediaManager
@@ -52,13 +55,27 @@ object UploadManager {
         )
 
         CoroutineScope(Dispatchers.IO).launch {
-            var tempFile: java.io.File? = null
+            var tempFile: File? = null
             try {
                 // Copy the content URI to a temporary file to avoid SecurityExceptions with WorkManager
                 val contentResolver = context.contentResolver
                 val inputStream = contentResolver.openInputStream(fileUri)
-                tempFile = java.io.File(context.cacheDir, "upload_temp_${System.currentTimeMillis()}")
-                val outputStream = java.io.FileOutputStream(tempFile)
+                
+                var extension = ""
+                if (fileUri.scheme == "content") {
+                    val mimeType = contentResolver.getType(fileUri)
+                    if (mimeType != null) {
+                        extension = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: ""
+                    }
+                } else if (fileUri.scheme == "file") {
+                    extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(fileUri.toString())
+                }
+                if (extension.isEmpty()) {
+                    extension = if (fileUri.toString().contains(".pdf")) "pdf" else "jpg"
+                }
+
+                tempFile = File(context.cacheDir, "upload_temp_${System.currentTimeMillis()}.$extension")
+                val outputStream = FileOutputStream(tempFile)
                 inputStream?.use { input ->
                     outputStream.use { output ->
                         input.copyTo(output)
@@ -67,21 +84,29 @@ object UploadManager {
 
                 val safeUri = Uri.fromFile(tempFile)
 
+                val progressJob = CoroutineScope(Dispatchers.IO).launch {
+                    var fakeProgress = 0f
+                    while (fakeProgress < 0.9f) {
+                        delay(300.milliseconds)
+                        fakeProgress += 0.05f
+                        _uploadStatus.value = _uploadStatus.value.copy(progress = fakeProgress.coerceAtMost(0.9f))
+                    }
+                }
+
                 MediaManager.get()
                     .upload(safeUri)
                     .callback(object : UploadCallback {
                         override fun onStart(requestId: String?) {}
 
                         override fun onProgress(requestId: String?, bytes: Long, totalBytes: Long) {
-                            if (totalBytes > 0) {
-                                val progress = bytes.toFloat() / totalBytes.toFloat()
-                                _uploadStatus.value = _uploadStatus.value.copy(progress = progress)
-                            }
+                            // Using fake progress instead because real progress is sometimes unreliable
                         }
 
                         override fun onSuccess(
                             requestId: String?, resultData: MutableMap<Any?, Any?>?
                         ) {
+                            progressJob.cancel()
+                            _uploadStatus.value = _uploadStatus.value.copy(progress = 1.0f)
                             tempFile.delete()
                             try {
                                 val fileUrl = resultData?.get("secure_url") as? String ?: ""
@@ -147,6 +172,7 @@ object UploadManager {
                         }
 
                         override fun onError(requestId: String?, error: ErrorInfo?) {
+                            progressJob.cancel()
                             tempFile.delete()
                             _uploadStatus.value = _uploadStatus.value.copy(
                                 state = UploadState.ERROR,
@@ -158,7 +184,10 @@ object UploadManager {
                             }
                         }
 
-                        override fun onReschedule(requestId: String?, error: ErrorInfo?) {}
+                        override fun onReschedule(requestId: String?, error: ErrorInfo?) {
+                            progressJob.cancel()
+                            tempFile.delete()
+                        }
                     })
                     .dispatch(context)
             } catch (e: Exception) {

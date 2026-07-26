@@ -73,7 +73,7 @@ class UserDetailViewModel(
             }
         }
     }
-    
+
     fun addMember(uid: String, memberName: String, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             val user = _userProfile.value

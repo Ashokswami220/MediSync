@@ -2,20 +2,18 @@ package com.example.medisync.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medisync.data.repository.DocumentRepository
 import com.example.medisync.repo.UserRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-import kotlinx.coroutines.flow.combine
-import com.example.medisync.data.repository.DocumentRepository
-import com.example.medisync.model.DocumentMetadata
-import com.google.firebase.auth.FirebaseAuth
 
 class UserListViewModel(
     private val userRepository: UserRepository,
@@ -39,44 +37,46 @@ class UserListViewModel(
                 .catch { _ ->
                     _isLoading.value = false
                 }
-            
+
             combine(usersFlow, documentRepository.getDocuments(null)) { profiles, docs ->
                 // Sort docs by newest
                 val sortedDocs = docs.sortedByDescending { it.uploadedAt }
-                
+
                 // Map profiles
                 val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
                 val adminModels = profiles
                     .filter { it.uid != currentUserId }
                     .map { profile ->
-                    val userDocs = sortedDocs.filter { it.linkedUserUid == profile.uid }
-                    val latestDoc = userDocs.firstOrNull()
-                    
-                    val fullName = "${profile.firstName} ${profile.lastName}".trim()
-                    
-                    UserAdminModel(
-                        uid = profile.uid,
-                        name = fullName.ifEmpty { "Unknown User" },
-                        lastReportName = latestDoc?.documentName ?: "No Reports Yet",
-                        lastReportTime = if (latestDoc != null) {
-                            val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                            formatter.format(Date(latestDoc.uploadedAt))
-                        } else "",
-                        hasViewed = false, // Default to false
-                        timestamp = latestDoc?.uploadedAt ?: profile.accountCreatedTime,
-                        avatarUrl = profile.avatarUrl
-                    )
-                }
-                
+                        val userDocs = sortedDocs.filter { it.linkedUserUid == profile.uid }
+                        val latestDoc = userDocs.firstOrNull()
+
+                        val fullName = "${profile.firstName} ${profile.lastName}".trim()
+
+                        UserAdminModel(
+                            uid = profile.uid,
+                            name = fullName.ifEmpty { "Unknown User" },
+                            lastReportName = latestDoc?.documentName ?: "No Reports Yet",
+                            lastReportTime = if (latestDoc != null) {
+                                val formatter =
+                                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                                formatter.format(Date(latestDoc.uploadedAt))
+                            } else "",
+                            hasViewed = false, // Default to false
+                            timestamp = latestDoc?.uploadedAt ?: profile.accountCreatedTime,
+                            avatarUrl = profile.avatarUrl
+                        )
+                    }
+
                 // Sort by default: Newest first based on latest report
                 adminModels.sortedByDescending { it.timestamp }
             }.catch { _ ->
                 _isLoading.value = false
                 _usersState.value = emptyList()
-            }.collect { adminModels ->
-                _usersState.value = adminModels
-                _isLoading.value = false
             }
+                .collect { adminModels ->
+                    _usersState.value = adminModels
+                    _isLoading.value = false
+                }
         }
     }
 

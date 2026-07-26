@@ -1,19 +1,28 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.example.medisync.ui.screens.admin
 
-import com.example.medisync.utils.GlobalToastManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Check
@@ -23,9 +32,24 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LoadingIndicatorDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,9 +64,9 @@ import com.example.medisync.ui.components.ClearAdminDataDialog
 import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.ui.navigation.TopBar
+import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
-
 
 
 data class UserAdminModel(
@@ -65,23 +89,23 @@ fun UserListScreen(
     val colorScheme = MaterialTheme.colorScheme
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    
+
     var showFilterMenu by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("Default") }
-    
+
     val users by viewModel.usersState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    
+
     LaunchedEffect(Unit) {
         viewModel.fetchUsers()
     }
-    
+
     LaunchedEffect(isLoading) {
         if (isLoading) {
-            com.example.medisync.utils.GlobalToastManager.showToast("Data is updating...")
+            GlobalToastManager.showToast("Data is updating...")
         }
     }
-    
+
     val sortedUsers = remember(users, selectedFilter, searchQuery) {
         var result = users
         if (searchQuery.isNotBlank()) {
@@ -95,7 +119,7 @@ fun UserListScreen(
             else -> result
         }
     }
-    
+
     val selectedUsers = remember { mutableStateListOf<String>() }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showClearDataDialog by remember { mutableStateOf(false) }
@@ -151,7 +175,9 @@ fun UserListScreen(
                         }
                         MaterialTheme(
                             colorScheme = MaterialTheme.colorScheme,
-                            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(12.dp))
+                            shapes = MaterialTheme.shapes.copy(
+                                extraSmall = RoundedCornerShape(12.dp)
+                            )
                         ) {
                             DropdownMenu(
                                 expanded = showFilterMenu,
@@ -161,18 +187,26 @@ fun UserListScreen(
                                     .width(140.dp),
                                 offset = DpOffset(62.dp, 8.dp)
                             ) {
-                                val options = listOf("Default", "A-Z", "Z-A", "Newest first", "Oldest first")
+                                val options =
+                                    listOf("Default", "A-Z", "Z-A", "Newest first", "Oldest first")
                                 options.forEach { option ->
                                     DropdownMenuItem(
                                         modifier = Modifier.height(40.dp),
-                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                                        contentPadding = PaddingValues(
+                                            horizontal = 16.dp, vertical = 0.dp
+                                        ),
                                         text = { Text(option) },
                                         onClick = {
                                             selectedFilter = option
                                             showFilterMenu = false
                                         },
                                         trailingIcon = if (selectedFilter == option) {
-                                            { Icon(Icons.Default.Check, contentDescription = "Selected") }
+                                            {
+                                                Icon(
+                                                    Icons.Default.Check,
+                                                    contentDescription = "Selected"
+                                                )
+                                            }
                                         } else null
                                     )
                                 }
@@ -189,7 +223,10 @@ fun UserListScreen(
 
         if (isLoading && users.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                LoadingIndicator(polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons)
+                LoadingIndicator(
+                    color = MaterialTheme.colorScheme.secondary,
+                    polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                )
             }
         } else if (users.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -197,112 +234,116 @@ fun UserListScreen(
             }
         } else {
             LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
-        ) {
-            items(sortedUsers) { user ->
-                val isSelected = selectedUsers.contains(user.uid)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(if (isSelected) colorScheme.secondary.copy(alpha = 0.15f) else Color.Transparent)
-                        .combinedClickable(
-                            onClick = {
-                                if (selectedUsers.isNotEmpty()) {
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
+            ) {
+                items(sortedUsers) { user ->
+                    val isSelected = selectedUsers.contains(user.uid)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (isSelected) colorScheme.secondary.copy(
+                                    alpha = 0.15f
+                                ) else Color.Transparent
+                            )
+                            .combinedClickable(
+                                onClick = {
+                                    if (selectedUsers.isNotEmpty()) {
+                                        if (isSelected) selectedUsers.remove(user.uid)
+                                        else selectedUsers.add(user.uid)
+                                    } else {
+                                        onNavigateToUserDetail(user.uid)
+                                    }
+                                },
+                                onLongClick = {
                                     if (isSelected) selectedUsers.remove(user.uid)
                                     else selectedUsers.add(user.uid)
-                                } else {
-                                    onNavigateToUserDetail(user.uid)
                                 }
-                            },
-                            onLongClick = {
-                                if (isSelected) selectedUsers.remove(user.uid)
-                                else selectedUsers.add(user.uid)
-                            }
-                        )
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // User Avatar with larger clickable area
-                    Box(
-                        modifier = Modifier
-                            .clickable { onNavigateToUserProfile(user.uid) }
-                            .padding(end = 12.dp, top = 8.dp, bottom = 8.dp)
-                    ) {
-                        Box(modifier = Modifier.size(50.dp)) {
-                            UserAvatar(
-                                avatarUrl = user.avatarUrl,
-                                size = 50.dp,
-                                borderWidth = 0.dp
                             )
-                            if (isSelected) {
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // User Avatar with larger clickable area
+                        Box(
+                            modifier = Modifier
+                                .clickable { onNavigateToUserProfile(user.uid) }
+                                .padding(end = 12.dp, top = 8.dp, bottom = 8.dp)
+                        ) {
+                            Box(modifier = Modifier.size(50.dp)) {
+                                UserAvatar(
+                                    avatarUrl = user.avatarUrl,
+                                    size = 50.dp,
+                                    borderWidth = 0.dp
+                                )
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = "Selected",
+                                        tint = colorScheme.secondary,
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .size(20.dp)
+                                            .background(Color.White, CircleShape)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        // Name and Subtitle
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = user.name,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp,
+                                    color = colorScheme.onBackground,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = user.lastReportTime,
+                                    fontSize = 12.sp,
+                                    color = colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = "Selected",
-                                    tint = colorScheme.secondary,
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .size(20.dp)
-                                        .background(Color.White, CircleShape)
+                                    imageVector = if (user.hasViewed) Icons.Default.DoneAll else Icons.Default.Check,
+                                    contentDescription = if (user.hasViewed) "Viewed" else "Sent",
+                                    tint = if (user.hasViewed) colorScheme.primary else colorScheme.outline,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = user.lastReportName,
+                                    fontSize = 14.sp,
+                                    color = colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
                     }
-                    
-                    Spacer(modifier = Modifier.width(4.dp))
-                    
-                    // Name and Subtitle
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = user.name,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp,
-                                color = colorScheme.onBackground,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = user.lastReportTime,
-                                fontSize = 12.sp,
-                                color = colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = if (user.hasViewed) Icons.Default.DoneAll else Icons.Default.Check,
-                                contentDescription = if (user.hasViewed) "Viewed" else "Sent",
-                                tint = if (user.hasViewed) colorScheme.primary else colorScheme.outline,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = user.lastReportName,
-                                fontSize = 14.sp,
-                                color = colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 82.dp, end = 16.dp),
+                        thickness = 0.5.dp,
+                        color = colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
                 }
-                
-                HorizontalDivider(
-                    modifier = Modifier.padding(start = 82.dp, end = 16.dp),
-                    thickness = 0.5.dp,
-                    color = colorScheme.outlineVariant.copy(alpha = 0.5f)
-                )
             }
-        }
         }
     }
 
@@ -367,9 +408,9 @@ fun SelectionTopBar(
                 tint = colorScheme.onSurface,
                 modifier = Modifier
                     .size(24.dp)
-                    .clickable { 
+                    .clickable {
                         HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        onClearSelection() 
+                        onClearSelection()
                     }
             )
             Spacer(modifier = Modifier.width(24.dp))
@@ -401,19 +442,29 @@ fun SelectionTopBar(
                     ) {
                         DropdownMenuItem(
                             text = { Text("Delete Users", color = colorScheme.error) },
-                            onClick = { 
+                            onClick = {
                                 showSelectionMenu = false
-                                onDeleteClick() 
+                                onDeleteClick()
                             },
-                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = colorScheme.error) }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Delete, contentDescription = null,
+                                    tint = colorScheme.error
+                                )
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("Clear Data", color = colorScheme.error) },
-                            onClick = { 
+                            onClick = {
                                 showSelectionMenu = false
-                                onClearDataClick() 
+                                onClearDataClick()
                             },
-                            leadingIcon = { Icon(Icons.Default.ClearAll, contentDescription = null, tint = colorScheme.error) }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.ClearAll, contentDescription = null,
+                                    tint = colorScheme.error
+                                )
+                            }
                         )
                     }
                 }

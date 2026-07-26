@@ -66,8 +66,6 @@ import com.example.medisync.data.SettingsManager
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.ui.components.AppearanceBottomSheet
-import com.example.medisync.ui.components.DeleteAccountDialog
-import com.example.medisync.ui.components.DeleteDataDialog
 import com.example.medisync.ui.components.LanguageBottomSheet
 import com.example.medisync.ui.navigation.TopBar
 import com.example.medisync.ui.theme.LocalAppearance
@@ -81,9 +79,10 @@ import org.koin.compose.koinInject
 @Composable
 fun SettingsScreen(
     onNavigateToEditProfile: () -> Unit = {},
-    onNavigateToLogin: () -> Unit = {},
-    onNavigateToAboutUs: () -> Unit = {},
-    onSignOut: () -> Unit = {},
+    onNavigateToAboutUs: () -> Unit,
+    onNavigateToDeleteAction: (DeleteActionMode) -> Unit,
+    onNavigateToLogin: () -> Unit,
+    onSignOut: () -> Unit,
     profileViewModel: ProfileViewModel = koinViewModel()
 ) {
     val authRepo: AuthRepository = koinInject()
@@ -117,9 +116,6 @@ fun SettingsScreen(
             number = "Tap to login"
         }
     }
-
-    val (showDeleteDataDialog, setShowDeleteDataDialog) = remember { mutableStateOf(false) }
-    val (showDeleteAccountDialog, setShowDeleteAccountDialog) = remember { mutableStateOf(false) }
 
     var showAppearanceSheet by remember { mutableStateOf(false) }
     var currentAppearance by LocalAppearance.current
@@ -399,7 +395,7 @@ fun SettingsScreen(
                     onClick = {
                         if (isLoggedIn) {
                             HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
-                            setShowDeleteDataDialog(true)
+                            onNavigateToDeleteAction(DeleteActionMode.DATA)
                         }
                     }
                 )
@@ -412,7 +408,7 @@ fun SettingsScreen(
                     onClick = {
                         if (isLoggedIn) {
                             HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
-                            setShowDeleteAccountDialog(true)
+                            onNavigateToDeleteAction(DeleteActionMode.ACCOUNT)
                         }
                     }
                 )
@@ -475,32 +471,6 @@ fun SettingsScreen(
                 onAppearanceSelected = { appearance ->
                     currentAppearance = appearance
                 }
-            )
-        }
-
-        if (showDeleteDataDialog) {
-            DeleteDataDialog(
-                onConfirm = {
-                    profileViewModel.deleteData {
-                        // Data deleted
-                    }
-                },
-                onDismiss = { setShowDeleteDataDialog(false) }
-            )
-        }
-
-        if (showDeleteAccountDialog) {
-            DeleteAccountDialog(
-                onConfirm = {
-                    profileViewModel.deleteAccount {
-                        GlobalToastManager.showToast(
-                            message = "Your Account has been deleted",
-                            icon = Icons.Default.Delete
-                        )
-                        onSignOut()
-                    }
-                },
-                onDismiss = { setShowDeleteAccountDialog(false) }
             )
         }
     }

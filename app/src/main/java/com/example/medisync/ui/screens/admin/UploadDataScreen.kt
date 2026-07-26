@@ -1,7 +1,8 @@
 package com.example.medisync.ui.screens.admin
 
-import com.example.medisync.model.UserRole
-import com.example.medisync.utils.GlobalToastManager
+import kotlinx.coroutines.withContext
+import java.io.File
+
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -20,17 +21,44 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,11 +73,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.data.repository.DocumentRepository
 import com.example.medisync.model.UserProfile
+import com.example.medisync.model.UserRole
 import com.example.medisync.repo.UserRepository
 import com.example.medisync.ui.components.MemberSwitcher
+import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.UploadManager
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,18 +94,31 @@ fun AnimatedVisibilityScope.UploadDataDialog(
     val context = LocalContext.current
     val repository: DocumentRepository = koinInject()
     val userRepository: UserRepository = koinInject()
-    
-    val users by userRepository.getAllUsers().collectAsState(initial = emptyList())
+
+    val users by userRepository.getAllUsers()
+        .collectAsState(initial = emptyList())
 
     var docName by remember { mutableStateOf("") }
-    var selectedUser by remember { mutableStateOf<UserProfile?>(preselectedUser) }
+    var selectedUser by remember { mutableStateOf(preselectedUser) }
+
+    LaunchedEffect(users) {
+        if (selectedUser != null) {
+            val updated = users.find { it.uid == selectedUser?.uid }
+            if (updated != null) {
+                selectedUser = updated
+            }
+        }
+    }
+
     var selectedMember by remember { mutableStateOf("") }
     var showUserSelectionDialog by remember { mutableStateOf(false) }
 
-    var uploadState by remember { mutableStateOf("normal") } // "normal", "uploading", "success", "error"
-    var uploadProgress by remember { mutableFloatStateOf(0f) }
+    var uploadState by remember {
+        mutableStateOf(
+            "normal"
+        )
+    } // "normal", "uploading", "success", "error"
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
-    var uploadedFileUrl by remember { mutableStateOf("") }
 
     val windowInfo = LocalWindowInfo.current
     val screenCenter = remember(windowInfo) {
@@ -188,21 +231,25 @@ fun AnimatedVisibilityScope.UploadDataDialog(
                             )
                             return@UploadActionButtons
                         }
-                        
+
                         val uName = "${selectedUser?.firstName} ${selectedUser?.lastName}".trim()
                         val uUid = selectedUser?.uid ?: ""
                         val cleanMember = selectedMember
-                        
+
+                        val finalDocName = if (docName.trim()
+                                .endsWith("Report", ignoreCase = true)
+                        ) docName.trim() else "${docName.trim()} Report"
+
                         UploadManager.startUpload(
                             context = context,
                             fileUri = selectedFileUri!!,
-                            docName = docName,
+                            docName = finalDocName,
                             uName = uName,
                             uUid = uUid,
                             cleanMember = cleanMember,
                             repository = repository
                         )
-                        
+
                         onDismiss()
                     }
                 )
@@ -217,8 +264,8 @@ fun AnimatedVisibilityScope.UploadDataDialog(
             UserSelectionDialog(
                 users = users.filter { it.role != UserRole.ADMIN },
                 onDismiss = { showUserSelectionDialog = false },
-                onUserSelected = { 
-                    selectedUser = it 
+                onUserSelected = {
+                    selectedUser = it
                     selectedMember = "" // reset member when user changes
                 }
             )
@@ -234,8 +281,109 @@ fun UploadDocCard(
     onRemoveFile: () -> Unit
 ) {
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { onFileSelected(it) }
+    val coroutineScope = rememberCoroutineScope()
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+        if (uris.size > 3) {
+            GlobalToastManager.showToast("Max 3 images allowed", Icons.Default.Info)
+            return@rememberLauncherForActivityResult
+        }
+        val isAllImages = uris.all {
+            context.contentResolver.getType(it)
+                ?.startsWith("image/") == true
+        }
+        val isSinglePdf =
+            uris.size == 1 && context.contentResolver.getType(uris.first()) == "application/pdf"
+
+        if (isAllImages) {
+            GlobalToastManager.showToast("Processing images to PDF...", Icons.Default.Info)
+            coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val pdfDocument = android.graphics.pdf.PdfDocument()
+                    uris.forEachIndexed { index, uri ->
+                        var inSampleSize = 1
+                        context.contentResolver.openInputStream(uri)
+                            ?.use { stream ->
+                                val options = android.graphics.BitmapFactory.Options()
+                                options.inJustDecodeBounds = true
+                                android.graphics.BitmapFactory.decodeStream(stream, null, options)
+                                val maxDim = 2000
+                                if (options.outHeight > maxDim || options.outWidth > maxDim) {
+                                    val halfHeight = options.outHeight / 2
+                                    val halfWidth = options.outWidth / 2
+                                    while (halfHeight / inSampleSize >= maxDim && halfWidth / inSampleSize >= maxDim) {
+                                        inSampleSize *= 2
+                                    }
+                                }
+                            }
+
+                        val bitmap = context.contentResolver.openInputStream(uri)
+                            ?.use { stream ->
+                                val options = android.graphics.BitmapFactory.Options()
+                                options.inSampleSize = inSampleSize
+                                android.graphics.BitmapFactory.decodeStream(stream, null, options)
+                            }
+
+                        if (bitmap != null) {
+                            val a4Width = 595f
+                            val a4Height = 842f
+                            val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(
+                                a4Width.toInt(), a4Height.toInt(), index + 1
+                            )
+                                .create()
+                            val page = pdfDocument.startPage(pageInfo)
+
+                            val scale =
+                                (a4Width / bitmap.width).coerceAtMost(a4Height / bitmap.height)
+                            val scaledWidth = bitmap.width * scale
+                            val scaledHeight = bitmap.height * scale
+                            val left = (a4Width - scaledWidth) / 2f
+                            val top = (a4Height - scaledHeight) / 2f
+
+                            val destRect = android.graphics.RectF(
+                                left, top, left + scaledWidth, top + scaledHeight
+                            )
+                            val paint = android.graphics.Paint(
+                                android.graphics.Paint.FILTER_BITMAP_FLAG or android.graphics.Paint.ANTI_ALIAS_FLAG
+                            )
+                            page.canvas.drawBitmap(bitmap, null, destRect, paint)
+
+                            pdfDocument.finishPage(page)
+                            bitmap.recycle()
+                        }
+                    }
+                    val sharedReportsDir = File(context.cacheDir, "shared_reports")
+                    if (!sharedReportsDir.exists()) sharedReportsDir.mkdirs()
+                    val pdfFile = File(
+                        sharedReportsDir, "generated_report_${System.currentTimeMillis()}.pdf"
+                    )
+                    pdfFile.outputStream()
+                        .use { pdfDocument.writeTo(it) }
+                    pdfDocument.close()
+
+                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        val pdfUri = androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            pdfFile
+                        )
+                        onFileSelected(pdfUri)
+                    }
+                } catch (_: Exception) {
+                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        GlobalToastManager.showToast("Failed to process images", Icons.Default.Info)
+                    }
+                }
+            }
+        } else if (isSinglePdf) {
+            onFileSelected(uris.first())
+        } else {
+            GlobalToastManager.showToast(
+                "Please select 1 PDF or up to 3 images", Icons.Default.Info
+            )
+        }
     }
 
     Box(
@@ -244,7 +392,9 @@ fun UploadDocCard(
             .height(140.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(
-                if (uploadState == "normal") Color.Transparent else MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                if (uploadState == "normal") Color.Transparent else MaterialTheme.colorScheme.secondary.copy(
+                    alpha = 0.1f
+                )
             )
             .border(
                 1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
@@ -266,18 +416,25 @@ fun UploadDocCard(
                         .size(70.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.Transparent)
-                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .border(
+                            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                            RoundedCornerShape(12.dp)
+                        )
                         .clickable {
+                            val mimeType = context.contentResolver.getType(selectedFileUri)
+                                ?: if (selectedFileUri.toString()
+                                        .contains(".pdf")
+                                ) "application/pdf" else "*/*"
                             val intent = Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(selectedFileUri, context.contentResolver.getType(selectedFileUri) ?: "*/*")
+                                setDataAndType(selectedFileUri, mimeType)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
                             try {
                                 context.startActivity(intent)
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 GlobalToastManager.showToast(
-                                    message = "No app to view this document",
-                                    icon = Icons.Default.Info
+                                    message = "No app to view this content",
+                                    icon = Icons.Default.ErrorOutline
                                 )
                             }
                         },
@@ -310,7 +467,9 @@ fun UploadDocCard(
                         modifier = Modifier.height(32.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
                     ) {
                         Text(
                             text = "Remove",
@@ -353,7 +512,12 @@ fun DocumentNameField(docName: String, onDocNameChange: (String) -> Unit) {
             focusedLabelColor = MaterialTheme.colorScheme.secondary,
             cursorColor = MaterialTheme.colorScheme.secondary,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-        )
+        ),
+        suffix = {
+            Text(
+                "Report", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+        }
     )
 }
 
@@ -363,7 +527,10 @@ fun SelectUserCard(selectedUser: UserProfile?, onShowDialog: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .border(
+                1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                RoundedCornerShape(12.dp)
+            )
             .clip(RoundedCornerShape(12.dp))
             .clickable { onShowDialog() }
             .padding(horizontal = 16.dp),
@@ -417,16 +584,21 @@ fun SelectUserCard(selectedUser: UserProfile?, onShowDialog: () -> Unit) {
 }
 
 @Composable
-fun SelectMemberCard(selectedMember: String, selectedUser: UserProfile?, members: List<String>, onMemberSelected: (String) -> Unit) {
+fun SelectMemberCard(
+    selectedMember: String, selectedUser: UserProfile?, members: List<String>,
+    onMemberSelected: (String) -> Unit
+) {
     val isEnabled = selectedUser != null
-    
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
             .border(
-                width = 1.dp, 
-                color = MaterialTheme.colorScheme.outline.copy(alpha = if (isEnabled) 0.5f else 0.2f), 
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(
+                    alpha = if (isEnabled) 0.5f else 0.2f
+                ),
                 shape = CircleShape
             )
             .clip(CircleShape)
@@ -446,7 +618,9 @@ fun SelectMemberCard(selectedMember: String, selectedUser: UserProfile?, members
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Member",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isEnabled) 1f else 0.5f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                        alpha = if (isEnabled) 1f else 0.5f
+                    ),
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -454,22 +628,26 @@ fun SelectMemberCard(selectedMember: String, selectedUser: UserProfile?, members
             Text(
                 text = "Member",
                 fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isEnabled) 1f else 0.5f)
+                color = MaterialTheme.colorScheme.onSurface.copy(
+                    alpha = if (isEnabled) 1f else 0.5f
+                )
             )
         }
-        
+
         MemberSwitcher(
             selectedMember = selectedMember,
             onMemberSelected = onMemberSelected,
             enabled = isEnabled,
             members = members,
             popupAlignment = Alignment.BottomEnd,
-            triggerContent = { expandedMenu, onExpand ->
+            triggerContent = { _, onExpand ->
                 Box(
                     modifier = Modifier
                         .border(
                             width = 1.dp,
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = if (isEnabled) 0.5f else 0.2f),
+                            color = MaterialTheme.colorScheme.outline.copy(
+                                alpha = if (isEnabled) 0.5f else 0.2f
+                            ),
                             shape = CircleShape
                         )
                         .clip(CircleShape)
@@ -485,13 +663,17 @@ fun SelectMemberCard(selectedMember: String, selectedUser: UserProfile?, members
                             text = selectedMember.ifEmpty { "Select" },
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isEnabled) 1f else 0.5f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                alpha = if (isEnabled) 1f else 0.5f
+                            )
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             imageVector = Icons.Default.ExpandMore,
                             contentDescription = "Expand",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isEnabled) 1f else 0.5f),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                alpha = if (isEnabled) 1f else 0.5f
+                            ),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -504,12 +686,16 @@ fun SelectMemberCard(selectedMember: String, selectedUser: UserProfile?, members
 @Composable
 fun UploadActionButtons(onDismiss: () -> Unit, onUpload: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         OutlinedButton(
             onClick = onDismiss,
-            modifier = Modifier.weight(1f).height(52.dp),
+            modifier = Modifier
+                .weight(1f)
+                .height(52.dp),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
         ) {
@@ -521,11 +707,18 @@ fun UploadActionButtons(onDismiss: () -> Unit, onUpload: () -> Unit) {
 
         Button(
             onClick = onUpload,
-            modifier = Modifier.weight(1f).height(52.dp),
+            modifier = Modifier
+                .weight(1f)
+                .height(52.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary
+            )
         ) {
-            Text("Upload", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
+            Text(
+                "Upload", fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSecondary
+            )
         }
     }
 }

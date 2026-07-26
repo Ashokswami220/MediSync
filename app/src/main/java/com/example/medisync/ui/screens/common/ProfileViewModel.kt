@@ -1,15 +1,18 @@
 package com.example.medisync.ui.screens.common
 
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.UserRepository
+import com.example.medisync.data.repository.DocumentRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -28,7 +31,8 @@ sealed class ProfileUpdateState {
 
 class ProfileViewModel(
     private val authRepo: AuthRepository,
-    private val userRepo: UserRepository
+    private val userRepo: UserRepository,
+    private val documentRepo: DocumentRepository
 ) : ViewModel() {
 
     private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Loading)
@@ -41,23 +45,33 @@ class ProfileViewModel(
         loadProfile()
     }
 
+    private var profileJob: Job? = null
+
     fun loadProfile() {
-        viewModelScope.launch {
+        if (_profileState.value !is ProfileState.Success) {
             _profileState.value = ProfileState.Loading
+        }
+        profileJob?.cancel()
+        profileJob = viewModelScope.launch {
             try {
                 val currentUser = authRepo.getCurrentUserSync()
                 if (currentUser != null) {
-                    val profile = userRepo.getUserProfile(currentUser.uid)
-                        .first()
-                    if (profile != null) {
-                        _profileState.value = ProfileState.Success(profile)
-                    } else {
-                        _profileState.value = ProfileState.Error("Profile not found.")
+                    userRepo.getUserProfile(currentUser.uid).collect { profile ->
+                        if (profile != null) {
+                            _profileState.value = ProfileState.Success(profile)
+                        } else {
+                            // If null is emitted (e.g., from empty cache), keep state as Loading 
+                            // until server responds, or fallback if it persists.
+                            if (_profileState.value !is ProfileState.Success) {
+                                _profileState.value = ProfileState.Loading
+                            }
+                        }
                     }
                 } else {
                     _profileState.value = ProfileState.Error("User not logged in.")
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _profileState.value = ProfileState.Error(e.message ?: "Failed to load profile")
             }
         }
@@ -85,6 +99,7 @@ class ProfileViewModel(
                     _updateState.value = ProfileUpdateState.Error("User not logged in.")
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _updateState.value =
                     ProfileUpdateState.Error(e.message ?: "Failed to update profile")
             }
@@ -100,6 +115,7 @@ class ProfileViewModel(
             try {
                 val uid = authRepo.getCurrentUserSync()?.uid
                 if (uid != null) {
+                    documentRepo.clearDataForUsers(listOf(uid))
                     FirebaseFirestore.getInstance()
                         .collection("users")
                         .document(uid)
@@ -120,8 +136,10 @@ class ProfileViewModel(
     fun deleteData(onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                // Don't delete user profile info (name, number)
-                // Just clear cache / collections (if there are subcollections, delete them here)
+                val uid = authRepo.getCurrentUserSync()?.uid
+                if (uid != null) {
+                    documentRepo.clearDataForUsers(listOf(uid))
+                }
                 onSuccess()
             } catch (_: Exception) {
                 // Ignore errors

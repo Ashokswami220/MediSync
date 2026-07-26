@@ -36,8 +36,9 @@ import androidx.compose.ui.text.font.FontWeight
 import com.example.medisync.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalDensity
-import com.example.medisync.ui.navigation.UserHomeTopBar
+import com.example.medisync.ui.navigation.HomeTopBar
 
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Directions
@@ -69,8 +70,12 @@ fun UserHomeScreen(
     members: List<String> = emptyList(),
     bloodPressure: String = "",
     bloodType: String = "",
-    bloodSugar: String = ""
+    bloodSugar: String = "",
+    onRefreshProfile: () -> Unit = {}
 ) {
+    LaunchedEffect(Unit) {
+        onRefreshProfile()
+    }
     val scrollState = rememberScrollState()
     val colorScheme = MaterialTheme.colorScheme
     val density = LocalDensity.current
@@ -133,7 +138,7 @@ fun UserHomeScreen(
             AnimatedSloganText(scrollState = scrollState)
         }
 
-        UserHomeTopBar(
+        HomeTopBar(
             modifier = Modifier.align(Alignment.TopCenter),
             scrollFraction = scrollFraction,
             onBellClick = {
@@ -316,7 +321,7 @@ fun HealthStatsGrid(
                     contentDescription = "Syringe",
                     modifier = Modifier
                         .size(36.dp)
-                        .offset(y = syringeOffsetY)
+                        .offset { IntOffset(0, syringeOffsetY.roundToPx()) }
                         .rotate(-20f)
                 )
             }

@@ -1,10 +1,9 @@
 package com.example.medisync.ui.components
 
+import androidx.compose.runtime.rememberUpdatedState
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -27,13 +26,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -152,13 +151,26 @@ fun UploadProgressToast(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
-                                WavyProgressIndicator(
-                                    progress = uploadStatus.progress,
-                                    color = MaterialTheme.colorScheme.inverseOnSurface,
-                                    trackColor = MaterialTheme.colorScheme.inverseOnSurface.copy(
-                                        alpha = 0.3f
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    WavyProgressIndicator(
+                                        progress = uploadStatus.progress,
+                                        color = MaterialTheme.colorScheme.inverseOnSurface,
+                                        trackColor = MaterialTheme.colorScheme.inverseOnSurface.copy(
+                                            alpha = 0.3f
+                                        ),
+                                        modifier = Modifier.weight(1f)
                                     )
-                                )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "${(uploadStatus.progress * 100).toInt()}%",
+                                        color = MaterialTheme.colorScheme.inverseOnSurface,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
                         }
                     }
@@ -168,6 +180,7 @@ fun UploadProgressToast(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun WavyProgressIndicator(
     progress: Float,
@@ -175,14 +188,10 @@ fun WavyProgressIndicator(
     color: Color,
     trackColor: Color
 ) {
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(500, easing = FastOutSlowInEasing),
-        label = "progress_anim"
-    )
+    val progressState = rememberUpdatedState(progress)
 
-    LinearProgressIndicator(
-        progress = { animatedProgress },
+    LinearWavyProgressIndicator(
+        progress = { progressState.value.coerceIn(0f, 1f) },
         modifier = modifier
             .fillMaxWidth()
             .height(6.dp)

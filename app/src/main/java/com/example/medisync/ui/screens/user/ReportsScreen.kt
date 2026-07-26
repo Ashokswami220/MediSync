@@ -1,5 +1,7 @@
 package com.example.medisync.ui.screens.user
 
+import kotlinx.coroutines.delay
+
 import com.example.medisync.model.DocumentMetadata
 import com.example.medisync.R
 import android.content.Context
@@ -108,7 +110,7 @@ fun UserReportsScreen(
     LaunchedEffect(isRefreshing) {
         if (isRefreshing) {
             viewModel.refresh()
-            kotlinx.coroutines.delay(3000.milliseconds)
+            delay(3000.milliseconds)
             isRefreshing = false
             showToast = true
         }
