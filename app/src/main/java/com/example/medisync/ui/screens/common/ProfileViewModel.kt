@@ -110,10 +110,11 @@ class ProfileViewModel(
         _updateState.value = ProfileUpdateState.Idle
     }
 
-    fun deleteAccount(onSuccess: () -> Unit) {
+    fun deleteAccount(onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             try {
-                val uid = authRepo.getCurrentUserSync()?.uid
+                val user = authRepo.getCurrentUserSync()
+                val uid = user?.uid
                 if (uid != null) {
                     documentRepo.clearDataForUsers(listOf(uid))
                     FirebaseFirestore.getInstance()
@@ -122,27 +123,29 @@ class ProfileViewModel(
                         .delete()
                         .await()
                 }
-                authRepo.getCurrentUserSync()
-                    ?.delete()
-                    ?.await()
                 authRepo.signOut()
-                onSuccess()
-            } catch (_: Exception) {
-                // Ignore errors or handle them gracefully
+                onResult(true, "Account deleted successfully")
+            } catch (e: Exception) {
+                onResult(false, e.message ?: "Failed to wipe account data")
             }
         }
     }
 
-    fun deleteData(onSuccess: () -> Unit) {
+    fun deleteData(onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             try {
                 val uid = authRepo.getCurrentUserSync()?.uid
                 if (uid != null) {
                     documentRepo.clearDataForUsers(listOf(uid))
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(uid)
+                        .update("members", emptyList<String>())
+                        .await()
                 }
-                onSuccess()
-            } catch (_: Exception) {
-                // Ignore errors
+                onResult(true, "Data cleared successfully")
+            } catch (e: Exception) {
+                onResult(false, e.message ?: "Failed to clear data")
             }
         }
     }

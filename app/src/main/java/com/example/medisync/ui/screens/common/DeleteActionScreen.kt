@@ -21,7 +21,7 @@ enum class DeleteActionMode {
 @Composable
 fun DeleteActionScreen(
     mode: DeleteActionMode,
-    onComplete: () -> Unit
+    onComplete: (onResult: (Boolean) -> Unit) -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
     var isProcessing by remember { mutableStateOf(false) }
@@ -36,7 +36,11 @@ fun DeleteActionScreen(
     LaunchedEffect(isProcessing) {
         if (isProcessing) {
             delay(4000.milliseconds)
-            onComplete()
+            onComplete { success ->
+                if (!success) {
+                    isProcessing = false
+                }
+            }
         }
     }
 

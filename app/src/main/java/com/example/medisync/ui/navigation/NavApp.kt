@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -535,25 +536,46 @@ fun NavApp(
                     val mode = try { DeleteActionMode.valueOf(modeString) } catch (_: Exception) { DeleteActionMode.ACCOUNT }
                     DeleteActionScreen(
                         mode = mode,
-                        onComplete = {
+                        onComplete = { onResult ->
                             if (mode == DeleteActionMode.ACCOUNT) {
-                                profileViewModel.deleteAccount {
-                                    coroutineScope.launch {
-                                        settingsManager.setUserRole("USER")
-                                    }
-                                    navController.navigate(Routes.LOGIN) {
-                                        popUpTo(navController.graph.id) {
-                                            inclusive = true
+                                profileViewModel.deleteAccount { success, msg ->
+                                    if (success) {
+                                        com.example.medisync.utils.GlobalToastManager.showToast(
+                                            message = msg,
+                                            icon = androidx.compose.material.icons.Icons.Default.Delete
+                                        )
+                                        coroutineScope.launch {
+                                            settingsManager.setUserRole("USER")
                                         }
+                                        authViewModel.signOut()
+                                        navController.navigate(Routes.LOGIN) {
+                                            popUpTo(navController.graph.id) {
+                                                inclusive = true
+                                            }
+                                        }
+                                    } else {
+                                        com.example.medisync.utils.GlobalToastManager.showToast(
+                                            message = msg,
+                                            icon = androidx.compose.material.icons.Icons.Default.Error
+                                        )
                                     }
+                                    onResult(success)
                                 }
                             } else {
-                                profileViewModel.deleteData {
-                                    com.example.medisync.utils.GlobalToastManager.showToast(
-                                        message = "Data clear process completed",
-                                        icon = androidx.compose.material.icons.Icons.Default.Delete
-                                    )
-                                    navController.popBackStack()
+                                profileViewModel.deleteData { success, msg ->
+                                    if (success) {
+                                        com.example.medisync.utils.GlobalToastManager.showToast(
+                                            message = msg,
+                                            icon = androidx.compose.material.icons.Icons.Default.Delete
+                                        )
+                                        navController.popBackStack()
+                                    } else {
+                                        com.example.medisync.utils.GlobalToastManager.showToast(
+                                            message = msg,
+                                            icon = androidx.compose.material.icons.Icons.Default.Error
+                                        )
+                                    }
+                                    onResult(success)
                                 }
                             }
                         }

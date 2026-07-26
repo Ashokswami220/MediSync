@@ -14,7 +14,6 @@ import com.example.medisync.ui.screens.admin.UserDetailViewModel
 import com.example.medisync.ui.screens.admin.UserListViewModel
 import com.example.medisync.ui.screens.auth.AuthViewModel
 import com.example.medisync.ui.screens.common.ProfileViewModel
-import com.example.medisync.ui.screens.upload.UploadViewModel
 import com.example.medisync.ui.screens.user.ReportsViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -47,7 +46,6 @@ val appModule = module {
     // ViewModels
     viewModel { AuthViewModel(get(), get(), androidContext() as Application) }
     viewModel { ProfileViewModel(get(), get(), get()) }
-    viewModel { UploadViewModel() }
     viewModel { UserListViewModel(get(), get()) }
     viewModel { UserDetailViewModel(get(), get()) }
     viewModel { AdminUserProfileViewModel(get()) }
