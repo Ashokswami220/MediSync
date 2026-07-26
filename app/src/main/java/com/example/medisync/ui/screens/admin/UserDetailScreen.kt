@@ -135,18 +135,19 @@ fun UserDetailScreen(
             )
         }
     ) { paddingValues ->
+        val isMainUser = selectedMember == userName
+        val otherMembers = members.filter { it != userName }
+        val filteredDocuments = documents.filter { doc ->
+            if (isMainUser) {
+                !otherMembers.contains(doc.linkedMember)
+            } else {
+                doc.linkedMember == selectedMember
+            }
+        }.reversed()
+
         UserDetailReportsList(
             selectedMember = selectedMember,
-            documents = documents.filter {
-                if (selectedMember == userProfile?.firstName) {
-                    it.linkedMember == userProfile?.firstName || it.linkedMember.isEmpty() || it.linkedMember.contains(
-                        "(Self)"
-                    )
-                } else {
-                    it.linkedMember == selectedMember
-                }
-            }
-                .reversed(),
+            documents = filteredDocuments,
             onNavigateToReportDetail = onNavigateToReportDetail,
             onDeleteReport = { docId ->
                 viewModel.deleteReport(docId) { _, msg ->

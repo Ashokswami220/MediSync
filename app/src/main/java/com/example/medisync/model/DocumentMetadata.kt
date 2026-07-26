@@ -1,6 +1,8 @@
 package com.example.medisync.model
 
 data class DocumentMetadata(
+    // Note: These fields MUST be var with default values so that Firebase's 
+    // toObject() can use the no-arg constructor and set the fields via reflection.
     var id: String = "",
     var documentName: String = "",
     var fileUrl: String = "",

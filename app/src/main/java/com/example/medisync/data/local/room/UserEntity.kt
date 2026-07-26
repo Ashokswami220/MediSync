@@ -10,6 +10,7 @@ data class UserEntity(
     @PrimaryKey val uid: String,
     val firstName: String,
     val lastName: String,
+    val email: String,
     val phoneNumber: String,
     val role: String, // Store enum as String
     val bloodType: String,
@@ -25,6 +26,7 @@ data class UserEntity(
             uid = uid,
             firstName = firstName,
             lastName = lastName,
+            email = email,
             phoneNumber = phoneNumber,
             role = try { UserRole.valueOf(role) } catch (_: Exception) { UserRole.USER },
             bloodType = bloodType,
@@ -43,6 +45,7 @@ data class UserEntity(
                 uid = profile.uid,
                 firstName = profile.firstName,
                 lastName = profile.lastName,
+                email = profile.email,
                 phoneNumber = profile.phoneNumber,
                 role = profile.role.name,
                 bloodType = profile.bloodType,

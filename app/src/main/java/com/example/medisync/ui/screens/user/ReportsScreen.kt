@@ -201,7 +201,19 @@ fun UserReportsScreen(
                             EmptyReportsState(colorScheme = colorScheme)
                         }
                         is ReportsState.Success -> {
-                            val filteredDocuments = state.documents.filter { it.linkedMember == selectedMember }
+                            val mainUser = members.firstOrNull() ?: "User"
+                            val isMainUser = selectedMember == mainUser
+                            val otherMembers = members.filter { it != mainUser }
+                            
+                            val filteredDocuments = state.documents.filter { doc ->
+                                if (isMainUser) {
+                                    // Fallback for old/legacy reports: if it's the main user, 
+                                    // show reports that don't explicitly belong to sub-members.
+                                    !otherMembers.contains(doc.linkedMember)
+                                } else {
+                                    doc.linkedMember == selectedMember
+                                }
+                            }
                             if (filteredDocuments.isEmpty()) {
                                 EmptyReportsState(colorScheme = colorScheme)
                             } else {

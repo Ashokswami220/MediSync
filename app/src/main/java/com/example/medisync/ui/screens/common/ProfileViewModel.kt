@@ -9,12 +9,11 @@ import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.UserRepository
 import com.example.medisync.repo.DocumentRepository
-import com.google.firebase.firestore.FirebaseFirestore
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 sealed class ProfileState {
     object Loading : ProfileState()
@@ -117,11 +116,7 @@ class ProfileViewModel(
                 val uid = user?.uid
                 if (uid != null) {
                     documentRepo.clearDataForUsers(listOf(uid))
-                    FirebaseFirestore.getInstance()
-                        .collection("users")
-                        .document(uid)
-                        .delete()
-                        .await()
+                    userRepo.deleteUsers(listOf(uid))
                 }
                 authRepo.signOut()
                 onResult(true, "Account deleted successfully")
@@ -137,11 +132,7 @@ class ProfileViewModel(
                 val uid = authRepo.getCurrentUserSync()?.uid
                 if (uid != null) {
                     documentRepo.clearDataForUsers(listOf(uid))
-                    FirebaseFirestore.getInstance()
-                        .collection("users")
-                        .document(uid)
-                        .update("members", emptyList<String>())
-                        .await()
+                    userRepo.updateUserProfile(uid, mapOf("members" to emptyList<String>()))
                 }
                 onResult(true, "Data cleared successfully")
             } catch (e: Exception) {

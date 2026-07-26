@@ -18,10 +18,10 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.Icons
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -38,14 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.navigation.NavType
-import com.example.medisync.ui.screens.common.DeleteActionScreen
-import com.example.medisync.ui.screens.common.DeleteActionMode
 import com.example.medisync.data.SettingsManager
 import com.example.medisync.model.UserRole
 import com.example.medisync.ui.components.UploadProgressToast
@@ -59,6 +57,8 @@ import com.example.medisync.ui.screens.auth.AuthState
 import com.example.medisync.ui.screens.auth.AuthViewModel
 import com.example.medisync.ui.screens.auth.StandaloneLoginScreen
 import com.example.medisync.ui.screens.common.AboutUsScreen
+import com.example.medisync.ui.screens.common.DeleteActionMode
+import com.example.medisync.ui.screens.common.DeleteActionScreen
 import com.example.medisync.ui.screens.common.EditProfileScreen
 import com.example.medisync.ui.screens.common.ProfileState
 import com.example.medisync.ui.screens.common.ProfileViewModel
@@ -67,8 +67,8 @@ import com.example.medisync.ui.screens.common.SettingsScreen
 import com.example.medisync.ui.screens.onboarding.CarouselScreen
 import com.example.medisync.ui.screens.user.UserHomeScreen
 import com.example.medisync.ui.screens.user.UserReportsScreen
-import com.example.medisync.utils.UploadManager
 import com.example.medisync.utils.GlobalToastManager
+import com.example.medisync.utils.UploadManager
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
@@ -158,8 +158,8 @@ fun NavApp(
     val bloodType = (profileState as? ProfileState.Success)?.profile?.bloodType ?: ""
     val bloodSugar = (profileState as? ProfileState.Success)?.profile?.bloodSugar ?: ""
 
-    var selectedMember by rememberSaveable(displayMembers) { 
-        mutableStateOf(displayMembers.firstOrNull() ?: "User") 
+    var selectedMember by rememberSaveable(displayMembers) {
+        mutableStateOf(displayMembers.firstOrNull() ?: "User")
     }
     var selectedReportName by rememberSaveable { mutableStateOf("") }
     var selectedReportUrl by rememberSaveable { mutableStateOf("") }
@@ -225,12 +225,14 @@ fun NavApp(
                                     animationSpec = tween(600)
                                 ) + fadeOut(tween(600))
                             }
+
                             Routes.MAIN_TABS -> {
                                 slideOutHorizontally(
                                     targetOffsetX = { -it / 3 },
                                     animationSpec = tween(ANIM_DURATION, easing = ANIM_EASING)
                                 )
                             }
+
                             else -> {
                                 slideOutHorizontally(
                                     targetOffsetX = { width -> -width / 3 }, animationSpec = tween(
@@ -373,12 +375,12 @@ fun NavApp(
                                                 },
                                                 selectedMember = selectedMember,
                                                 onMemberSelected = { selectedMember = it },
-                                                    members = displayMembers,
-                                                    bloodPressure = bloodPressure,
-                                                    bloodType = bloodType,
-                                                    bloodSugar = bloodSugar,
-                                                    onRefreshProfile = { profileViewModel.loadProfile() }
-                                                )
+                                                members = displayMembers,
+                                                bloodPressure = bloodPressure,
+                                                bloodType = bloodType,
+                                                bloodSugar = bloodSugar,
+                                                onRefreshProfile = { profileViewModel.loadProfile() }
+                                            )
                                         }
 
                                         Routes.USER_LIST -> {
@@ -449,9 +451,15 @@ fun NavApp(
                                                 )
                                             },
                                             onNavigateToDeleteAction = { mode ->
-                                                navigateToDest("${Routes.DELETE_ACTION}/${mode.name}")
+                                                navigateToDest(
+                                                    "${Routes.DELETE_ACTION}/${mode.name}"
+                                                )
                                             },
-                                            onNavigateToAboutUs = { navigateToDest(Routes.ABOUT_US) },
+                                            onNavigateToAboutUs = {
+                                                navigateToDest(
+                                                    Routes.ABOUT_US
+                                                )
+                                            },
                                             onNavigateToLogin = { navigateToDest(Routes.LOGIN) },
                                             onSignOut = {
                                                 coroutineScope.launch {
@@ -525,7 +533,7 @@ fun NavApp(
                     )
                 }
                 composable(route = Routes.ABOUT_US) {
-                     AboutUsScreen(onBackClick = { navController.popBackStack() })
+                    AboutUsScreen(onBackClick = { navController.popBackStack() })
                 }
                 composable(route = Routes.EDIT_PROFILE) {
                     EditProfileScreen(onBackClick = { navController.popBackStack() })
@@ -535,7 +543,11 @@ fun NavApp(
                     arguments = listOf(navArgument("mode") { type = NavType.StringType })
                 ) { backStackEntry ->
                     val modeString = backStackEntry.arguments?.getString("mode") ?: "ACCOUNT"
-                    val mode = try { DeleteActionMode.valueOf(modeString) } catch (_: Exception) { DeleteActionMode.ACCOUNT }
+                    val mode = try {
+                        DeleteActionMode.valueOf(modeString)
+                    } catch (_: Exception) {
+                        DeleteActionMode.ACCOUNT
+                    }
                     DeleteActionScreen(
                         mode = mode,
                         onComplete = { onResult ->
@@ -612,26 +624,26 @@ fun NavApp(
                     val coroutineScope = rememberCoroutineScope()
                     val settingsManager = remember { SettingsManager(context) }
 
-                        StandaloneLoginScreen(
-                            viewModel = authViewModel,
-                            onNavigateBack = {
-                                if (navController.previousBackStackEntry == null) {
-                                    navController.navigate(Routes.MAIN_TABS) {
-                                        popUpTo(navController.graph.id) { inclusive = true }
-                                    }
-                                } else {
-                                    navController.popBackStack()
-                                }
-                            },
-                            onLoginSuccess = {
-                                coroutineScope.launch {
-                                    settingsManager.setOnboardingCompleted(true)
-                                }
+                    StandaloneLoginScreen(
+                        viewModel = authViewModel,
+                        onNavigateBack = {
+                            if (navController.previousBackStackEntry == null) {
                                 navController.navigate(Routes.MAIN_TABS) {
                                     popUpTo(navController.graph.id) { inclusive = true }
                                 }
+                            } else {
+                                navController.popBackStack()
                             }
-                        )
+                        },
+                        onLoginSuccess = {
+                            coroutineScope.launch {
+                                settingsManager.setOnboardingCompleted(true)
+                            }
+                            navController.navigate(Routes.MAIN_TABS) {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                            }
+                        }
+                    )
                 }
             }
 
