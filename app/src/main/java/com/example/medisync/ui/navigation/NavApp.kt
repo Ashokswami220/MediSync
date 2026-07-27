@@ -1,9 +1,6 @@
 package com.example.medisync.ui.navigation
 
 import android.annotation.SuppressLint
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -14,15 +11,10 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,7 +27,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -45,12 +36,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.medisync.data.SettingsManager
 import com.example.medisync.model.UserRole
-import com.example.medisync.ui.components.GlassNavBar
 import com.example.medisync.ui.components.UploadProgressToast
-import com.example.medisync.ui.screens.admin.AdminHomeScreen
-import com.example.medisync.ui.screens.admin.UploadDataDialog
 import com.example.medisync.ui.screens.admin.UserDetailScreen
-import com.example.medisync.ui.screens.admin.UserListScreen
 import com.example.medisync.ui.screens.admin.UserProfileScreen
 import com.example.medisync.ui.screens.auth.AuthFlowScreen
 import com.example.medisync.ui.screens.auth.AuthState
@@ -63,14 +50,8 @@ import com.example.medisync.ui.screens.common.EditProfileScreen
 import com.example.medisync.ui.screens.common.ProfileState
 import com.example.medisync.ui.screens.common.ProfileViewModel
 import com.example.medisync.ui.screens.common.ReportDetailScreen
-import com.example.medisync.ui.screens.common.SettingsScreen
 import com.example.medisync.ui.screens.onboarding.CarouselScreen
-import com.example.medisync.ui.screens.user.UserHomeScreen
-import com.example.medisync.ui.screens.user.UserReportsScreen
-import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.UploadManager
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -103,7 +84,6 @@ fun NavApp(
             UserRole.USER
         )
 
-    val hazeState = remember { HazeState() }
 
     val authViewModel = koinViewModel<AuthViewModel>()
     val authState by authViewModel.authState.collectAsState()
@@ -305,192 +285,45 @@ fun NavApp(
 
                 // ================== MAIN TABS ===================
                 composable(route = Routes.MAIN_TABS) {
-                    LaunchedEffect(Unit) {
-                        profileViewModel.loadProfile()
-                    }
-                    var currentTabRoute by rememberSaveable {
-                        mutableStateOf(
-                            if (currentRole == UserRole.ADMIN) Routes.ADMIN_HOME else Routes.USER_HOME
-                        )
-                    }
-                    var showUploadDialog by rememberSaveable { mutableStateOf(false) }
-                    var uploadButtonCenter by remember { mutableStateOf(Offset.Zero) }
-
-                    LaunchedEffect(currentRole) {
-                        if (currentRole == UserRole.USER && (currentTabRoute == Routes.ADMIN_HOME || currentTabRoute == Routes.USER_LIST)) {
-                            currentTabRoute = Routes.USER_HOME
-                        } else if (currentRole == UserRole.ADMIN && (currentTabRoute == Routes.USER_HOME || currentTabRoute == Routes.USER_REPORTS)) {
-                            currentTabRoute = Routes.ADMIN_HOME
-                        }
-                    }
-
-                    val homeRoute =
-                        if (currentRole == UserRole.ADMIN) Routes.ADMIN_HOME else Routes.USER_HOME
-                    val isBottomBarTabButNotHome = currentTabRoute != homeRoute
-                    BackHandler(enabled = isBottomBarTabButNotHome) {
-                        currentTabRoute = homeRoute
-                    }
-
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Scaffold(
-                            modifier = Modifier.fillMaxSize(),
-                            bottomBar = {
-                                GlassNavBar(
-                                    role = currentRole,
-                                    currentRoute = currentTabRoute,
-                                    onNavigate = { route ->
-                                        if (route == Routes.UPLOAD_DATA) {
-                                            showUploadDialog = !showUploadDialog
-                                        } else {
-                                            currentTabRoute = route
-                                        }
-                                    },
-                                    hazeState = hazeState,
-                                    onUploadButtonPositioned = { uploadButtonCenter = it }
-                                )
+                    MainTabsScreen(
+                        currentRole = currentRole,
+                        profileViewModel = profileViewModel,
+                        displayMembers = displayMembers,
+                        bloodPressure = bloodPressure,
+                        bloodType = bloodType,
+                        bloodSugar = bloodSugar,
+                        selectedMember = selectedMember,
+                        onMemberSelected = { selectedMember = it },
+                        onNavigateToReportDetail = { name, url ->
+                            selectedReportName = name
+                            selectedReportUrl = url
+                            navigateToDest(Routes.REPORT_DETAIL)
+                        },
+                        onNavigateToUserDetail = { uid ->
+                            selectedUserUid = uid
+                            navigateToDest(Routes.USER_DETAIL)
+                        },
+                        onNavigateToUserProfile = { uid ->
+                            selectedUserUid = uid
+                            navigateToDest(Routes.ADMIN_USER_PROFILE)
+                        },
+                        onNavigateToEditProfile = { navigateToDest(Routes.EDIT_PROFILE) },
+                        onNavigateToDeleteAction = { mode ->
+                            navigateToDest("${Routes.DELETE_ACTION}/${mode.name}")
+                        },
+                        onNavigateToAboutUs = { navigateToDest(Routes.ABOUT_US) },
+                        onSignOut = {
+                            coroutineScope.launch {
+                                settingsManager.setUserRole("USER")
+                                activeRole = UserRole.USER
                             }
-                        ) { _ ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .hazeSource(hazeState)
-                            ) {
-                                AnimatedContent(
-                                    targetState = currentTabRoute,
-                                    transitionSpec = {
-                                        fadeIn(tween(ANIM_DURATION)) togetherWith fadeOut(
-                                            tween(ANIM_DURATION)
-                                        )
-                                    },
-                                    label = "tab_switch"
-                                ) { targetRoute ->
-                                    when (targetRoute) {
-                                        Routes.ADMIN_HOME -> {
-                                            if (currentRole == UserRole.ADMIN) AdminHomeScreen() else UserHomeScreen(
-                                                onNavigateToReportDetail = { name, url ->
-                                                    selectedReportName = name
-                                                    selectedReportUrl = url
-                                                    navigateToDest(Routes.REPORT_DETAIL)
-                                                },
-                                                selectedMember = selectedMember,
-                                                onMemberSelected = { selectedMember = it },
-                                                members = displayMembers,
-                                                bloodPressure = bloodPressure,
-                                                bloodType = bloodType,
-                                                bloodSugar = bloodSugar,
-                                                onRefreshProfile = { profileViewModel.loadProfile() }
-                                            )
-                                        }
-
-                                        Routes.USER_LIST -> {
-                                            if (currentRole == UserRole.ADMIN) {
-                                                UserListScreen(
-                                                    onNavigateToUserDetail = { uid ->
-                                                        selectedUserUid = uid
-                                                        navigateToDest(Routes.USER_DETAIL)
-                                                    },
-                                                    onNavigateToUserProfile = { uid ->
-                                                        selectedUserUid = uid
-                                                        navigateToDest(Routes.ADMIN_USER_PROFILE)
-                                                    }
-                                                )
-                                            } else {
-                                                UserHomeScreen(
-                                                    onNavigateToReportDetail = { name, url ->
-                                                        selectedReportName = name
-                                                        selectedReportUrl = url
-                                                        navigateToDest(Routes.REPORT_DETAIL)
-                                                    },
-                                                    selectedMember = selectedMember,
-                                                    onMemberSelected = { selectedMember = it },
-                                                    members = displayMembers,
-                                                    bloodPressure = bloodPressure,
-                                                    bloodType = bloodType,
-                                                    bloodSugar = bloodSugar,
-                                                    onRefreshProfile = { profileViewModel.loadProfile() }
-                                                )
-                                            }
-                                        }
-
-                                        Routes.USER_HOME -> UserHomeScreen(
-                                            onNavigateToReportDetail = { name, url ->
-                                                selectedReportName = name
-                                                selectedReportUrl = url
-                                                navigateToDest(
-                                                    Routes.REPORT_DETAIL
-                                                )
-                                            },
-                                            selectedMember = selectedMember,
-                                            onMemberSelected = { selectedMember = it },
-                                            members = displayMembers,
-                                            bloodPressure = bloodPressure,
-                                            bloodType = bloodType,
-                                            bloodSugar = bloodSugar,
-                                            onRefreshProfile = { profileViewModel.loadProfile() }
-                                        )
-
-                                        Routes.USER_REPORTS -> UserReportsScreen(
-                                            onNavigateToReportDetail = { name, url ->
-                                                selectedReportName = name
-                                                selectedReportUrl = url
-                                                navigateToDest(
-                                                    Routes.REPORT_DETAIL
-                                                )
-                                            },
-                                            selectedMember = selectedMember,
-                                            onMemberSelected = { selectedMember = it },
-                                            members = displayMembers,
-                                            onNavigateToLogin = { navigateToDest(Routes.LOGIN) }
-                                        )
-
-                                        Routes.SETTINGS -> SettingsScreen(
-                                            onNavigateToEditProfile = {
-                                                navigateToDest(
-                                                    Routes.EDIT_PROFILE
-                                                )
-                                            },
-                                            onNavigateToDeleteAction = { mode ->
-                                                navigateToDest(
-                                                    "${Routes.DELETE_ACTION}/${mode.name}"
-                                                )
-                                            },
-                                            onNavigateToAboutUs = {
-                                                navigateToDest(
-                                                    Routes.ABOUT_US
-                                                )
-                                            },
-                                            onNavigateToLogin = { navigateToDest(Routes.LOGIN) },
-                                            onSignOut = {
-                                                coroutineScope.launch {
-                                                    settingsManager.setUserRole("USER")
-                                                    activeRole = UserRole.USER
-                                                }
-                                                authViewModel.signOut()
-                                                navController.navigate(Routes.LOGIN) {
-                                                    popUpTo(navController.graph.id) {
-                                                        inclusive = true
-                                                    }
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            } // end of Box hazeSource
-                        } // end of Scaffold content lambda
-
-                        // Upload Dialog Overlay
-                        AnimatedVisibility(
-                            visible = showUploadDialog,
-                            enter = fadeIn(animationSpec = tween(300)),
-                            exit = fadeOut(animationSpec = tween(300)),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            UploadDataDialog(
-                                onDismiss = { showUploadDialog = false },
-                                buttonCenter = uploadButtonCenter
-                            )
-                        }
-                    } // End of outer Box wrapping Scaffold
+                            authViewModel.signOut()
+                            navController.navigate(Routes.LOGIN) {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                            }
+                        },
+                        onNavigateToLogin = { navigateToDest(Routes.LOGIN) }
+                    )
                 }
 
                 // ================== OTHER SCREENS =======================
@@ -549,48 +382,17 @@ fun NavApp(
                     }
                     DeleteActionScreen(
                         mode = mode,
-                        onComplete = { onResult ->
-                            if (mode == DeleteActionMode.ACCOUNT) {
-                                profileViewModel.deleteAccount { success, msg ->
-                                    if (success) {
-                                        GlobalToastManager.showToast(
-                                            message = msg,
-                                            icon = Icons.Default.Delete
-                                        )
-                                        coroutineScope.launch {
-                                            settingsManager.setUserRole("USER")
-                                        }
-                                        authViewModel.signOut()
-                                        navController.navigate(Routes.LOGIN) {
-                                            popUpTo(navController.graph.id) {
-                                                inclusive = true
-                                            }
-                                        }
-                                    } else {
-                                        GlobalToastManager.showToast(
-                                            message = msg,
-                                            icon = Icons.Default.Error
-                                        )
-                                    }
-                                    onResult(success)
-                                }
-                            } else {
-                                profileViewModel.deleteData { success, msg ->
-                                    if (success) {
-                                        GlobalToastManager.showToast(
-                                            message = msg,
-                                            icon = Icons.Default.Delete
-                                        )
-                                        navController.popBackStack()
-                                    } else {
-                                        GlobalToastManager.showToast(
-                                            message = msg,
-                                            icon = Icons.Default.Error
-                                        )
-                                    }
-                                    onResult(success)
-                                }
+                        onAccountDeleted = {
+                            coroutineScope.launch {
+                                settingsManager.setUserRole("USER")
                             }
+                            authViewModel.signOut()
+                            navController.navigate(Routes.LOGIN) {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                            }
+                        },
+                        onDataDeleted = {
+                            navController.popBackStack()
                         }
                     )
                 }
