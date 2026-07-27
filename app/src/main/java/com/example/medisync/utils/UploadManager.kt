@@ -119,6 +119,7 @@ object UploadManager : KoinComponent {
 
                 MediaManager.get()
                     .upload(safeUri)
+                    .unsigned("medisync_preset")
                     .callback(object : UploadCallback {
                         override fun onStart(requestId: String?) {}
 

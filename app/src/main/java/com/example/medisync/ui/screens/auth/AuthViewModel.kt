@@ -149,6 +149,15 @@ class AuthViewModel(
     }
 
     fun completeProfile(firstName: String, lastName: String, phoneNumber: String) {
+        if (firstName.trim().length < 2) {
+            _authState.value = AuthState.Error("First name must be at least 2 characters")
+            return
+        }
+        if (phoneNumber.trim().length < 10) {
+            _authState.value = AuthState.Error("Please enter a valid phone number (min 10 digits)")
+            return
+        }
+
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             try {

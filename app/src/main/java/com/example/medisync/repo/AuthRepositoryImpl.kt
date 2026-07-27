@@ -36,4 +36,13 @@ class AuthRepositoryImpl(
     override suspend fun signOut() {
         auth.signOut()
     }
+
+    override suspend fun deleteCurrentUser(): Result<Unit> {
+        return try {
+            auth.currentUser?.delete()?.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

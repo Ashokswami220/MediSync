@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      // Check if the requesting user's profile has role == 'ADMIN'
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
+    // USERS COLLECTION
+    match /users/{userId} {
+      // Authenticated users can read profiles (needed to display members)
+      allow read: if isAuthenticated();
+
+      // Users can create their own profile, but CANNOT set role to 'ADMIN'
+      allow create: if isAuthenticated() && isOwner(userId) && request.resource.data.role != 'ADMIN';
+      
+      // Users can update their own profile, but CANNOT escalate to 'ADMIN'
+      allow update: if isAuthenticated() && isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || request.resource.data.role == resource.data.role);
+
+      // Users can delete their own profile
+      allow delete: if isAuthenticated() && isOwner(userId);
+
+      // Admins can do anything
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    // UPLOADED DOCUMENTS COLLECTION
+    match /uploaded_documents/{docId} {
+      // Users can read and delete documents where they are the linked user
+      allow read, delete: if isAuthenticated() && resource.data.linkedUserUid == request.auth.uid;
+      
+      // Admins can read, create, update, delete all documents
+      allow read, write: if isAuthenticated() && isAdmin();
+    }
+
+  }
+}

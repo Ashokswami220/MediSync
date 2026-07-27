@@ -1,15 +1,13 @@
 package com.example.medisync.ui.screens.common
 
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.CancellationException
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.AuthRepository
-import com.example.medisync.repo.UserRepository
 import com.example.medisync.repo.DocumentRepository
-
+import com.example.medisync.repo.UserRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,17 +53,18 @@ class ProfileViewModel(
             try {
                 val currentUser = authRepo.getCurrentUserSync()
                 if (currentUser != null) {
-                    userRepo.getUserProfile(currentUser.uid).collect { profile ->
-                        if (profile != null) {
-                            _profileState.value = ProfileState.Success(profile)
-                        } else {
-                            // If null is emitted (e.g., from empty cache), keep state as Loading 
-                            // until server responds, or fallback if it persists.
-                            if (_profileState.value !is ProfileState.Success) {
-                                _profileState.value = ProfileState.Loading
+                    userRepo.getUserProfile(currentUser.uid)
+                        .collect { profile ->
+                            if (profile != null) {
+                                _profileState.value = ProfileState.Success(profile)
+                            } else {
+                                // If null is emitted (e.g., from empty cache), keep state as Loading
+                                // until server responds, or fallback if it persists.
+                                if (_profileState.value !is ProfileState.Success) {
+                                    _profileState.value = ProfileState.Loading
+                                }
                             }
                         }
-                    }
                 } else {
                     _profileState.value = ProfileState.Error("User not logged in.")
                 }
@@ -115,10 +114,26 @@ class ProfileViewModel(
                 val user = authRepo.getCurrentUserSync()
                 val uid = user?.uid
                 if (uid != null) {
-                    documentRepo.clearDataForUsers(listOf(uid))
-                    userRepo.deleteUsers(listOf(uid))
+                    val docResult = documentRepo.clearDataForUsers(listOf(uid))
+                    if (docResult.isFailure) throw docResult.exceptionOrNull() ?: Exception(
+                        "Failed to clear documents"
+                    )
+
+                    val userResult = userRepo.deleteUsers(listOf(uid))
+                    if (userResult.isFailure) throw userResult.exceptionOrNull() ?: Exception(
+                        "Failed to delete user profile"
+                    )
+
+                    val authResult = authRepo.deleteCurrentUser()
+                    if (authResult.isFailure) {
+                        // User might need to re-authenticate before deleting account
+                        throw authResult.exceptionOrNull() ?: Exception(
+                            "Failed to delete authentication user (You may need to log in again)"
+                        )
+                    }
+                } else {
+                    authRepo.signOut()
                 }
-                authRepo.signOut()
                 onResult(true, "Account deleted successfully")
             } catch (e: Exception) {
                 onResult(false, e.message ?: "Failed to wipe account data")
