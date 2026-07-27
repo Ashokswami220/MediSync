@@ -47,8 +47,12 @@ class DocumentRepositoryImpl(private val firestore: FirebaseFirestore) : Documen
     }
 
     override fun getDocuments(userUid: String?): Flow<List<DocumentMetadata>> = callbackFlow {
-        // Fetch all documents and filter locally to avoid Firestore query issues
-        val query: Query = firestore.collection("uploaded_documents")
+        // Use whereEqualTo for standard users so Firestore security rules don't block the read
+        val query: Query = if (userUid != null) {
+            firestore.collection("uploaded_documents").whereEqualTo("linkedUserUid", userUid)
+        } else {
+            firestore.collection("uploaded_documents")
+        }
 
         val listenerRegistration = query.addSnapshotListener { snapshot, error ->
             if (error != null) {
@@ -58,13 +62,7 @@ class DocumentRepositoryImpl(private val firestore: FirebaseFirestore) : Documen
 
             if (snapshot != null) {
                 val documents = snapshot.documents.mapNotNull { doc ->
-                    val metadata = doc.toObject(DocumentMetadata::class.java)
-                        ?.copy(id = doc.id)
-                    if (userUid != null && metadata?.linkedUserUid != userUid) {
-                        null // Filter locally
-                    } else {
-                        metadata
-                    }
+                    doc.toObject(DocumentMetadata::class.java)?.copy(id = doc.id)
                 }
                     .sortedByDescending { it.uploadedAt }
                 trySend(documents)

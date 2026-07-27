@@ -113,6 +113,16 @@ class UserListViewModel(
             val result = documentRepository.clearDataForUsers(uids)
             _isLoading.value = false
             if (result.isSuccess) {
+                val updates = mapOf(
+                    "members" to emptyList<String>(),
+                    "bloodType" to "",
+                    "bloodPressure" to "",
+                    "bloodSugar" to "",
+                    "documents" to emptyList<String>()
+                )
+                uids.forEach { uid ->
+                    userRepository.updateUserProfile(uid, updates)
+                }
                 onResult(true, "Successfully cleared data")
             } else {
                 onResult(false, result.exceptionOrNull()?.message ?: "Failed to clear data")

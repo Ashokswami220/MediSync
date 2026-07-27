@@ -56,6 +56,14 @@ class UserDetailViewModel(
         viewModelScope.launch {
             val result = documentRepository.clearDataForUsers(listOf(uid))
             if (result.isSuccess) {
+                val updates = mapOf(
+                    "members" to emptyList<String>(),
+                    "bloodType" to "",
+                    "bloodPressure" to "",
+                    "bloodSugar" to "",
+                    "documents" to emptyList<String>()
+                )
+                userRepository.updateUserProfile(uid, updates)
                 onResult(true, "Successfully cleared data")
             } else {
                 onResult(false, result.exceptionOrNull()?.message ?: "Failed to clear data")

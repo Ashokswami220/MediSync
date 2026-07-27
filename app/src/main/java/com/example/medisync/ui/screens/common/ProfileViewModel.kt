@@ -147,7 +147,14 @@ class ProfileViewModel(
                 val uid = authRepo.getCurrentUserSync()?.uid
                 if (uid != null) {
                     documentRepo.clearDataForUsers(listOf(uid))
-                    userRepo.updateUserProfile(uid, mapOf("members" to emptyList<String>()))
+                    val updates = mapOf(
+                        "members" to emptyList<String>(),
+                        "bloodType" to "",
+                        "bloodPressure" to "",
+                        "bloodSugar" to "",
+                        "documents" to emptyList<String>()
+                    )
+                    userRepo.updateUserProfile(uid, updates)
                 }
                 onResult(true, "Data cleared successfully")
             } catch (e: Exception) {
