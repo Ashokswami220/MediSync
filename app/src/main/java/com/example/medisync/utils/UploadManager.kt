@@ -1,27 +1,29 @@
 package com.example.medisync.utils
 
-import java.io.File
-import java.io.FileOutputStream
-
 import android.content.Context
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import com.cloudinary.android.MediaManager
-import com.google.firebase.auth.FirebaseAuth
 import com.cloudinary.android.callback.ErrorInfo
 import com.cloudinary.android.callback.UploadCallback
-import android.webkit.MimeTypeMap
 import com.example.medisync.repo.DocumentRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.SupervisorJob
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import java.io.File
+import java.io.FileOutputStream
 import kotlin.time.Duration.Companion.milliseconds
 
-object UploadManager {
-    
+object UploadManager : KoinComponent {
+    private val repository: DocumentRepository by inject()
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     enum class UploadState {
@@ -42,10 +44,9 @@ object UploadManager {
         context: Context,
         fileUri: Uri,
         docName: String,
-        uName: String,
-        uUid: String,
-        cleanMember: String,
-        repository: DocumentRepository
+        userName: String,
+        userUid: String,
+        memberName: String
     ) {
         if (_uploadStatus.value.state == UploadState.UPLOADING) {
             return
@@ -55,7 +56,7 @@ object UploadManager {
             state = UploadState.UPLOADING,
             progress = 0f,
             docName = docName,
-            targetUid = uUid
+            targetUid = userUid
         )
 
         scope.launch {
@@ -64,21 +65,25 @@ object UploadManager {
                 // Copy the content URI to a temporary file to avoid SecurityExceptions with WorkManager
                 val contentResolver = context.contentResolver
                 val inputStream = contentResolver.openInputStream(fileUri)
-                
+
                 var extension = ""
                 if (fileUri.scheme == "content") {
                     val mimeType = contentResolver.getType(fileUri)
                     if (mimeType != null) {
-                        extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: ""
+                        extension = MimeTypeMap.getSingleton()
+                            .getExtensionFromMimeType(mimeType) ?: ""
                     }
                 } else if (fileUri.scheme == "file") {
                     extension = MimeTypeMap.getFileExtensionFromUrl(fileUri.toString())
                 }
                 if (extension.isEmpty()) {
-                    extension = if (fileUri.toString().contains(".pdf")) "pdf" else "jpg"
+                    extension = if (fileUri.toString()
+                            .contains(".pdf")
+                    ) "pdf" else "jpg"
                 }
 
-                tempFile = File(context.cacheDir, "upload_temp_${System.currentTimeMillis()}.$extension")
+                tempFile =
+                    File(context.cacheDir, "upload_temp_${System.currentTimeMillis()}.$extension")
                 val outputStream = FileOutputStream(tempFile)
                 inputStream?.use { input ->
                     outputStream.use { output ->
@@ -107,7 +112,8 @@ object UploadManager {
                     while (fakeProgress < 0.9f) {
                         delay(300.milliseconds)
                         fakeProgress += 0.05f
-                        _uploadStatus.value = _uploadStatus.value.copy(progress = fakeProgress.coerceAtMost(0.9f))
+                        _uploadStatus.value =
+                            _uploadStatus.value.copy(progress = fakeProgress.coerceAtMost(0.9f))
                     }
                 }
 
@@ -140,9 +146,9 @@ object UploadManager {
                                         repository.saveDocumentMetadata(
                                             documentName = docName,
                                             fileUrl = fileUrl,
-                                            linkedUser = uName,
-                                            linkedUserUid = uUid,
-                                            linkedMember = cleanMember,
+                                            linkedUser = userName,
+                                            linkedUserUid = userUid,
+                                            linkedMember = memberName,
                                             publicId = publicId,
                                             resourceType = resourceType,
                                             uploaderEmail = uploaderEmail
@@ -193,12 +199,13 @@ object UploadManager {
                             progressJob.cancel()
                             tempFile.delete()
                             val rawError = error?.description ?: "Upload failed"
-                            val friendlyError = if (rawError.contains("file size too large", ignoreCase = true)) {
-                                "File is too large (Maximum allowed is 10MB)"
-                            } else {
-                                rawError
-                            }
-                            
+                            val friendlyError =
+                                if (rawError.contains("file size too large", ignoreCase = true)) {
+                                    "File is too large (Maximum allowed is 10MB)"
+                                } else {
+                                    rawError
+                                }
+
                             _uploadStatus.value = _uploadStatus.value.copy(
                                 state = UploadState.ERROR,
                                 errorMsg = friendlyError

@@ -2,9 +2,9 @@ package com.example.medisync.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.repo.UserRepository
-import com.example.medisync.repo.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -90,7 +90,6 @@ class UserListViewModel(
                 }
         }
     }
-
 
 
     fun deleteSelectedUsers(uids: List<String>, onResult: (Boolean, String) -> Unit) {

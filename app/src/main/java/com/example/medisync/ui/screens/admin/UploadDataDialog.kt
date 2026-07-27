@@ -1,9 +1,10 @@
 package com.example.medisync.ui.screens.admin
 
-import kotlinx.coroutines.withContext
-import java.io.File
-
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -71,21 +72,19 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.graphics.BitmapFactory
-import android.graphics.Paint
-import android.graphics.RectF
-import android.graphics.pdf.PdfDocument
 import androidx.core.content.FileProvider
-import kotlinx.coroutines.Dispatchers
-import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.model.UserProfile
 import com.example.medisync.model.UserRole
+
 import com.example.medisync.repo.UserRepository
 import com.example.medisync.ui.components.MemberSwitcher
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.UploadManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
+import java.io.File
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,7 +97,7 @@ fun AnimatedVisibilityScope.UploadDataDialog(
     BackHandler { onDismiss() }
 
     val context = LocalContext.current
-    val repository: DocumentRepository = koinInject()
+
     val userRepository: UserRepository = koinInject()
 
     val users by userRepository.getAllUsers()
@@ -238,9 +237,9 @@ fun AnimatedVisibilityScope.UploadDataDialog(
                             return@UploadActionButtons
                         }
 
-                        val uName = "${selectedUser?.firstName} ${selectedUser?.lastName}".trim()
-                        val uUid = selectedUser?.uid ?: ""
-                        val cleanMember = selectedMember
+                        val userName = "${selectedUser?.firstName} ${selectedUser?.lastName}".trim()
+                        val userUid = selectedUser?.uid ?: ""
+                        val memberName = selectedMember
 
                         val finalDocName = if (docName.trim()
                                 .endsWith("Report", ignoreCase = true)
@@ -250,10 +249,9 @@ fun AnimatedVisibilityScope.UploadDataDialog(
                             context = context,
                             fileUri = selectedFileUri!!,
                             docName = finalDocName,
-                            uName = uName,
-                            uUid = uUid,
-                            cleanMember = cleanMember,
-                            repository = repository
+                            userName = userName,
+                            userUid = userUid,
+                            memberName = memberName
                         )
 
                         onDismiss()

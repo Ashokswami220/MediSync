@@ -36,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -46,6 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.medisync.data.SettingsManager
 import com.example.medisync.model.UserRole
+import com.example.medisync.ui.components.GlassNavBar
 import com.example.medisync.ui.components.UploadProgressToast
 import com.example.medisync.ui.screens.admin.AdminHomeScreen
 import com.example.medisync.ui.screens.admin.UploadDataDialog
@@ -73,6 +73,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 const val ANIM_DURATION = 400
 val ANIM_EASING = FastOutSlowInEasing
@@ -87,8 +88,7 @@ fun NavApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: startDestination
 
-    val context = LocalContext.current
-    val settingsManager = remember { SettingsManager(context) }
+    val settingsManager = koinInject<SettingsManager>()
     val cachedRoleString by settingsManager.userRoleFlow.collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
 
@@ -288,9 +288,8 @@ fun NavApp(
                         }
                     }
                 ) {
-                    val context = LocalContext.current
                     val coroutineScope = rememberCoroutineScope()
-                    val settingsManager = remember { SettingsManager(context) }
+                    val settingsManager = koinInject<SettingsManager>()
 
                     AuthFlowScreen(
                         onNavigateNext = {
@@ -620,9 +619,8 @@ fun NavApp(
                         }
                     }
                 ) {
-                    val context = LocalContext.current
                     val coroutineScope = rememberCoroutineScope()
-                    val settingsManager = remember { SettingsManager(context) }
+                    val settingsManager = koinInject<SettingsManager>()
 
                     StandaloneLoginScreen(
                         viewModel = authViewModel,

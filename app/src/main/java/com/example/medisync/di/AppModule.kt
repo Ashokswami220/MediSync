@@ -1,13 +1,13 @@
 package com.example.medisync.di
 
 import android.app.Application
-
-import com.example.medisync.repo.DocumentRepository
-import com.example.medisync.repo.DocumentRepositoryImpl
 import androidx.room.Room
+import com.example.medisync.data.SettingsManager
 import com.example.medisync.data.local.room.MediSyncDatabase
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.AuthRepositoryImpl
+import com.example.medisync.repo.DocumentRepository
+import com.example.medisync.repo.DocumentRepositoryImpl
 import com.example.medisync.repo.UserRepository
 import com.example.medisync.repo.UserRepositoryImpl
 import com.example.medisync.ui.screens.admin.AdminUserProfileViewModel
@@ -43,6 +43,9 @@ val appModule = module {
     single<AuthRepository> { AuthRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get(), get()) }
     single<DocumentRepository> { DocumentRepositoryImpl(get()) }
+
+    // Settings
+    single { SettingsManager(androidContext()) }
 
     // ViewModels
     viewModel { AuthViewModel(get(), get(), androidContext() as Application) }

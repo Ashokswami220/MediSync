@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.example.medisync.ui.navigation.HomeTopBar
+import com.example.medisync.ui.components.HomeTopBar
 import com.example.medisync.ui.screens.user.AnimatedSloganText
 import com.example.medisync.ui.screens.user.HealthStatsGrid
 import com.example.medisync.ui.screens.user.PharmacistSection

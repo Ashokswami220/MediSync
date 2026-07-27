@@ -40,7 +40,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
-import com.example.medisync.ui.components.UserAvatar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -68,7 +67,8 @@ import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.ui.components.AppearanceBottomSheet
 import com.example.medisync.ui.components.LanguageBottomSheet
-import com.example.medisync.ui.navigation.TopBar
+import com.example.medisync.ui.components.TopBar
+import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.ui.theme.LocalAppearance
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
@@ -120,7 +120,7 @@ fun SettingsScreen(
 
     var showAppearanceSheet by remember { mutableStateOf(false) }
     var currentAppearance by LocalAppearance.current
-    val settingsManager = remember { SettingsManager(context) }
+    val settingsManager = koinInject<SettingsManager>()
     val isHaptic by settingsManager.hapticsFlow.collectAsState(initial = true)
     val coroutineScope = rememberCoroutineScope()
 
@@ -362,7 +362,7 @@ fun SettingsScreen(
                         icon = Icons.Default.Info,
                         title = "About Us",
                         showArrow = true,
-                        onClick = { 
+                        onClick = {
                             HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                             onNavigateToAboutUs()
                         }

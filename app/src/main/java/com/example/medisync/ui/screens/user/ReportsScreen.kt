@@ -1,9 +1,5 @@
 package com.example.medisync.ui.screens.user
 
-import kotlinx.coroutines.delay
-
-import com.example.medisync.model.DocumentMetadata
-import com.example.medisync.R
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -27,29 +23,26 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.MedicalInformation
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.pullRefreshIndicatorTransform
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.ButtonDefaults.outlinedButtonColors
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import com.example.medisync.ui.components.CustomToast
-import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.material.pullrefresh.pullRefreshIndicatorTransform
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -61,27 +54,32 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.medisync.ui.navigation.TopBar
-import com.example.medisync.utils.HapticHelper
+import com.example.medisync.R
+import com.example.medisync.model.DocumentMetadata
 import com.example.medisync.repo.AuthRepository
-import org.koin.compose.koinInject
+import com.example.medisync.ui.components.CustomToast
+import com.example.medisync.ui.components.TopBar
+import com.example.medisync.utils.HapticHelper
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import java.text.SimpleDateFormat
 import java.util.Date
 import kotlin.time.Duration.Companion.milliseconds
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun UserReportsScreen(
     viewModel: ReportsViewModel = koinViewModel(),
@@ -197,14 +195,16 @@ fun UserReportsScreen(
                                 )
                             }
                         }
+
                         is ReportsState.Empty -> {
                             EmptyReportsState(colorScheme = colorScheme)
                         }
+
                         is ReportsState.Success -> {
                             val mainUser = members.firstOrNull() ?: "User"
                             val isMainUser = selectedMember == mainUser
                             val otherMembers = members.filter { it != mainUser }
-                            
+
                             val filteredDocuments = state.documents.filter { doc ->
                                 if (isMainUser) {
                                     // Fallback for old/legacy reports: if it's the main user, 
@@ -224,6 +224,7 @@ fun UserReportsScreen(
                                 )
                             }
                         }
+
                         is ReportsState.Error -> {
                             // Show error or empty state
                             EmptyReportsState(colorScheme = colorScheme)
@@ -234,12 +235,13 @@ fun UserReportsScreen(
                 // Add padding at the bottom for NavBar
                 Spacer(modifier = Modifier.height(120.dp))
             }
-            
+
             // Custom Pull to Refresh Indicator
             if (pullRefreshState.progress > 0 || isRefreshing) {
-                val scale = if (isRefreshing) 1f else (pullRefreshState.progress * 1.2f).coerceIn(0f, 1.2f)
+                val scale =
+                    if (isRefreshing) 1f else (pullRefreshState.progress * 1.2f).coerceIn(0f, 1.2f)
                 val alpha = if (isRefreshing) 1f else pullRefreshState.progress.coerceIn(0f, 1f)
-                
+
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -257,7 +259,7 @@ fun UserReportsScreen(
                     )
                 }
             }
-            
+
             // Custom Toast Overlay
             Box(
                 modifier = Modifier
