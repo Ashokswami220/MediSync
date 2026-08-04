@@ -206,12 +206,23 @@ fun UserReportsScreen(
                             val otherMembers = members.filter { it != mainUser }
 
                             val filteredDocuments = state.documents.filter { doc ->
-                                if (isMainUser) {
-                                    // Fallback for old/legacy reports: if it's the main user, 
-                                    // show reports that don't explicitly belong to sub-members.
+                                val matchesMember = if (isMainUser) {
                                     !otherMembers.contains(doc.linkedMember)
                                 } else {
                                     doc.linkedMember == selectedMember
+                                }
+                                val matchesSearch = searchQuery.isBlank() || doc.documentName.contains(searchQuery, ignoreCase = true)
+                                val matchesCategory = if (selectedCategory == "All") {
+                                    true
+                                } else {
+                                    doc.documentName.contains(selectedCategory, ignoreCase = true)
+                                }
+                                matchesMember && matchesSearch && matchesCategory
+                            }.sortedWith { a, b ->
+                                if (selectedSort == "Oldest First") {
+                                    a.uploadedAt.compareTo(b.uploadedAt)
+                                } else {
+                                    b.uploadedAt.compareTo(a.uploadedAt)
                                 }
                             }
                             if (filteredDocuments.isEmpty()) {
@@ -496,7 +507,7 @@ fun ReportsList(
 ) {
     val dateFormatter =
         SimpleDateFormat("MMM dd, yyyy", LocalLocale.current.platformLocale)
-    val groupFormatter = SimpleDateFormat("yyyy", LocalLocale.current.platformLocale)
+    val groupFormatter = SimpleDateFormat("MMM yyyy", LocalLocale.current.platformLocale)
 
     val groupedReports = filteredDocuments.groupBy { doc ->
         groupFormatter.format(Date(doc.uploadedAt))
