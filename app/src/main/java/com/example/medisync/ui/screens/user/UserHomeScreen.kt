@@ -174,7 +174,8 @@ fun UserHomeScreen(
             },
             selectedMember = selectedMember,
             onMemberSelected = onMemberSelected,
-            members = members
+            members = members,
+            showAllOption = false
         )
 
         if (showCallSheet) {

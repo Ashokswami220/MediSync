@@ -63,6 +63,7 @@ fun TopBar(
     selectedMember: String = "User",
     onMemberSelected: (String) -> Unit = {},
     members: List<String> = emptyList(),
+    showAllOption: Boolean = false,
     extraActions: @Composable RowScope.() -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -152,10 +153,15 @@ fun TopBar(
                         val isLoggedIn = currentUser != null
 
                         if (isLoggedIn) {
+                            val displayMembers = if (showAllOption) {
+                                listOf("All") + members
+                            } else {
+                                members
+                            }
                             MemberSwitcher(
                                 selectedMember = selectedMember,
                                 onMemberSelected = onMemberSelected,
-                                members = members
+                                members = displayMembers
                             )
                         }
                     }
@@ -202,6 +208,7 @@ fun HomeTopBar(
     selectedMember: String = "User",
     onMemberSelected: (String) -> Unit = {},
     members: List<String> = emptyList(),
+    showAllOption: Boolean = false,
     showMemberSwitcher: Boolean = true
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -280,10 +287,15 @@ fun HomeTopBar(
                 val isLoggedIn = currentUser != null
 
                 if (isLoggedIn && showMemberSwitcher) {
+                    val displayMembers = if (showAllOption) {
+                        listOf("All") + members
+                    } else {
+                        members
+                    }
                     MemberSwitcher(
                         selectedMember = selectedMember,
                         onMemberSelected = onMemberSelected,
-                        members = members
+                        members = displayMembers
                     )
                 }
 

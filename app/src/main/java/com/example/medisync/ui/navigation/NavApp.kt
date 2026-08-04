@@ -135,13 +135,25 @@ fun NavApp(
         }
     }
 
-    var selectedMember by rememberSaveable(displayMembers) {
-        mutableStateOf(displayMembers.firstOrNull() ?: "User")
+    var selectedHomeMember by rememberSaveable {
+        mutableStateOf("User")
+    }
+    var selectedReportMember by rememberSaveable {
+        mutableStateOf("All")
+    }
+
+    LaunchedEffect(displayMembers) {
+        if (selectedReportMember != "All" && selectedReportMember !in displayMembers) {
+            selectedReportMember = "All"
+        }
+        if (selectedHomeMember !in displayMembers) {
+            selectedHomeMember = displayMembers.firstOrNull() ?: "User"
+        }
     }
 
     val currentProfile = (profileState as? ProfileState.Success)?.profile
     val mainUserName = currentProfile?.firstName?.ifEmpty { "User" } ?: "User"
-    val isMainUser = selectedMember == mainUserName
+    val isMainUser = selectedHomeMember == mainUserName
     
     val currentVitals = if (isMainUser) {
         MemberVitals(
@@ -150,7 +162,7 @@ fun NavApp(
             bloodSugar = currentProfile?.bloodSugar ?: ""
         )
     } else {
-        currentProfile?.memberVitals?.get(selectedMember) ?: MemberVitals()
+        currentProfile?.memberVitals?.get(selectedHomeMember) ?: MemberVitals()
     }
 
     val bloodPressure = currentVitals.bloodPressure
@@ -308,8 +320,10 @@ fun NavApp(
                         bloodPressure = bloodPressure,
                         bloodType = bloodType,
                         bloodSugar = bloodSugar,
-                        selectedMember = selectedMember,
-                        onMemberSelected = { selectedMember = it },
+                        selectedHomeMember = selectedHomeMember,
+                        onHomeMemberSelected = { selectedHomeMember = it },
+                        selectedReportMember = selectedReportMember,
+                        onReportMemberSelected = { selectedReportMember = it },
                         onNavigateToReportDetail = { name, url ->
                             selectedReportName = name
                             selectedReportUrl = url

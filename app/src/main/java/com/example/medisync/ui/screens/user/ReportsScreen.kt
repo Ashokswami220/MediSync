@@ -140,7 +140,8 @@ fun UserReportsScreen(
             onSearchQueryChange = { searchQuery = it },
             selectedMember = selectedMember,
             onMemberSelected = onMemberSelected,
-            members = members
+            members = members,
+            showAllOption = true
         )
 
         val authRepo: AuthRepository = koinInject()
@@ -206,7 +207,9 @@ fun UserReportsScreen(
                             val otherMembers = members.filter { it != mainUser }
 
                             val filteredDocuments = state.documents.filter { doc ->
-                                val matchesMember = if (isMainUser) {
+                                val matchesMember = if (selectedMember == "All") {
+                                    true
+                                } else if (isMainUser) {
                                     !otherMembers.contains(doc.linkedMember)
                                 } else {
                                     doc.linkedMember == selectedMember

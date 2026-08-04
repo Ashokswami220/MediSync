@@ -42,8 +42,10 @@ fun MainTabsScreen(
     bloodPressure: String,
     bloodType: String,
     bloodSugar: String,
-    selectedMember: String,
-    onMemberSelected: (String) -> Unit,
+    selectedHomeMember: String,
+    onHomeMemberSelected: (String) -> Unit,
+    selectedReportMember: String,
+    onReportMemberSelected: (String) -> Unit,
     onNavigateToReportDetail: (name: String, url: String) -> Unit,
     onNavigateToUserDetail: (uid: String) -> Unit,
     onNavigateToUserProfile: (uid: String) -> Unit,
@@ -78,6 +80,9 @@ fun MainTabsScreen(
     val homeRoute = if (currentRole == UserRole.ADMIN) Routes.ADMIN_HOME else Routes.USER_HOME
     val isBottomBarTabButNotHome = currentTabRoute != homeRoute
     BackHandler(enabled = isBottomBarTabButNotHome) {
+        if (currentTabRoute == Routes.USER_REPORTS) {
+            onReportMemberSelected("All")
+        }
         currentTabRoute = homeRoute
     }
 
@@ -92,6 +97,9 @@ fun MainTabsScreen(
                         if (route == Routes.UPLOAD_DATA) {
                             showUploadDialog = !showUploadDialog
                         } else {
+                            if (route != Routes.USER_REPORTS && currentTabRoute == Routes.USER_REPORTS) {
+                                onReportMemberSelected("All")
+                            }
                             currentTabRoute = route
                         }
                     },
@@ -116,8 +124,8 @@ fun MainTabsScreen(
                         Routes.ADMIN_HOME -> {
                             if (currentRole == UserRole.ADMIN) AdminHomeScreen() else UserHomeScreen(
                                 onNavigateToReportDetail = onNavigateToReportDetail,
-                                selectedMember = selectedMember,
-                                onMemberSelected = onMemberSelected,
+                                selectedMember = selectedHomeMember,
+                                onMemberSelected = onHomeMemberSelected,
                                 members = displayMembers,
                                 bloodPressure = bloodPressure,
                                 bloodType = bloodType,
@@ -135,8 +143,8 @@ fun MainTabsScreen(
                             } else {
                                 UserHomeScreen(
                                     onNavigateToReportDetail = onNavigateToReportDetail,
-                                    selectedMember = selectedMember,
-                                    onMemberSelected = onMemberSelected,
+                                    selectedMember = selectedHomeMember,
+                                    onMemberSelected = onHomeMemberSelected,
                                     members = displayMembers,
                                     bloodPressure = bloodPressure,
                                     bloodType = bloodType,
@@ -148,8 +156,8 @@ fun MainTabsScreen(
 
                         Routes.USER_HOME -> UserHomeScreen(
                             onNavigateToReportDetail = onNavigateToReportDetail,
-                            selectedMember = selectedMember,
-                            onMemberSelected = onMemberSelected,
+                            selectedMember = selectedHomeMember,
+                            onMemberSelected = onHomeMemberSelected,
                             members = displayMembers,
                             bloodPressure = bloodPressure,
                             bloodType = bloodType,
@@ -159,8 +167,8 @@ fun MainTabsScreen(
 
                         Routes.USER_REPORTS -> UserReportsScreen(
                             onNavigateToReportDetail = onNavigateToReportDetail,
-                            selectedMember = selectedMember,
-                            onMemberSelected = onMemberSelected,
+                            selectedMember = selectedReportMember,
+                            onMemberSelected = onReportMemberSelected,
                             members = displayMembers,
                             onNavigateToLogin = onNavigateToLogin
                         )
