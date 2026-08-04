@@ -48,5 +48,13 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && isAdmin();
     }
 
+    // CONFIG COLLECTION
+    match /config/{configId} {
+      // Anyone can read config
+      allow read: if true;
+      // Admins can write config
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
   }
 }

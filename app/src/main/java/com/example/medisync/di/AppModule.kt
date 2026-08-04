@@ -10,10 +10,13 @@ import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.repo.DocumentRepositoryImpl
 import com.example.medisync.repo.UserRepository
 import com.example.medisync.repo.UserRepositoryImpl
+import com.example.medisync.repo.ConfigRepository
+import com.example.medisync.repo.ConfigRepositoryImpl
 import com.example.medisync.ui.screens.admin.AdminUserProfileViewModel
 import com.example.medisync.ui.screens.admin.UserDetailViewModel
 import com.example.medisync.ui.screens.admin.UserListViewModel
 import com.example.medisync.ui.screens.auth.AuthViewModel
+import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.ui.screens.common.ProfileViewModel
 import com.example.medisync.ui.screens.user.ReportsViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -44,6 +47,7 @@ val appModule = module {
     single<AuthRepository> { AuthRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get(), get()) }
     single<DocumentRepository> { DocumentRepositoryImpl(get()) }
+    single<ConfigRepository> { ConfigRepositoryImpl(get()) }
 
     // Settings
     single { SettingsManager(androidContext()) }
@@ -55,4 +59,5 @@ val appModule = module {
     viewModel { UserDetailViewModel(get(), get()) }
     viewModel { AdminUserProfileViewModel(get()) }
     viewModel { ReportsViewModel(get(), get()) }
+    viewModel { ConfigViewModel(get()) }
 }

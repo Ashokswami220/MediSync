@@ -40,6 +40,7 @@ import com.example.medisync.model.UserRole
 import com.example.medisync.ui.components.UploadProgressToast
 import com.example.medisync.ui.screens.admin.UserDetailScreen
 import com.example.medisync.ui.screens.admin.UserProfileScreen
+import com.example.medisync.ui.screens.admin.AdminEditContactsScreen
 import com.example.medisync.ui.screens.auth.AuthFlowScreen
 import com.example.medisync.ui.screens.auth.AuthState
 import com.example.medisync.ui.screens.auth.AuthViewModel
@@ -338,6 +339,7 @@ fun NavApp(
                             navigateToDest(Routes.ADMIN_USER_PROFILE)
                         },
                         onNavigateToEditProfile = { navigateToDest(Routes.EDIT_PROFILE) },
+                        onNavigateToEditContacts = { navigateToDest(Routes.ADMIN_EDIT_CONTACTS) },
                         onNavigateToDeleteAction = { mode ->
                             navigateToDest("${Routes.DELETE_ACTION}/${mode.name}")
                         },
@@ -382,6 +384,15 @@ fun NavApp(
                         UserProfileScreen(
                             userUid = selectedUserUid,
                             onBackClick = { navController.popBackStack() }
+                        )
+                    } else {
+                        LaunchedEffect(Unit) { navController.popBackStack() }
+                    }
+                }
+                composable(route = Routes.ADMIN_EDIT_CONTACTS) {
+                    if (currentRole == UserRole.ADMIN) {
+                        AdminEditContactsScreen(
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     } else {
                         LaunchedEffect(Unit) { navController.popBackStack() }

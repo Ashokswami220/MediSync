@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -50,6 +51,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -64,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.example.medisync.data.SettingsManager
 import com.example.medisync.data.local.ContactConfig
+import com.example.medisync.model.UserRole
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.ui.components.AppearanceBottomSheet
 import com.example.medisync.ui.components.LanguageBottomSheet
@@ -79,7 +82,9 @@ import org.koin.compose.koinInject
 
 @Composable
 fun SettingsScreen(
+    currentRole: UserRole = UserRole.USER,
     onNavigateToEditProfile: () -> Unit = {},
+    onNavigateToEditContacts: () -> Unit = {},
     onNavigateToAboutUs: () -> Unit,
     onNavigateToDeleteAction: (DeleteActionMode) -> Unit,
     onNavigateToLogin: () -> Unit,
@@ -197,6 +202,60 @@ fun SettingsScreen(
                         contentDescription = "Edit Profile",
                         tint = colorScheme.onSurfaceVariant
                     )
+                }
+            }
+
+            if (currentRole == UserRole.ADMIN) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(colorScheme.surface)
+                        .border(1.dp, colorScheme.outlineVariant)
+                        .clickable {
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            onNavigateToEditContacts()
+                        }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(RoundedCornerShape(32.dp))
+                                .background(colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = "Edit Contacts",
+                                tint = colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(20.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Edit Contacts",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colorScheme.onBackground
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Manage pharmacists and support",
+                                fontSize = 14.sp,
+                                color = colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Go",
+                            tint = colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 

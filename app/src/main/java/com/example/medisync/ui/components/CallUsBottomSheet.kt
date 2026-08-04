@@ -35,6 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
+import com.example.medisync.ui.screens.common.ConfigViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import org.koin.androidx.compose.koinViewModel
 
 data class ContactOption(
     val name: String,
@@ -46,15 +50,31 @@ data class ContactOption(
 @Composable
 fun CallUsBottomSheet(
     onDismissRequest: () -> Unit,
-    onCallClick: (String) -> Unit
+    onCallClick: (String) -> Unit,
+    configViewModel: ConfigViewModel = koinViewModel()
 ) {
-    val contacts = listOf(
-        ContactOption("Sawai Singh", ContactConfig.pharmacistPhones.sawaiSingh, R.drawable.doctor1),
-        ContactOption("Govind", ContactConfig.pharmacistPhones.govind, R.drawable.doctor2),
-        ContactOption(
-            "Ashok Swami", ContactConfig.pharmacistPhones.thirdNum, R.drawable.holding_flowers
+    val appConfig by configViewModel.appConfig.collectAsState()
+    val dynamicContacts = appConfig.contacts.map { contact ->
+        val imageRes = when (contact.imageResName) {
+            "doctor1" -> R.drawable.doctor1
+            "doctor2" -> R.drawable.doctor2
+            "holding_flowers" -> R.drawable.holding_flowers
+            else -> R.drawable.holding_flowers
+        }
+        ContactOption(contact.name, contact.phone, imageRes)
+    }
+
+    val contacts = dynamicContacts.ifEmpty {
+        listOf(
+            ContactOption(
+                "Sawai Singh", ContactConfig.pharmacistPhones.sawaiSingh, R.drawable.doctor1
+            ),
+            ContactOption("Govind", ContactConfig.pharmacistPhones.govind, R.drawable.doctor2),
+            ContactOption(
+                "Ashok Swami", ContactConfig.pharmacistPhones.thirdNum, R.drawable.holding_flowers
+            )
         )
-    )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,

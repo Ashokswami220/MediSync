@@ -50,6 +50,7 @@ fun MainTabsScreen(
     onNavigateToUserDetail: (uid: String) -> Unit,
     onNavigateToUserProfile: (uid: String) -> Unit,
     onNavigateToEditProfile: () -> Unit,
+    onNavigateToEditContacts: () -> Unit,
     onNavigateToDeleteAction: (mode: DeleteActionMode) -> Unit,
     onNavigateToAboutUs: () -> Unit,
     onSignOut: () -> Unit,
@@ -180,7 +181,9 @@ fun MainTabsScreen(
                         )
 
                         Routes.SETTINGS -> SettingsScreen(
+                            currentRole = currentRole,
                             onNavigateToEditProfile = onNavigateToEditProfile,
+                            onNavigateToEditContacts = onNavigateToEditContacts,
                             onNavigateToDeleteAction = onNavigateToDeleteAction,
                             onNavigateToAboutUs = onNavigateToAboutUs,
                             onNavigateToLogin = onNavigateToLogin,

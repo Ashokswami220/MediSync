@@ -90,6 +90,8 @@ import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.example.medisync.ui.components.NotLoggedInState
 import com.example.medisync.ui.components.HorizEmptyReportsState
+import com.example.medisync.model.ContactModel
+import com.example.medisync.ui.screens.common.ConfigViewModel
 
 @Composable
 fun UserHomeScreen(
@@ -111,6 +113,8 @@ fun UserHomeScreen(
 
     val reportsViewModel: ReportsViewModel = koinViewModel()
     val reportsState by reportsViewModel.reportsState.collectAsState()
+    val configViewModel: ConfigViewModel = koinViewModel()
+    val appConfig by configViewModel.appConfig.collectAsState()
     val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
 
     LaunchedEffect(Unit) {
@@ -167,7 +171,8 @@ fun UserHomeScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             PharmacistSection(
-                colorScheme = colorScheme
+                colorScheme = colorScheme,
+                contacts = appConfig.contacts
             )
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -743,7 +748,7 @@ fun RecentReportsSection(
 
 
 @Composable
-fun PharmacistSection(colorScheme: ColorScheme) {
+fun PharmacistSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -762,34 +767,43 @@ fun PharmacistSection(colorScheme: ColorScheme) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             val context = LocalContext.current
-            PharmacistCard(
-                name = "Sawai Singh",
-                specialty = "Pharmacist",
-                experience = "8 years experience",
-                imageRes = R.drawable.doctor1,
-                colorScheme = colorScheme,
-                onCallClick = {
-                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                    val intent = Intent(Intent.ACTION_DIAL).apply {
-                        data = "tel:${ContactConfig.pharmacistPhones.sawaiSingh}".toUri()
-                    }
-                    context.startActivity(intent)
+            
+            val displayContacts = contacts.filter { it.imageResName == "doctor1" || it.imageResName == "doctor2" }.ifEmpty {
+                listOf(
+                    ContactModel(
+                        name = "Sawai Singh", phone = ContactConfig.pharmacistPhones.sawaiSingh,
+                        experience = "8 years experience", imageResName = "doctor1"
+                    ),
+                    ContactModel(
+                        name = "Govind", phone = ContactConfig.pharmacistPhones.govind,
+                        experience = "5 years experience", imageResName = "doctor2"
+                    )
+                )
+            }
+            
+            displayContacts.forEach { contact ->
+                val imageRes = when (contact.imageResName) {
+                    "doctor1" -> R.drawable.doctor1
+                    "doctor2" -> R.drawable.doctor2
+                    "holding_flowers" -> R.drawable.holding_flowers
+                    else -> R.drawable.holding_flowers
                 }
-            )
-            PharmacistCard(
-                name = "Govind",
-                specialty = "Pharmacist",
-                experience = "5 years experience",
-                imageRes = R.drawable.doctor2,
-                colorScheme = colorScheme,
-                onCallClick = {
-                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                    val intent = Intent(Intent.ACTION_DIAL).apply {
-                        data = "tel:${ContactConfig.pharmacistPhones.govind}".toUri()
+                
+                PharmacistCard(
+                    name = contact.name,
+                    specialty = contact.role,
+                    experience = contact.experience,
+                    imageRes = imageRes,
+                    colorScheme = colorScheme,
+                    onCallClick = {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                            data = "tel:${contact.phone}".toUri()
+                        }
+                        context.startActivity(intent)
                     }
-                    context.startActivity(intent)
-                }
-            )
+                )
+            }
         }
     }
 }

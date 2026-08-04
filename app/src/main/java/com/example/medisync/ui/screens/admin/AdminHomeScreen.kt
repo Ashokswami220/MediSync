@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -24,7 +25,9 @@ import com.example.medisync.ui.components.HomeTopBar
 import com.example.medisync.ui.screens.user.AnimatedSloganText
 import com.example.medisync.ui.screens.user.HealthStatsGrid
 import com.example.medisync.ui.screens.user.PharmacistSection
+import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.ui.screens.user.PromotionCard
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AdminHomeScreen() {
@@ -32,6 +35,8 @@ fun AdminHomeScreen() {
     val colorScheme = MaterialTheme.colorScheme
     val density = LocalDensity.current
     val context = LocalContext.current
+    val configViewModel: ConfigViewModel = koinViewModel()
+    val appConfig by configViewModel.appConfig.collectAsState()
 
     val collapseRangePx = with(density) { 70.dp.toPx() }
     val scrollFraction by remember {
@@ -66,7 +71,7 @@ fun AdminHomeScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            PharmacistSection(colorScheme = colorScheme)
+            PharmacistSection(colorScheme = colorScheme, contacts = appConfig.contacts)
 
             Spacer(modifier = Modifier.height(48.dp))
 
