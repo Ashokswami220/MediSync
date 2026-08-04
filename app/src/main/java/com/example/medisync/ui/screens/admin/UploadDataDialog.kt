@@ -100,8 +100,13 @@ fun AnimatedVisibilityScope.UploadDataDialog(
 
     val userRepository: UserRepository = koinInject()
 
-    val users by userRepository.getAllUsers()
+    val allUsersList by userRepository.getAllUsers()
         .collectAsState(initial = emptyList())
+    
+    val users = remember(allUsersList) {
+        val claimedPlaceholderUids = allUsersList.flatMap { it.previousUids }.toSet()
+        allUsersList.filter { it.uid !in claimedPlaceholderUids }
+    }
 
     var docName by remember { mutableStateOf("") }
     var selectedUser by remember { mutableStateOf(preselectedUser) }

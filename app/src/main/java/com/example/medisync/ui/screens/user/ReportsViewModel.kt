@@ -48,7 +48,7 @@ class ReportsViewModel(
     private fun fetchDocuments(userUid: String, showLoading: Boolean) {
         fetchJob?.cancel()
         fetchJob = viewModelScope.launch {
-            if (showLoading && _reportsState.value !is ReportsState.Success) {
+            if (showLoading && _reportsState.value !is ReportsState.Success && _reportsState.value !is ReportsState.Empty) {
                 _reportsState.value = ReportsState.Loading
             }
             repository.getDocuments(userUid)

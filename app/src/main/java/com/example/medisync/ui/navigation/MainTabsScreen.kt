@@ -124,12 +124,14 @@ fun MainTabsScreen(
                         Routes.ADMIN_HOME -> {
                             if (currentRole == UserRole.ADMIN) AdminHomeScreen() else UserHomeScreen(
                                 onNavigateToReportDetail = onNavigateToReportDetail,
+                                onNavigateToReports = { currentTabRoute = Routes.USER_REPORTS },
                                 selectedMember = selectedHomeMember,
                                 onMemberSelected = onHomeMemberSelected,
                                 members = displayMembers,
                                 bloodPressure = bloodPressure,
                                 bloodType = bloodType,
                                 bloodSugar = bloodSugar,
+                                onNavigateToLogin = onNavigateToLogin,
                                 onRefreshProfile = { profileViewModel.loadProfile() }
                             )
                         }
@@ -143,12 +145,14 @@ fun MainTabsScreen(
                             } else {
                                 UserHomeScreen(
                                     onNavigateToReportDetail = onNavigateToReportDetail,
+                                    onNavigateToReports = { currentTabRoute = Routes.USER_REPORTS },
                                     selectedMember = selectedHomeMember,
                                     onMemberSelected = onHomeMemberSelected,
                                     members = displayMembers,
                                     bloodPressure = bloodPressure,
                                     bloodType = bloodType,
                                     bloodSugar = bloodSugar,
+                                    onNavigateToLogin = onNavigateToLogin,
                                     onRefreshProfile = { profileViewModel.loadProfile() }
                                 )
                             }
@@ -156,12 +160,14 @@ fun MainTabsScreen(
 
                         Routes.USER_HOME -> UserHomeScreen(
                             onNavigateToReportDetail = onNavigateToReportDetail,
+                            onNavigateToReports = { currentTabRoute = Routes.USER_REPORTS },
                             selectedMember = selectedHomeMember,
                             onMemberSelected = onHomeMemberSelected,
                             members = displayMembers,
                             bloodPressure = bloodPressure,
                             bloodType = bloodType,
                             bloodSugar = bloodSugar,
+                            onNavigateToLogin = onNavigateToLogin,
                             onRefreshProfile = { profileViewModel.loadProfile() }
                         )
 

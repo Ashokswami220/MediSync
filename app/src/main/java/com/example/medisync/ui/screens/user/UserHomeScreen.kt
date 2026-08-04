@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ColorScheme
@@ -63,10 +62,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -85,6 +82,14 @@ import com.example.medisync.ui.components.HealthStatDetails
 import com.example.medisync.ui.components.HomeTopBar
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
+import com.google.firebase.auth.FirebaseAuth
+import org.koin.androidx.compose.koinViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LoadingIndicatorDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.example.medisync.ui.components.NotLoggedInState
+import com.example.medisync.ui.components.HorizEmptyReportsState
 
 @Composable
 fun UserHomeScreen(
@@ -96,16 +101,24 @@ fun UserHomeScreen(
     bloodPressure: String = "",
     bloodType: String = "",
     bloodSugar: String = "",
+    onNavigateToLogin: () -> Unit,
     onRefreshProfile: () -> Unit = {}
 ) {
-    LaunchedEffect(Unit) {
-        onRefreshProfile()
-    }
     val scrollState = rememberScrollState()
     val colorScheme = MaterialTheme.colorScheme
-    val density = LocalDensity.current
     val context = LocalContext.current
+    val density = LocalDensity.current
 
+    val reportsViewModel: ReportsViewModel = koinViewModel()
+    val reportsState by reportsViewModel.reportsState.collectAsState()
+    val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
+
+    LaunchedEffect(Unit) {
+        onRefreshProfile()
+        if (isLoggedIn) {
+            reportsViewModel.loadDocuments()
+        }
+    }
     var showCallSheet by remember { mutableStateOf(false) }
     var selectedHealthStat by remember { mutableStateOf<HealthStatDetails?>(null) }
 
@@ -144,7 +157,10 @@ fun UserHomeScreen(
                 RecentReportsSection(
                     onNavigateToReportDetail = onNavigateToReportDetail,
                     onNavigateToReports = onNavigateToReports,
-                    colorScheme = colorScheme
+                    colorScheme = colorScheme,
+                    reportsState = reportsState,
+                    isLoggedIn = isLoggedIn,
+                    onNavigateToLogin = onNavigateToLogin
                 )
             }
 
@@ -573,11 +589,15 @@ fun HealthStatsGrid(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RecentReportsSection(
     onNavigateToReportDetail: (String, String) -> Unit,
     onNavigateToReports: () -> Unit,
-    colorScheme: ColorScheme
+    colorScheme: ColorScheme,
+    reportsState: ReportsState,
+    isLoggedIn: Boolean,
+    onNavigateToLogin: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -606,88 +626,121 @@ fun RecentReportsSection(
         }
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
-
-    // Reports List
-    val reports = listOf(
-        ReportItem(
-            "Comprehensive Metabolic Panel", "Oct 24, 2023 • Lab Results",
-            Icons.Default.Science, colorScheme.onPrimaryContainer,
-            colorScheme.primaryContainer
-        ),
-        ReportItem(
-            "Chest X-Ray", "Oct 12, 2023 • Imaging", Icons.Default.MedicalInformation,
-            colorScheme.onSecondaryContainer, colorScheme.secondaryContainer
-        ),
-        ReportItem(
-            "Prescription Renewal", "Sep 30, 2023 • Clinical Notes", Icons.Default.Science,
-            colorScheme.onSurface, colorScheme.surfaceContainerHighest
+    if (!isLoggedIn) {
+        NotLoggedInState(
+            modifier = Modifier.padding(bottom = 8.dp),
+            horizontalPadding = 0.dp,
+            onNavigateToLogin = onNavigateToLogin,
+            colorScheme = colorScheme
         )
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, colorScheme.outlineVariant)
-    ) {
-        reports.take(3)
-            .forEachIndexed { index, report ->
+    } else {
+        when (reportsState) {
+            is ReportsState.Loading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(colorScheme.surface)
-                        .clickable { onNavigateToReportDetail(report.title, "") }
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(colorScheme.secondary.copy(alpha = 0.07f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                report.icon, contentDescription = null,
-                                tint = colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                report.title, fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp,
-                                color = colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                report.subtitle, fontSize = 14.sp,
-                                color = colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Icon(
-                            Icons.Default.ChevronRight, contentDescription = null,
-                            tint = colorScheme.outline
-                        )
-                    }
-                }
-
-                if (index < 2) {
-                    HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+                    LoadingIndicator(
+                        modifier = Modifier.size(50.dp),
+                        color = colorScheme.secondary,
+                        polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                    )
                 }
             }
+            is ReportsState.Empty -> {
+                HorizEmptyReportsState(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    colorScheme = colorScheme
+                )
+            }
+            is ReportsState.Success -> {
+                val dateFormatter = java.text.SimpleDateFormat(
+                    "MMM dd, yyyy",
+                    androidx.compose.ui.platform.LocalLocale.current.platformLocale
+                )
+                
+                val recentDocs = reportsState.documents
+                    .sortedByDescending { it.uploadedAt }
+                    .take(3)
+                
+                if (recentDocs.isEmpty()) {
+                    HorizEmptyReportsState(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        colorScheme = colorScheme
+                    )
+                } else {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, colorScheme.outlineVariant)
+                    ) {
+                        recentDocs.forEachIndexed { index, doc ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(colorScheme.surface)
+                                    .clickable { onNavigateToReportDetail(doc.documentName, doc.fileUrl) }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(colorScheme.secondary.copy(alpha = 0.07f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.MedicalInformation,
+                                            contentDescription = null,
+                                            tint = colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = doc.documentName,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 16.sp,
+                                            color = colorScheme.onBackground,
+                                            maxLines = 1
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "${dateFormatter.format(java.util.Date(doc.uploadedAt))} • ${doc.linkedMember}",
+                                            fontSize = 13.sp,
+                                            color = colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Icon(
+                                        imageVector = Icons.Default.ChevronRight,
+                                        contentDescription = null,
+                                        tint = colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            if (index < recentDocs.size - 1) {
+                                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+                            }
+                        }
+                    }
+                }
+            }
+            is ReportsState.Error -> {
+                HorizEmptyReportsState(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    colorScheme = colorScheme
+                )
+            }
+        }
     }
 }
 
-data class ReportItem(
-    val title: String,
-    val subtitle: String,
-    val icon: ImageVector,
-    val iconColor: Color,
-    val iconBgColor: Color
-)
 
 @Composable
 fun PharmacistSection(colorScheme: ColorScheme) {

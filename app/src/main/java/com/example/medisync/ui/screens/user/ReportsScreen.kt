@@ -2,8 +2,6 @@ package com.example.medisync.ui.screens.user
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,12 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FilterAlt
@@ -33,7 +29,6 @@ import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.pullRefreshIndicatorTransform
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material3.ButtonDefaults.outlinedButtonColors
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -44,7 +39,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -61,15 +55,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.medisync.R
 import com.example.medisync.model.DocumentMetadata
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.ui.components.CustomToast
 import com.example.medisync.ui.components.TopBar
+import com.example.medisync.ui.components.NotLoggedInState
+import com.example.medisync.ui.components.VertEmptyReportsState
 import com.example.medisync.utils.HapticHelper
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
@@ -177,6 +171,7 @@ fun UserReportsScreen(
 
                 if (!isLoggedIn) {
                     NotLoggedInState(
+                        modifier = Modifier.height(480.dp).padding(top = 48.dp),
                         onNavigateToLogin = onNavigateToLogin,
                         colorScheme = colorScheme
                     )
@@ -198,7 +193,10 @@ fun UserReportsScreen(
                         }
 
                         is ReportsState.Empty -> {
-                            EmptyReportsState(colorScheme = colorScheme)
+                            VertEmptyReportsState(
+                                modifier = Modifier.height(480.dp).padding(top = 48.dp),
+                                colorScheme = colorScheme
+                            )
                         }
 
                         is ReportsState.Success -> {
@@ -229,7 +227,10 @@ fun UserReportsScreen(
                                 }
                             }
                             if (filteredDocuments.isEmpty()) {
-                                EmptyReportsState(colorScheme = colorScheme)
+                                VertEmptyReportsState(
+                                    modifier = Modifier.height(480.dp).padding(top = 48.dp),
+                                    colorScheme = colorScheme
+                                )
                             } else {
                                 ReportsList(
                                     filteredDocuments = filteredDocuments,
@@ -241,7 +242,10 @@ fun UserReportsScreen(
 
                         is ReportsState.Error -> {
                             // Show error or empty state
-                            EmptyReportsState(colorScheme = colorScheme)
+                            VertEmptyReportsState(
+                                modifier = Modifier.height(480.dp).padding(top = 48.dp),
+                                colorScheme = colorScheme
+                            )
                         }
                     }
                 }
@@ -398,109 +402,7 @@ fun ReportsFilterRow(
     }
 }
 
-@Composable
-fun NotLoggedInState(
-    onNavigateToLogin: () -> Unit,
-    colorScheme: ColorScheme
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(480.dp)
-            .padding(top = 48.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .height(240.dp)
-                    .background(
-                        Color.Black.copy(alpha = 0.04f),
-                        shape = RoundedCornerShape(32.dp)
-                    )
-            )
-            Image(
-                painter = painterResource(id = R.drawable.person_with_doc),
-                contentDescription = "Login Illustration",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(280.dp)
-            )
-        }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        OutlinedButton(
-            onClick = onNavigateToLogin,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(56.dp),
-            shape = RoundedCornerShape(100.dp),
-            colors = outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(
-                1.dp, colorScheme.outlineVariant
-            )
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .background(colorScheme.secondary, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Login,
-                    contentDescription = null,
-                    tint = colorScheme.onPrimary,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                "Login to see reports", color = colorScheme.onSurface, fontSize = 16.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun EmptyReportsState(colorScheme: ColorScheme) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(480.dp)
-            .padding(top = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.no_doc),
-            contentDescription = "No reports",
-            modifier = Modifier.size(110.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "No Reports available",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            color = colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Try changing member",
-            fontSize = 16.sp,
-            color = colorScheme.onSurfaceVariant
-        )
-    }
-}
 
 @Composable
 fun ReportsList(
