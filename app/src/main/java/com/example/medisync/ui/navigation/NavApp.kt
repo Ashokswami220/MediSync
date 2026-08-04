@@ -35,6 +35,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.medisync.data.SettingsManager
+import com.example.medisync.model.MemberVitals
 import com.example.medisync.model.UserRole
 import com.example.medisync.ui.components.UploadProgressToast
 import com.example.medisync.ui.screens.admin.UserDetailScreen
@@ -134,13 +135,28 @@ fun NavApp(
         }
     }
 
-    val bloodPressure = (profileState as? ProfileState.Success)?.profile?.bloodPressure ?: ""
-    val bloodType = (profileState as? ProfileState.Success)?.profile?.bloodType ?: ""
-    val bloodSugar = (profileState as? ProfileState.Success)?.profile?.bloodSugar ?: ""
-
     var selectedMember by rememberSaveable(displayMembers) {
         mutableStateOf(displayMembers.firstOrNull() ?: "User")
     }
+
+    val currentProfile = (profileState as? ProfileState.Success)?.profile
+    val mainUserName = currentProfile?.firstName?.ifEmpty { "User" } ?: "User"
+    val isMainUser = selectedMember == mainUserName
+    
+    val currentVitals = if (isMainUser) {
+        MemberVitals(
+            bloodType = currentProfile?.bloodType ?: "",
+            bloodPressure = currentProfile?.bloodPressure ?: "",
+            bloodSugar = currentProfile?.bloodSugar ?: ""
+        )
+    } else {
+        currentProfile?.memberVitals?.get(selectedMember) ?: MemberVitals()
+    }
+
+    val bloodPressure = currentVitals.bloodPressure
+    val bloodType = currentVitals.bloodType
+    val bloodSugar = currentVitals.bloodSugar
+
     var selectedReportName by rememberSaveable { mutableStateOf("") }
     var selectedReportUrl by rememberSaveable { mutableStateOf("") }
     val uploadStatus by UploadManager.status.collectAsState()

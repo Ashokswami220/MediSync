@@ -16,5 +16,12 @@ data class UserProfile(
     val documents: List<String> = emptyList(),
     val isPlaceholder: Boolean = false,
     val claimedByUid: String? = null,
-    val previousUids: List<String> = emptyList()
+    val previousUids: List<String> = emptyList(),
+    val memberVitals: Map<String, MemberVitals> = emptyMap()
+)
+
+data class MemberVitals(
+    val bloodType: String = "",
+    val bloodPressure: String = "",
+    val bloodSugar: String = ""
 )

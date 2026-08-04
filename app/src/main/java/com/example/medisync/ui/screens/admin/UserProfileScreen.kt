@@ -1,17 +1,64 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.example.medisync.ui.screens.admin
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Bloodtype
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LoadingIndicatorDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,6 +66,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.model.MemberVitals
 import com.example.medisync.model.UserProfile
 import com.example.medisync.ui.components.AddMemberBottomSheet
 import com.example.medisync.ui.components.UserAvatar
@@ -43,6 +91,7 @@ fun UserProfileScreen(
     var showEditSheet by remember { mutableStateOf(false) }
     var editField by remember { mutableStateOf("") }
     var editValue by remember { mutableStateOf("") }
+    var editingMember by remember { mutableStateOf<String?>(null) }
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     var showAddMemberDialog by remember { mutableStateOf(false) }
 
@@ -59,11 +108,21 @@ fun UserProfileScreen(
     val profile = userProfile!!
 
     val handleSaveField = { field: String, value: String ->
-        if (field == "fullName") {
-            val parts = value.trim().split(" ", limit = 2)
+        val member = editingMember
+        if (member != null) {
+            viewModel.updateMemberVital(userUid, member, field, value) { _, msg ->
+                GlobalToastManager.showToast(message = msg)
+                showEditSheet = false
+                editingMember = null
+            }
+        } else if (field == "fullName") {
+            val parts = value.trim()
+                .split(" ", limit = 2)
             val first = parts.getOrNull(0) ?: ""
             val last = parts.getOrNull(1) ?: ""
-            viewModel.updateUserFields(userUid, mapOf("firstName" to first, "lastName" to last)) { _, msg ->
+            viewModel.updateUserFields(
+                userUid, mapOf("firstName" to first, "lastName" to last)
+            ) { _, msg ->
                 GlobalToastManager.showToast(message = msg)
                 showEditSheet = false
             }
@@ -80,7 +139,8 @@ fun UserProfileScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "${profile.firstName} ${profile.lastName}".trim().ifEmpty { "User Profile" },
+                        "${profile.firstName} ${profile.lastName}".trim()
+                            .ifEmpty { "User Profile" },
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -135,6 +195,14 @@ fun UserProfileScreen(
             items(profile.members) { member ->
                 MemberEditItem(
                     name = member,
+                    vitals = profile.memberVitals[member]
+                        ?: MemberVitals(),
+                    onEditClick = { field, value ->
+                        editingMember = member
+                        editField = field
+                        editValue = value
+                        showEditSheet = true
+                    },
                     onDelete = {
                         val updatedList = profile.members.toMutableList()
                         updatedList.remove(member)
@@ -171,7 +239,10 @@ fun UserProfileScreen(
             editValue = editValue,
             onValueChange = { editValue = it },
             onSave = { handleSaveField(editField, editValue) },
-            onDismiss = { showEditSheet = false }
+            onDismiss = {
+                showEditSheet = false
+                editingMember = null
+            }
         )
     }
 }
@@ -215,7 +286,11 @@ fun UserProfileHeader(
                 ProfileDetailRow(
                     icon = Icons.Default.Person,
                     text = "${profile.firstName} ${profile.lastName}".trim(),
-                    onEditClick = { onEditClick("fullName", "${profile.firstName} ${profile.lastName}".trim()) }
+                    onEditClick = {
+                        onEditClick(
+                            "fullName", "${profile.firstName} ${profile.lastName}".trim()
+                        )
+                    }
                 )
 
                 // Number
@@ -248,7 +323,10 @@ fun ProfileDetailRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = colorScheme.onSurfaceVariant)
+        Icon(
+            icon, contentDescription = null, modifier = Modifier.size(20.dp),
+            tint = colorScheme.onSurfaceVariant
+        )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
@@ -259,7 +337,10 @@ fun ProfileDetailRow(
         )
         if (onEditClick != null) {
             IconButton(onClick = onEditClick, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(18.dp), tint = colorScheme.outline)
+                Icon(
+                    Icons.Default.Edit, contentDescription = "Edit",
+                    modifier = Modifier.size(18.dp), tint = colorScheme.outline
+                )
             }
         }
     }
@@ -338,7 +419,10 @@ fun UserProfileMembersHeader(onAddMemberClick: () -> Unit) {
                 modifier = Modifier.weight(1f)
             )
             IconButton(onClick = onAddMemberClick) {
-                Icon(Icons.Default.Add, contentDescription = "Add Member", tint = colorScheme.secondary)
+                Icon(
+                    Icons.Default.Add, contentDescription = "Add Member",
+                    tint = colorScheme.secondary
+                )
             }
         }
     }
@@ -366,7 +450,8 @@ fun EditFieldBottomSheet(
                 .fillMaxWidth()
                 .padding(24.dp)
         ) {
-            val displayFieldName = editField.replace(Regex("([a-z])([A-Z]+)"), "$1 $2").replaceFirstChar { it.uppercase() }
+            val displayFieldName = editField.replace(Regex("([a-z])([A-Z]+)"), "$1 $2")
+                .replaceFirstChar { it.uppercase() }
             Text(
                 text = "Edit $displayFieldName",
                 fontSize = 20.sp,
@@ -387,10 +472,15 @@ fun EditFieldBottomSheet(
             Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = onSave,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colorScheme.secondary)
             ) {
-                Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colorScheme.onSecondary)
+                Text(
+                    "Save Changes", fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                    color = colorScheme.onSecondary
+                )
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -417,7 +507,10 @@ fun VitalCard(
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = colorScheme.secondary, modifier = Modifier.size(20.dp))
+                Icon(
+                    icon, contentDescription = null, tint = colorScheme.secondary,
+                    modifier = Modifier.size(20.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = title, fontSize = 13.sp, color = colorScheme.onSurfaceVariant)
             }
@@ -446,29 +539,90 @@ fun VitalCard(
 @Composable
 fun MemberEditItem(
     name: String,
+    vitals: MemberVitals,
+    onEditClick: (String, String) -> Unit,
     onDelete: () -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) }
     val colorScheme = MaterialTheme.colorScheme
-    Row(
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(colorScheme.surface)
             .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.Person, contentDescription = null, tint = colorScheme.onSurfaceVariant)
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = name,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
-        )
-        IconButton(onClick = onDelete) {
-            Icon(Icons.Default.Delete, contentDescription = "Delete Member", tint = colorScheme.error)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Person, contentDescription = null, tint = colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = name,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = onDelete) {
+                Icon(
+                    Icons.Default.Delete, contentDescription = "Delete Member",
+                    tint = colorScheme.error
+                )
+            }
+            Icon(
+                if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = "Expand",
+                tint = colorScheme.onSurfaceVariant
+            )
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    VitalCard(
+                        title = "Blood Pressure",
+                        value = vitals.bloodPressure,
+                        unit = "mmHg",
+                        icon = Icons.Default.Favorite,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onEditClick("bloodPressure", vitals.bloodPressure) }
+                    )
+                    VitalCard(
+                        title = "Blood Sugar",
+                        value = vitals.bloodSugar,
+                        unit = "mg/dL",
+                        icon = Icons.Default.WaterDrop,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onEditClick("bloodSugar", vitals.bloodSugar) }
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    VitalCard(
+                        title = "Blood Type",
+                        value = vitals.bloodType,
+                        unit = "",
+                        icon = Icons.Default.Bloodtype,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onEditClick("bloodType", vitals.bloodType) }
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }

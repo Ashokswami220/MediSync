@@ -2,6 +2,7 @@ package com.example.medisync.data.local.room
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.medisync.model.MemberVitals
 import com.example.medisync.model.UserProfile
 import com.example.medisync.model.UserRole
 
@@ -22,7 +23,8 @@ data class UserEntity(
     val documents: List<String>,
     val isPlaceholder: Boolean,
     val claimedByUid: String?,
-    val previousUids: List<String>
+    val previousUids: List<String>,
+    val memberVitals: Map<String, MemberVitals>
 ) {
     fun toUserProfile(): UserProfile {
         return UserProfile(
@@ -41,7 +43,8 @@ data class UserEntity(
             documents = documents,
             isPlaceholder = isPlaceholder,
             claimedByUid = claimedByUid,
-            previousUids = previousUids
+            previousUids = previousUids,
+            memberVitals = memberVitals
         )
     }
 
@@ -63,7 +66,8 @@ data class UserEntity(
                 documents = profile.documents,
                 isPlaceholder = profile.isPlaceholder,
                 claimedByUid = profile.claimedByUid,
-                previousUids = profile.previousUids
+                previousUids = profile.previousUids,
+                memberVitals = profile.memberVitals
             )
         }
     }

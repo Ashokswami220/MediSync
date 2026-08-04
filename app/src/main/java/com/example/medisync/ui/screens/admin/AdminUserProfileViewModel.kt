@@ -2,6 +2,7 @@ package com.example.medisync.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medisync.model.MemberVitals
 import com.example.medisync.model.UserProfile
 import com.example.medisync.repo.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +37,23 @@ class AdminUserProfileViewModel(
                 onResult(false, result.exceptionOrNull()?.message ?: "Failed to update")
             }
         }
+    }
+
+    fun updateMemberVital(uid: String, memberName: String, field: String, value: String, onResult: (Boolean, String) -> Unit) {
+        val currentProfile = _userProfile.value ?: return
+        val currentVitals = currentProfile.memberVitals[memberName] ?: MemberVitals()
+        
+        val updatedVitals = when (field) {
+            "bloodType" -> currentVitals.copy(bloodType = value)
+            "bloodPressure" -> currentVitals.copy(bloodPressure = value)
+            "bloodSugar" -> currentVitals.copy(bloodSugar = value)
+            else -> currentVitals
+        }
+        
+        val newMap = currentProfile.memberVitals.toMutableMap()
+        newMap[memberName] = updatedVitals
+        
+        updateUserField(uid, "memberVitals", newMap, onResult)
     }
 
     fun updateUserFields(uid: String, updates: Map<String, Any>, onResult: (Boolean, String) -> Unit) {
