@@ -55,10 +55,18 @@ class UserListViewModel(
 
                 // Map profiles
                 val currentUserId = authRepo.getCurrentUserUid()
+
+                // Collect all UIDs that are claimed via previousUids
+                val claimedPlaceholderUids = profiles
+                    .flatMap { it.previousUids }
+                    .toSet()
+
                 val adminModels = profiles
                     .filter { it.uid != currentUserId }
+                    .filter { it.uid !in claimedPlaceholderUids }
                     .map { profile ->
-                        val userDocs = sortedDocs.filter { it.linkedUserUid == profile.uid }
+                        val allUids = listOf(profile.uid) + profile.previousUids
+                        val userDocs = sortedDocs.filter { it.linkedUserUid in allUids }
                         val latestDoc = userDocs.firstOrNull()
 
                         val fullName = "${profile.firstName} ${profile.lastName}".trim()
@@ -126,6 +134,46 @@ class UserListViewModel(
                 onResult(true, "Successfully cleared data")
             } else {
                 onResult(false, result.exceptionOrNull()?.message ?: "Failed to clear data")
+            }
+        }
+    }
+
+    fun createPlaceholderUser(
+        firstName: String,
+        lastName: String,
+        contactMethod: String, // "phone" or "email"
+        contactValue: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                // Check if user already exists
+                val exists = userRepository.checkUserExists(contactValue)
+                if (exists) {
+                    onResult(false, "This user already exists")
+                    return@launch
+                }
+
+                val placeholderUid = java.util.UUID.randomUUID()
+                    .toString()
+                val profile = com.example.medisync.model.UserProfile(
+                    uid = placeholderUid,
+                    firstName = firstName,
+                    lastName = lastName,
+                    phoneNumber = if (contactMethod == "phone") contactValue else "",
+                    email = if (contactMethod == "email") contactValue else "",
+                    role = com.example.medisync.model.UserRole.USER,
+                    isPlaceholder = true
+                )
+
+                val result = userRepository.createUserProfile(profile)
+                if (result.isSuccess) {
+                    onResult(true, "Placeholder user created")
+                } else {
+                    onResult(false, result.exceptionOrNull()?.message ?: "Failed to create user")
+                }
+            } catch (e: Exception) {
+                onResult(false, e.message ?: "An error occurred")
             }
         }
     }

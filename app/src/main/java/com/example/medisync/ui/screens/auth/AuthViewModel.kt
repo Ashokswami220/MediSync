@@ -163,34 +163,76 @@ class AuthViewModel(
             try {
                 val currentUser = authRepo.getCurrentUserSync()
                 if (currentUser != null) {
-                    // Try to fetch existing to preserve roles, Blood type, etc.
-                    val existingResult = userRepo.getUserProfileSync(currentUser.uid)
-                    val existingProfile = existingResult.getOrNull()
-                    val newProfile = existingProfile?.copy(
-                        firstName = firstName,
-                        lastName = lastName,
-                        phoneNumber = phoneNumber,
-                        email = currentUser.email ?: existingProfile.email,
-                        avatarUrl = currentUser.photoUrl?.toString() ?: existingProfile.avatarUrl
-                    ) ?: UserProfile(
-                        uid = currentUser.uid,
-                        firstName = firstName,
-                        lastName = lastName,
-                        phoneNumber = phoneNumber,
-                        email = currentUser.email ?: "",
-                        avatarUrl = currentUser.photoUrl?.toString() ?: ""
-                    )
+                    val realUserName = "$firstName $lastName".trim()
+                    val firebaseUid = currentUser.uid
+                    val emailToCheck = currentUser.email ?: ""
 
-                    val result = userRepo.createUserProfile(newProfile)
-                    if (result.isSuccess) {
-                        _authState.value = AuthState.Success
+                    Log.d("MediSync", "completeProfile: firebaseUid=$firebaseUid, phone=$phoneNumber, email=$emailToCheck")
+
+                    // 1. BEFORE creating anything, check for a placeholder
+                    val placeholderByPhone = userRepo.findPlaceholder(phoneNumber)
+                    val placeholderByEmail = if (emailToCheck.isNotBlank()) userRepo.findPlaceholder(emailToCheck) else null
+                    val placeholder = placeholderByPhone ?: placeholderByEmail
+
+                    // 2. If placeholder found — claim it (transfer docs, delete old)
+                    if (placeholder != null) {
+                        Log.d("MediSync", "Placeholder FOUND: uid=${placeholder.uid}, name=${placeholder.firstName} ${placeholder.lastName}")
+                        
+                        // Claim: transfers all documents and deletes old placeholder
+                        userRepo.claimPlaceholder(
+                            placeholderUid = placeholder.uid,
+                            realUserUid = firebaseUid,
+                            realUserName = realUserName
+                        )
+
+                        // Build profile: user's name + placeholder's medical data
+                        val newProfile = UserProfile(
+                            uid = firebaseUid,
+                            firstName = firstName,
+                            lastName = lastName,
+                            phoneNumber = phoneNumber,
+                            email = emailToCheck,
+                            avatarUrl = currentUser.photoUrl?.toString() ?: "",
+                            // Carry over placeholder's data
+                            members = placeholder.members,
+                            bloodType = placeholder.bloodType,
+                            bloodPressure = placeholder.bloodPressure,
+                            bloodSugar = placeholder.bloodSugar,
+                            previousUids = listOf(placeholder.uid)
+                        )
+
+                        val result = userRepo.createUserProfile(newProfile)
+                        if (result.isSuccess) {
+                            Log.d("MediSync", "Profile created with placeholder data at $firebaseUid")
+                            _authState.value = AuthState.Success
+                        } else {
+                            _authState.value = AuthState.Error("Failed to save profile.")
+                        }
                     } else {
-                        _authState.value = AuthState.Error("Failed to save profile.")
+                        // 3. No placeholder — create fresh profile
+                        Log.d("MediSync", "No placeholder found, creating fresh profile")
+                        
+                        val newProfile = UserProfile(
+                            uid = firebaseUid,
+                            firstName = firstName,
+                            lastName = lastName,
+                            phoneNumber = phoneNumber,
+                            email = emailToCheck,
+                            avatarUrl = currentUser.photoUrl?.toString() ?: ""
+                        )
+
+                        val result = userRepo.createUserProfile(newProfile)
+                        if (result.isSuccess) {
+                            _authState.value = AuthState.Success
+                        } else {
+                            _authState.value = AuthState.Error("Failed to save profile.")
+                        }
                     }
                 } else {
                     _authState.value = AuthState.Error("No authenticated user found.")
                 }
             } catch (e: Exception) {
+                Log.e("MediSync", "completeProfile FAILED", e)
                 _authState.value = AuthState.Error(e.message ?: "Failed to complete profile")
             }
         }

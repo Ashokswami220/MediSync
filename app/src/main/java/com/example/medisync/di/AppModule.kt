@@ -35,6 +35,7 @@ val appModule = module {
             MediSyncDatabase::class.java,
             "medisync_db"
         )
+            .fallbackToDestructiveMigration()
             .build()
     }
     single { get<MediSyncDatabase>().userDao() }

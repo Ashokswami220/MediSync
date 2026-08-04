@@ -21,4 +21,13 @@ interface UserRepository {
 
     /** Deletes multiple users from Firestore and local database. */
     suspend fun deleteUsers(uids: List<String>): Result<Unit>
+    
+    /** Checks if a user profile exists with the given phone number or email. */
+    suspend fun checkUserExists(phoneOrEmail: String): Boolean
+    
+    /** Finds a placeholder user by phone number or email. */
+    suspend fun findPlaceholder(phoneOrEmail: String): UserProfile?
+
+    /** Claims a placeholder: transfers all documents to the real user UID and updates the linkedUser name. */
+    suspend fun claimPlaceholder(placeholderUid: String, realUserUid: String, realUserName: String): Result<Unit>
 }

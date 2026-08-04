@@ -32,9 +32,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +63,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.ui.components.ClearAdminDataDialog
+import com.example.medisync.ui.components.CreateUserBottomSheet
 import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.UserAvatar
@@ -126,11 +129,14 @@ fun UserListScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colorScheme.background)
-    ) {
+    var showCreateUserSheet by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colorScheme.background)
+        ) {
         if (selectedUsers.isNotEmpty()) {
             SelectionTopBar(
                 selectedCount = selectedUsers.size,
@@ -335,6 +341,37 @@ fun UserListScreen(
                 }
             }
         }
+        }
+
+        // Floating Action Button
+        FloatingActionButton(
+            onClick = { showCreateUserSheet = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp)
+                .padding(bottom = 90.dp), // Adjust for nav bar if needed
+            shape = CircleShape,
+            containerColor = colorScheme.secondary,
+            contentColor = colorScheme.onSecondary
+        ) {
+            Icon(Icons.Default.PersonAdd, contentDescription = "Pre-register User")
+        }
+    }
+
+    if (showCreateUserSheet) {
+        CreateUserBottomSheet(
+            onDismiss = { showCreateUserSheet = false },
+            onCreate = { firstName, lastName, contactMethod, contactValue ->
+                viewModel.createPlaceholderUser(firstName, lastName, contactMethod, contactValue) { success, msg ->
+                    GlobalToastManager.showToast(message = msg)
+                    if (success) {
+                        showCreateUserSheet = false
+                        viewModel.fetchUsers() // Refresh list
+                    }
+                }
+            },
+            isLoading = isLoading
+        )
     }
 
     if (showDeleteDialog) {

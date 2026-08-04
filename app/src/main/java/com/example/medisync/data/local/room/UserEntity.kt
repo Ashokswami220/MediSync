@@ -19,7 +19,10 @@ data class UserEntity(
     val members: List<String>,
     val accountCreatedTime: Long,
     val avatarUrl: String,
-    val documents: List<String>
+    val documents: List<String>,
+    val isPlaceholder: Boolean,
+    val claimedByUid: String?,
+    val previousUids: List<String>
 ) {
     fun toUserProfile(): UserProfile {
         return UserProfile(
@@ -35,7 +38,10 @@ data class UserEntity(
             members = members,
             accountCreatedTime = accountCreatedTime,
             avatarUrl = avatarUrl,
-            documents = documents
+            documents = documents,
+            isPlaceholder = isPlaceholder,
+            claimedByUid = claimedByUid,
+            previousUids = previousUids
         )
     }
 
@@ -54,7 +60,10 @@ data class UserEntity(
                 members = profile.members,
                 accountCreatedTime = profile.accountCreatedTime,
                 avatarUrl = profile.avatarUrl,
-                documents = profile.documents
+                documents = profile.documents,
+                isPlaceholder = profile.isPlaceholder,
+                claimedByUid = profile.claimedByUid,
+                previousUids = profile.previousUids
             )
         }
     }

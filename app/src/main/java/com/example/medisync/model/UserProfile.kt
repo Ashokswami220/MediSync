@@ -13,5 +13,8 @@ data class UserProfile(
     val accountCreatedTime: Long = System.currentTimeMillis(),
     val avatarUrl: String = "",
     val email: String = "",
-    val documents: List<String> = emptyList()
+    val documents: List<String> = emptyList(),
+    val isPlaceholder: Boolean = false,
+    val claimedByUid: String? = null,
+    val previousUids: List<String> = emptyList()
 )

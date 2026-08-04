@@ -4,7 +4,6 @@ import com.cloudinary.android.MediaManager.get
 import com.example.medisync.model.DocumentMetadata
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -47,30 +46,56 @@ class DocumentRepositoryImpl(private val firestore: FirebaseFirestore) : Documen
     }
 
     override fun getDocuments(userUid: String?): Flow<List<DocumentMetadata>> = callbackFlow {
-        // Use whereEqualTo for standard users so Firestore security rules don't block the read
-        val query: Query = if (userUid != null) {
-            firestore.collection("uploaded_documents").whereEqualTo("linkedUserUid", userUid)
-        } else {
-            firestore.collection("uploaded_documents")
-        }
+        var listenerRegistration: com.google.firebase.firestore.ListenerRegistration? = null
 
-        val listenerRegistration = query.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-                return@addSnapshotListener
-            }
+        if (userUid != null) {
+            try {
+                val userDoc = firestore.collection("users")
+                    .document(userUid)
+                    .get()
+                    .await()
+                val previousUids = userDoc.get("previousUids") as? List<String> ?: emptyList()
+                val allUids = listOf(userUid) + previousUids
 
-            if (snapshot != null) {
-                val documents = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(DocumentMetadata::class.java)?.copy(id = doc.id)
+                val query = firestore.collection("uploaded_documents")
+                    .whereIn("linkedUserUid", allUids)
+                listenerRegistration = query.addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        close(error)
+                        return@addSnapshotListener
+                    }
+                    if (snapshot != null) {
+                        val documents = snapshot.documents.mapNotNull { doc ->
+                            doc.toObject(DocumentMetadata::class.java)
+                                ?.copy(id = doc.id)
+                        }
+                            .sortedByDescending { it.uploadedAt }
+                        trySend(documents)
+                    }
                 }
-                    .sortedByDescending { it.uploadedAt }
-                trySend(documents)
+            } catch (e: Exception) {
+                close(e)
+            }
+        } else {
+            val query = firestore.collection("uploaded_documents")
+            listenerRegistration = query.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                if (snapshot != null) {
+                    val documents = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(DocumentMetadata::class.java)
+                            ?.copy(id = doc.id)
+                    }
+                        .sortedByDescending { it.uploadedAt }
+                    trySend(documents)
+                }
             }
         }
 
         awaitClose {
-            listenerRegistration.remove()
+            listenerRegistration?.remove()
         }
     }
 
