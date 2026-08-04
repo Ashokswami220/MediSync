@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -41,10 +42,13 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -103,6 +107,7 @@ fun UserDetailScreen(
 
     val userProfile by viewModel.userProfile.collectAsState()
     val documents by viewModel.documents.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     val userName = userProfile?.firstName ?: "User"
     val members = userProfile?.members?.ifEmpty { listOf(userName) } ?: listOf(userName)
@@ -152,6 +157,7 @@ fun UserDetailScreen(
         UserDetailReportsList(
             selectedMember = selectedMember,
             documents = filteredDocuments,
+            isLoading = isLoading,
             onNavigateToReportDetail = onNavigateToReportDetail,
             onDeleteReport = { docId ->
                 viewModel.deleteReport(docId) { _, msg ->
@@ -414,11 +420,14 @@ fun UserDetailBottomBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3ExpressiveApi::class,
+       ExperimentalMaterial3Api::class
+)
 @Composable
 fun UserDetailReportsList(
     selectedMember: String,
     documents: List<DocumentMetadata>,
+    isLoading: Boolean,
     onNavigateToReportDetail: (String, String) -> Unit,
     onDeleteReport: (String) -> Unit,
     paddingValues: PaddingValues
@@ -436,10 +445,18 @@ fun UserDetailReportsList(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "No reports found for $selectedMember",
-                color = colorScheme.onSurfaceVariant
-            )
+            if (isLoading) {
+                LoadingIndicator(
+                    modifier = Modifier.size(60.dp),
+                    color = MaterialTheme.colorScheme.secondary,
+                    polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                )
+            } else {
+                Text(
+                    text = "No reports found for $selectedMember",
+                    color = colorScheme.onSurfaceVariant
+                )
+            }
         }
         return
     }

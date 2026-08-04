@@ -102,7 +102,11 @@ fun UserListScreen(
     val sortedUsers = remember(users, selectedFilter, searchQuery) {
         var result = users
         if (searchQuery.isNotBlank()) {
-            result = result.filter { it.name.contains(searchQuery, ignoreCase = true) }
+            result = result.filter { 
+                it.name.contains(searchQuery, ignoreCase = true) ||
+                it.phoneNumber.contains(searchQuery) ||
+                it.email.contains(searchQuery, ignoreCase = true)
+            }
         }
         when (selectedFilter) {
             "A-Z" -> result.sortedBy { it.name }

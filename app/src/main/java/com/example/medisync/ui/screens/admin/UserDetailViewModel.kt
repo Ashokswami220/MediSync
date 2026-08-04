@@ -23,6 +23,9 @@ class UserDetailViewModel(
     private val _documents = MutableStateFlow<List<DocumentMetadata>>(emptyList())
     val documents: StateFlow<List<DocumentMetadata>> = _documents.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     fun loadUser(userUid: String) {
         viewModelScope.launch {
             userRepository.getUserProfile(userUid)
@@ -32,10 +35,15 @@ class UserDetailViewModel(
                 }
         }
         viewModelScope.launch {
+            _isLoading.value = true
             documentRepository.getDocuments(userUid)
-                .catch { e -> e.printStackTrace() }
+                .catch { e -> 
+                    e.printStackTrace()
+                    _isLoading.value = false
+                }
                 .collect { docs ->
                     _documents.value = docs
+                    _isLoading.value = false
                 }
         }
     }

@@ -22,7 +22,9 @@ data class UserAdminModel(
     val lastReportTime: String,
     val hasViewed: Boolean,
     val timestamp: Long = 0L,
-    val avatarUrl: String = ""
+    val avatarUrl: String = "",
+    val phoneNumber: String = "",
+    val email: String = ""
 )
 
 class UserListViewModel(
@@ -82,7 +84,9 @@ class UserListViewModel(
                             } else "",
                             hasViewed = false, // Default to false
                             timestamp = latestDoc?.uploadedAt ?: profile.accountCreatedTime,
-                            avatarUrl = profile.avatarUrl
+                            avatarUrl = profile.avatarUrl,
+                            phoneNumber = profile.phoneNumber,
+                            email = profile.email
                         )
                     }
 

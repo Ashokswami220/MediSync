@@ -1,9 +1,11 @@
 package com.example.medisync.ui.components
 
-import androidx.compose.runtime.rememberUpdatedState
-
+import androidx.compose.runtime.getValue
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -188,10 +190,17 @@ fun WavyProgressIndicator(
     color: Color,
     trackColor: Color
 ) {
-    val progressState = rememberUpdatedState(progress)
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(
+            durationMillis = 400,
+            easing = FastOutSlowInEasing
+        ),
+        label = "ProgressAnimation"
+    )
 
     LinearWavyProgressIndicator(
-        progress = { progressState.value.coerceIn(0f, 1f) },
+        progress = { animatedProgress },
         modifier = modifier
             .fillMaxWidth()
             .height(6.dp)

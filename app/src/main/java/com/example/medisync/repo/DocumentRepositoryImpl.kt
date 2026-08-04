@@ -4,6 +4,7 @@ import com.cloudinary.android.MediaManager.get
 import com.example.medisync.model.DocumentMetadata
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -46,7 +47,7 @@ class DocumentRepositoryImpl(private val firestore: FirebaseFirestore) : Documen
     }
 
     override fun getDocuments(userUid: String?): Flow<List<DocumentMetadata>> = callbackFlow {
-        var listenerRegistration: com.google.firebase.firestore.ListenerRegistration? = null
+        var listenerRegistration: ListenerRegistration? = null
 
         if (userUid != null) {
             try {
@@ -54,7 +55,8 @@ class DocumentRepositoryImpl(private val firestore: FirebaseFirestore) : Documen
                     .document(userUid)
                     .get()
                     .await()
-                val previousUids = userDoc.get("previousUids") as? List<String> ?: emptyList()
+                val previousUids = (userDoc.get("previousUids") as? List<*>)
+                    ?.filterIsInstance<String>() ?: emptyList()
                 val allUids = listOf(userUid) + previousUids
 
                 val query = firestore.collection("uploaded_documents")

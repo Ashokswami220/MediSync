@@ -110,8 +110,13 @@ object UploadManager : KoinComponent {
                 val progressJob = scope.launch {
                     var fakeProgress = 0f
                     while (fakeProgress < 0.9f) {
-                        delay(300.milliseconds)
-                        fakeProgress += 0.05f
+                        if (fakeProgress < 0.6f) {
+                            delay(150.milliseconds)
+                            fakeProgress += 0.1f
+                        } else {
+                            delay(400.milliseconds)
+                            fakeProgress += 0.02f
+                        }
                         _uploadStatus.value =
                             _uploadStatus.value.copy(progress = fakeProgress.coerceAtMost(0.9f))
                     }
