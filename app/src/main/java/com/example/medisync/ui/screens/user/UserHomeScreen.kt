@@ -46,13 +46,17 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,22 +80,18 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
+import com.example.medisync.model.ContactModel
 import com.example.medisync.ui.components.CallUsBottomSheet
 import com.example.medisync.ui.components.HealthStatBottomSheet
 import com.example.medisync.ui.components.HealthStatDetails
 import com.example.medisync.ui.components.HomeTopBar
+import com.example.medisync.ui.components.HorizEmptyReportsState
+import com.example.medisync.ui.components.NotLoggedInState
+import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import com.google.firebase.auth.FirebaseAuth
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.runtime.collectAsState
-import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.LoadingIndicatorDefaults
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import com.example.medisync.ui.components.NotLoggedInState
-import com.example.medisync.ui.components.HorizEmptyReportsState
-import com.example.medisync.model.ContactModel
-import com.example.medisync.ui.screens.common.ConfigViewModel
 
 @Composable
 fun UserHomeScreen(
@@ -654,22 +654,24 @@ fun RecentReportsSection(
                     )
                 }
             }
+
             is ReportsState.Empty -> {
                 HorizEmptyReportsState(
                     modifier = Modifier.padding(vertical = 8.dp),
                     colorScheme = colorScheme
                 )
             }
+
             is ReportsState.Success -> {
                 val dateFormatter = java.text.SimpleDateFormat(
                     "MMM dd, yyyy",
                     androidx.compose.ui.platform.LocalLocale.current.platformLocale
                 )
-                
+
                 val recentDocs = reportsState.documents
                     .sortedByDescending { it.uploadedAt }
                     .take(3)
-                
+
                 if (recentDocs.isEmpty()) {
                     HorizEmptyReportsState(
                         modifier = Modifier.padding(vertical = 8.dp),
@@ -687,7 +689,11 @@ fun RecentReportsSection(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(colorScheme.surface)
-                                    .clickable { onNavigateToReportDetail(doc.documentName, doc.fileUrl) }
+                                    .clickable {
+                                        onNavigateToReportDetail(
+                                            doc.documentName, doc.fileUrl
+                                        )
+                                    }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(16.dp),
@@ -717,7 +723,11 @@ fun RecentReportsSection(
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = "${dateFormatter.format(java.util.Date(doc.uploadedAt))} • ${doc.linkedMember}",
+                                            text = "${
+                                                dateFormatter.format(
+                                                    java.util.Date(doc.uploadedAt)
+                                                )
+                                            } • ${doc.linkedMember}",
                                             fontSize = 13.sp,
                                             color = colorScheme.onSurfaceVariant
                                         )
@@ -730,12 +740,15 @@ fun RecentReportsSection(
                                 }
                             }
                             if (index < recentDocs.size - 1) {
-                                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+                                HorizontalDivider(
+                                    thickness = 1.dp, color = colorScheme.outlineVariant
+                                )
                             }
                         }
                     }
                 }
             }
+
             is ReportsState.Error -> {
                 HorizEmptyReportsState(
                     modifier = Modifier.padding(vertical = 8.dp),
@@ -767,20 +780,24 @@ fun PharmacistSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             val context = LocalContext.current
-            
-            val displayContacts = contacts.filter { it.imageResName == "doctor1" || it.imageResName == "doctor2" }.ifEmpty {
-                listOf(
-                    ContactModel(
-                        name = "Sawai Singh", phone = ContactConfig.pharmacistPhones.sawaiSingh,
-                        experience = "8 years experience", imageResName = "doctor1"
-                    ),
-                    ContactModel(
-                        name = "Govind", phone = ContactConfig.pharmacistPhones.govind,
-                        experience = "5 years experience", imageResName = "doctor2"
-                    )
-                )
-            }
-            
+
+            val displayContacts =
+                contacts.filter { it.imageResName == "doctor1" || it.imageResName == "doctor2" }
+                    .sortedBy { it.imageResName }
+                    .ifEmpty {
+                        listOf(
+                            ContactModel(
+                                name = "Sawai Singh",
+                                phone = ContactConfig.pharmacistPhones.sawaiSingh,
+                                experience = "8 years experience", imageResName = "doctor1"
+                            ),
+                            ContactModel(
+                                name = "Govind", phone = ContactConfig.pharmacistPhones.govind,
+                                experience = "5 years experience", imageResName = "doctor2"
+                            )
+                        )
+                    }
+
             displayContacts.forEach { contact ->
                 val imageRes = when (contact.imageResName) {
                     "doctor1" -> R.drawable.doctor1
@@ -788,7 +805,7 @@ fun PharmacistSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
                     "holding_flowers" -> R.drawable.holding_flowers
                     else -> R.drawable.holding_flowers
                 }
-                
+
                 PharmacistCard(
                     name = contact.name,
                     specialty = contact.role,

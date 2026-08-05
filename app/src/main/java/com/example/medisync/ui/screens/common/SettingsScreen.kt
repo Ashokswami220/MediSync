@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
@@ -225,13 +226,13 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .size(64.dp)
                                 .clip(RoundedCornerShape(32.dp))
-                                .background(colorScheme.primaryContainer),
+                                .background(colorScheme.secondary.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Language,
+                                imageVector = Icons.Default.Contacts,
                                 contentDescription = "Edit Contacts",
-                                tint = colorScheme.onPrimaryContainer,
+                                tint = colorScheme.secondary,
                                 modifier = Modifier.size(32.dp)
                             )
                         }

@@ -1,5 +1,6 @@
 package com.example.medisync.ui.screens.admin
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,17 +16,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import com.example.medisync.ui.components.CallUsBottomSheet
 import com.example.medisync.ui.components.HomeTopBar
+import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.ui.screens.user.AnimatedSloganText
 import com.example.medisync.ui.screens.user.HealthStatsGrid
 import com.example.medisync.ui.screens.user.PharmacistSection
-import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.ui.screens.user.PromotionCard
 import org.koin.androidx.compose.koinViewModel
 
@@ -45,6 +50,8 @@ fun AdminHomeScreen() {
         }
     }
 
+    var showCallUsSheet by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -59,7 +66,7 @@ fun AdminHomeScreen() {
                     .padding(horizontal = 16.dp)
             ) {
                 HealthStatsGrid(
-                    onCallUsClick = { /* No-op for admin for now */ },
+                    onCallUsClick = { showCallUsSheet = true },
                     onStatClick = { /* No-op */ },
                     context = context,
                     colorScheme = colorScheme,
@@ -88,5 +95,18 @@ fun AdminHomeScreen() {
             onBellClick = { },
             showMemberSwitcher = false
         )
+
+        if (showCallUsSheet) {
+            CallUsBottomSheet(
+                onDismissRequest = { showCallUsSheet = false },
+                onCallClick = { number ->
+                    val intent = Intent(Intent.ACTION_DIAL).apply {
+                        data = "tel:$number".toUri()
+                    }
+                    context.startActivity(intent)
+                    showCallUsSheet = false
+                }
+            )
+        }
     }
 }
