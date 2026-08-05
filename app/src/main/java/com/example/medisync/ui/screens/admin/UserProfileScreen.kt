@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Bloodtype
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
@@ -443,7 +444,8 @@ fun EditFieldBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = colorScheme.surface
+        containerColor = colorScheme.surface,
+        dragHandle = null
     ) {
         Column(
             modifier = Modifier
@@ -452,12 +454,21 @@ fun EditFieldBottomSheet(
         ) {
             val displayFieldName = editField.replace(Regex("([a-z])([A-Z]+)"), "$1 $2")
                 .replaceFirstChar { it.uppercase() }
-            Text(
-                text = "Edit $displayFieldName",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorScheme.onSurface
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Edit $displayFieldName",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colorScheme.onSurface
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                }
+            }
             Spacer(modifier = Modifier.height(24.dp))
             OutlinedTextField(
                 value = editValue,
