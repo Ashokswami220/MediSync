@@ -90,6 +90,7 @@ import com.example.medisync.ui.components.NotLoggedInState
 import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
+import com.example.medisync.utils.HealthStatusHelper
 import com.google.firebase.auth.FirebaseAuth
 import org.koin.androidx.compose.koinViewModel
 
@@ -388,7 +389,7 @@ fun HealthStatsGrid(
                             title = "Blood Pressure",
                             value = bloodPressure.ifEmpty { "--/--" },
                             unit = "mmHg",
-                            status = "Normal",
+                            status = HealthStatusHelper.getBloodPressureStatus(bloodPressure),
                             date = "28 Jun 2026",
                             icon = Icons.Default.MonitorHeart,
                             color = colorScheme.primary
@@ -477,7 +478,7 @@ fun HealthStatsGrid(
                                 title = "Blood Type",
                                 value = bloodType.ifEmpty { "--" },
                                 unit = "",
-                                status = "Donor Eligible",
+                                status = HealthStatusHelper.getBloodTypeStatus(bloodType),
                                 date = "15 Jan 2026",
                                 icon = Icons.Default.Bloodtype,
                                 color = colorScheme.secondary
@@ -540,7 +541,7 @@ fun HealthStatsGrid(
                                 title = "Blood Sugar",
                                 value = bloodSugar.ifEmpty { "--" },
                                 unit = "mg/dL",
-                                status = "Normal",
+                                status = HealthStatusHelper.getBloodSugarStatus(bloodSugar),
                                 date = "28 Jun 2026",
                                 icon = Icons.Default.Bloodtype,
                                 color = colorScheme.error
