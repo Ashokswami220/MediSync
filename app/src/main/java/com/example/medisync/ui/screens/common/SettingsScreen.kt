@@ -394,6 +394,12 @@ fun SettingsScreen(
                             )
                             .clickable {
                                 HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                val shareIntent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    putExtra(Intent.EXTRA_TEXT, "Check out MediSync! The smartest way to manage your health: https://medisync-4c8c0.web.app")
+                                    type = "text/plain"
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Share MediSync via"))
                             }
                             .padding(16.dp), contentAlignment = Alignment.Center
                     ) {
