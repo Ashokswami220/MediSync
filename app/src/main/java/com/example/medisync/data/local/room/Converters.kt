@@ -25,6 +25,9 @@ class Converters {
             obj.put("bloodType", vitals.bloodType)
             obj.put("bloodPressure", vitals.bloodPressure)
             obj.put("bloodSugar", vitals.bloodSugar)
+            obj.put("bloodTypeLastUpdated", vitals.bloodTypeLastUpdated)
+            obj.put("bloodPressureLastUpdated", vitals.bloodPressureLastUpdated)
+            obj.put("bloodSugarLastUpdated", vitals.bloodSugarLastUpdated)
             json.put(name, obj)
         }
         return json.toString()
@@ -43,7 +46,10 @@ class Converters {
                 map[key] = MemberVitals(
                     bloodType = obj.optString("bloodType", ""),
                     bloodPressure = obj.optString("bloodPressure", ""),
-                    bloodSugar = obj.optString("bloodSugar", "")
+                    bloodSugar = obj.optString("bloodSugar", ""),
+                    bloodTypeLastUpdated = obj.optLong("bloodTypeLastUpdated", 0L),
+                    bloodPressureLastUpdated = obj.optLong("bloodPressureLastUpdated", 0L),
+                    bloodSugarLastUpdated = obj.optLong("bloodSugarLastUpdated", 0L)
                 )
             }
         } catch (e: Exception) { e.printStackTrace() }

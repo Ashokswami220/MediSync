@@ -1,5 +1,7 @@
 package com.example.medisync.model
 
+import com.google.firebase.firestore.PropertyName
+
 data class UserProfile(
     val uid: String = "",
     val firstName: String = "",
@@ -9,12 +11,17 @@ data class UserProfile(
     val bloodType: String = "",
     val bloodPressure: String = "",
     val bloodSugar: String = "",
+    val bloodTypeLastUpdated: Long = 0L,
+    val bloodPressureLastUpdated: Long = 0L,
+    val bloodSugarLastUpdated: Long = 0L,
     val members: List<String> = emptyList(),
     val accountCreatedTime: Long = System.currentTimeMillis(),
     val avatarUrl: String = "",
     val email: String = "",
     val documents: List<String> = emptyList(),
-    val isPlaceholder: Boolean = false,
+    @get:PropertyName("isPlaceholder")
+    @set:PropertyName("isPlaceholder")
+    var isPlaceholder: Boolean = false,
     val claimedByUid: String? = null,
     val previousUids: List<String> = emptyList(),
     val memberVitals: Map<String, MemberVitals> = emptyMap()
@@ -23,5 +30,8 @@ data class UserProfile(
 data class MemberVitals(
     val bloodType: String = "",
     val bloodPressure: String = "",
-    val bloodSugar: String = ""
+    val bloodSugar: String = "",
+    val bloodTypeLastUpdated: Long = 0L,
+    val bloodPressureLastUpdated: Long = 0L,
+    val bloodSugarLastUpdated: Long = 0L
 )

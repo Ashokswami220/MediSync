@@ -44,9 +44,9 @@ class AdminUserProfileViewModel(
         val currentVitals = currentProfile.memberVitals[memberName] ?: MemberVitals()
         
         val updatedVitals = when (field) {
-            "bloodType" -> currentVitals.copy(bloodType = value)
-            "bloodPressure" -> currentVitals.copy(bloodPressure = value)
-            "bloodSugar" -> currentVitals.copy(bloodSugar = value)
+            "bloodType" -> currentVitals.copy(bloodType = value, bloodTypeLastUpdated = System.currentTimeMillis())
+            "bloodPressure" -> currentVitals.copy(bloodPressure = value, bloodPressureLastUpdated = System.currentTimeMillis())
+            "bloodSugar" -> currentVitals.copy(bloodSugar = value, bloodSugarLastUpdated = System.currentTimeMillis())
             else -> currentVitals
         }
         

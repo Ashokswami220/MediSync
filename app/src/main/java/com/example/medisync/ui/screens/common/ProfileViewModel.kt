@@ -152,6 +152,9 @@ class ProfileViewModel(
                         "bloodType" to "",
                         "bloodPressure" to "",
                         "bloodSugar" to "",
+                        "bloodTypeLastUpdated" to 0L,
+                        "bloodPressureLastUpdated" to 0L,
+                        "bloodSugarLastUpdated" to 0L,
                         "documents" to emptyList<String>()
                     )
                     userRepo.updateUserProfile(uid, updates)

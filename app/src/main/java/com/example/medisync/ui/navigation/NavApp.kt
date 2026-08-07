@@ -160,7 +160,10 @@ fun NavApp(
         MemberVitals(
             bloodType = currentProfile?.bloodType ?: "",
             bloodPressure = currentProfile?.bloodPressure ?: "",
-            bloodSugar = currentProfile?.bloodSugar ?: ""
+            bloodSugar = currentProfile?.bloodSugar ?: "",
+            bloodTypeLastUpdated = currentProfile?.bloodTypeLastUpdated ?: 0L,
+            bloodPressureLastUpdated = currentProfile?.bloodPressureLastUpdated ?: 0L,
+            bloodSugarLastUpdated = currentProfile?.bloodSugarLastUpdated ?: 0L
         )
     } else {
         currentProfile?.memberVitals?.get(selectedHomeMember) ?: MemberVitals()
@@ -169,6 +172,9 @@ fun NavApp(
     val bloodPressure = currentVitals.bloodPressure
     val bloodType = currentVitals.bloodType
     val bloodSugar = currentVitals.bloodSugar
+    val bloodTypeLastUpdated = currentVitals.bloodTypeLastUpdated
+    val bloodPressureLastUpdated = currentVitals.bloodPressureLastUpdated
+    val bloodSugarLastUpdated = currentVitals.bloodSugarLastUpdated
 
     var selectedReportName by rememberSaveable { mutableStateOf("") }
     var selectedReportUrl by rememberSaveable { mutableStateOf("") }
@@ -321,6 +327,9 @@ fun NavApp(
                         bloodPressure = bloodPressure,
                         bloodType = bloodType,
                         bloodSugar = bloodSugar,
+                        bloodTypeLastUpdated = bloodTypeLastUpdated,
+                        bloodPressureLastUpdated = bloodPressureLastUpdated,
+                        bloodSugarLastUpdated = bloodSugarLastUpdated,
                         selectedHomeMember = selectedHomeMember,
                         onHomeMemberSelected = { selectedHomeMember = it },
                         selectedReportMember = selectedReportMember,

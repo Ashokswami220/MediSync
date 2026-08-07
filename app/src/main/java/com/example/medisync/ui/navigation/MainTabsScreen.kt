@@ -42,6 +42,9 @@ fun MainTabsScreen(
     bloodPressure: String,
     bloodType: String,
     bloodSugar: String,
+    bloodTypeLastUpdated: Long,
+    bloodPressureLastUpdated: Long,
+    bloodSugarLastUpdated: Long,
     selectedHomeMember: String,
     onHomeMemberSelected: (String) -> Unit,
     selectedReportMember: String,
@@ -132,6 +135,9 @@ fun MainTabsScreen(
                                 bloodPressure = bloodPressure,
                                 bloodType = bloodType,
                                 bloodSugar = bloodSugar,
+                                bloodTypeLastUpdated = bloodTypeLastUpdated,
+                                bloodPressureLastUpdated = bloodPressureLastUpdated,
+                                bloodSugarLastUpdated = bloodSugarLastUpdated,
                                 onNavigateToLogin = onNavigateToLogin,
                                 onRefreshProfile = { profileViewModel.loadProfile() }
                             )
@@ -153,6 +159,9 @@ fun MainTabsScreen(
                                     bloodPressure = bloodPressure,
                                     bloodType = bloodType,
                                     bloodSugar = bloodSugar,
+                                    bloodTypeLastUpdated = bloodTypeLastUpdated,
+                                    bloodPressureLastUpdated = bloodPressureLastUpdated,
+                                    bloodSugarLastUpdated = bloodSugarLastUpdated,
                                     onNavigateToLogin = onNavigateToLogin,
                                     onRefreshProfile = { profileViewModel.loadProfile() }
                                 )
@@ -168,6 +177,9 @@ fun MainTabsScreen(
                             bloodPressure = bloodPressure,
                             bloodType = bloodType,
                             bloodSugar = bloodSugar,
+                            bloodTypeLastUpdated = bloodTypeLastUpdated,
+                            bloodPressureLastUpdated = bloodPressureLastUpdated,
+                            bloodSugarLastUpdated = bloodSugarLastUpdated,
                             onNavigateToLogin = onNavigateToLogin,
                             onRefreshProfile = { profileViewModel.loadProfile() }
                         )

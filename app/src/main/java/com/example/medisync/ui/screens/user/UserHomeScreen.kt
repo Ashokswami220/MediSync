@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -81,18 +82,20 @@ import androidx.core.net.toUri
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.ContactModel
-import com.example.medisync.ui.components.sheets.CallUsBottomSheet
-import com.example.medisync.ui.components.sheets.HealthStatBottomSheet
-import com.example.medisync.ui.components.sheets.HealthStatDetails
 import com.example.medisync.ui.components.HomeTopBar
 import com.example.medisync.ui.components.HorizEmptyReportsState
 import com.example.medisync.ui.components.NotLoggedInState
+import com.example.medisync.ui.components.sheets.CallUsBottomSheet
+import com.example.medisync.ui.components.sheets.HealthStatBottomSheet
+import com.example.medisync.ui.components.sheets.HealthStatDetails
 import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import com.example.medisync.utils.HealthStatusHelper
 import com.google.firebase.auth.FirebaseAuth
 import org.koin.androidx.compose.koinViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
 
 @Composable
 fun UserHomeScreen(
@@ -104,6 +107,9 @@ fun UserHomeScreen(
     bloodPressure: String = "",
     bloodType: String = "",
     bloodSugar: String = "",
+    bloodTypeLastUpdated: Long = 0L,
+    bloodPressureLastUpdated: Long = 0L,
+    bloodSugarLastUpdated: Long = 0L,
     onNavigateToLogin: () -> Unit,
     onRefreshProfile: () -> Unit = {}
 ) {
@@ -154,7 +160,10 @@ fun UserHomeScreen(
                     colorScheme = colorScheme,
                     bloodPressure = bloodPressure,
                     bloodType = bloodType,
-                    bloodSugar = bloodSugar
+                    bloodSugar = bloodSugar,
+                    bloodTypeLastUpdated = bloodTypeLastUpdated,
+                    bloodPressureLastUpdated = bloodPressureLastUpdated,
+                    bloodSugarLastUpdated = bloodSugarLastUpdated
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -239,8 +248,16 @@ fun HealthStatsGrid(
     colorScheme: ColorScheme,
     bloodPressure: String,
     bloodType: String,
-    bloodSugar: String
+    bloodSugar: String,
+    bloodTypeLastUpdated: Long,
+    bloodPressureLastUpdated: Long,
+    bloodSugarLastUpdated: Long
 ) {
+    val formatter = SimpleDateFormat("dd MMM yyyy", LocalLocale.current.platformLocale)
+    val bpDateString = if (bloodPressureLastUpdated > 0L) formatter.format(Date(bloodPressureLastUpdated)) else "N/A"
+    val btDateString = if (bloodTypeLastUpdated > 0L) formatter.format(Date(bloodTypeLastUpdated)) else "N/A"
+    val bsDateString = if (bloodSugarLastUpdated > 0L) formatter.format(Date(bloodSugarLastUpdated)) else "N/A"
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -390,7 +407,7 @@ fun HealthStatsGrid(
                             value = bloodPressure.ifEmpty { "--/--" },
                             unit = "mmHg",
                             status = HealthStatusHelper.getBloodPressureStatus(bloodPressure),
-                            date = "28 Jun 2026",
+                            date = bpDateString,
                             icon = Icons.Default.MonitorHeart,
                             color = colorScheme.primary
                         )
@@ -479,7 +496,7 @@ fun HealthStatsGrid(
                                 value = bloodType.ifEmpty { "--" },
                                 unit = "",
                                 status = HealthStatusHelper.getBloodTypeStatus(bloodType),
-                                date = "15 Jan 2026",
+                                date = btDateString,
                                 icon = Icons.Default.Bloodtype,
                                 color = colorScheme.secondary
                             )
@@ -542,7 +559,7 @@ fun HealthStatsGrid(
                                 value = bloodSugar.ifEmpty { "--" },
                                 unit = "mg/dL",
                                 status = HealthStatusHelper.getBloodSugarStatus(bloodSugar),
-                                date = "28 Jun 2026",
+                                date = bsDateString,
                                 icon = Icons.Default.Bloodtype,
                                 color = colorScheme.error
                             )
@@ -664,9 +681,9 @@ fun RecentReportsSection(
             }
 
             is ReportsState.Success -> {
-                val dateFormatter = java.text.SimpleDateFormat(
+                val dateFormatter = SimpleDateFormat(
                     "MMM dd, yyyy",
-                    androidx.compose.ui.platform.LocalLocale.current.platformLocale
+                    LocalLocale.current.platformLocale
                 )
 
                 val recentDocs = reportsState.documents
@@ -726,7 +743,7 @@ fun RecentReportsSection(
                                         Text(
                                             text = "${
                                                 dateFormatter.format(
-                                                    java.util.Date(doc.uploadedAt)
+                                                    Date(doc.uploadedAt)
                                                 )
                                             } • ${doc.linkedMember}",
                                             fontSize = 13.sp,

@@ -82,16 +82,25 @@ class UserRepositoryImpl(
             try {
                 val snapshot = usersCollection.get()
                     .await()
+                android.util.Log.d("UserRepositoryImpl", "Fetched ${snapshot.documents.size} from Firestore")
                 val profiles = snapshot.documents.mapNotNull { doc ->
-                    val profile = doc.toObject(UserProfile::class.java)
-                    val isPlaceholder = doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder") ?: false
-                    profile?.copy(uid = doc.id, isPlaceholder = isPlaceholder)
+                    try {
+                        val profile = doc.toObject(UserProfile::class.java)
+                        val isPlaceholder = doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder") ?: false
+                        profile?.copy(uid = doc.id, isPlaceholder = isPlaceholder)
+                    } catch (e: Exception) {
+                        android.util.Log.e("UserRepositoryImpl", "Error mapping user document ${doc.id}", e)
+                        null
+                    }
                 }
+                android.util.Log.d("UserRepositoryImpl", "Mapped ${profiles.size} profiles")
                 db.withTransaction {
                     userDao.deleteAllUsers()
                     userDao.insertUsers(profiles.map { UserEntity.fromUserProfile(it) })
                 }
-            } catch (_: Exception) {
+                android.util.Log.d("UserRepositoryImpl", "Inserted ${profiles.size} users into Room")
+            } catch (e: Exception) {
+                android.util.Log.e("UserRepositoryImpl", "Error fetching users from Firestore", e)
                 // Network errors are ignored here, relying on offline Room cache
             }
         }
@@ -99,6 +108,7 @@ class UserRepositoryImpl(
         // 2. Continually emit from Room Database (Single Source of Truth)
         userDao.getAllUsers()
             .collect { entities ->
+                android.util.Log.d("UserRepositoryImpl", "Room emitted ${entities.size} users")
                 send(entities.map { it.toUserProfile() })
             }
     }

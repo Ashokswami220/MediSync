@@ -127,6 +127,15 @@ fun UserProfileScreen(
                 GlobalToastManager.showToast(message = msg)
                 showEditSheet = false
             }
+        } else if (field in listOf("bloodType", "bloodPressure", "bloodSugar")) {
+            val timestampField = "${field}LastUpdated"
+            viewModel.updateUserFields(
+                userUid,
+                mapOf(field to value, timestampField to System.currentTimeMillis())
+            ) { _, msg ->
+                GlobalToastManager.showToast(message = msg)
+                showEditSheet = false
+            }
         } else {
             viewModel.updateUserField(userUid, field, value) { _, msg ->
                 GlobalToastManager.showToast(message = msg)
