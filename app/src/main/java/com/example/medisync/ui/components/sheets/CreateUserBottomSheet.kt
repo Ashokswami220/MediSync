@@ -1,4 +1,4 @@
-package com.example.medisync.ui.components
+package com.example.medisync.ui.components.sheets
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement

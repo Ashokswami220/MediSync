@@ -1,4 +1,4 @@
-package com.example.medisync.ui.components
+package com.example.medisync.ui.components.sheets
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons

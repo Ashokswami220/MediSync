@@ -15,6 +15,7 @@ import com.example.medisync.repo.ConfigRepositoryImpl
 import com.example.medisync.ui.screens.admin.AdminUserProfileViewModel
 import com.example.medisync.ui.screens.admin.UserDetailViewModel
 import com.example.medisync.ui.screens.admin.UserListViewModel
+import com.example.medisync.ui.screens.admin.AdminHomeViewModel
 import com.example.medisync.ui.screens.auth.AuthViewModel
 import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.ui.screens.common.ProfileViewModel
@@ -60,4 +61,5 @@ val appModule = module {
     viewModel { AdminUserProfileViewModel(get()) }
     viewModel { ReportsViewModel(get(), get()) }
     viewModel { ConfigViewModel(get()) }
+    viewModel { AdminHomeViewModel(get(), get()) }
 }

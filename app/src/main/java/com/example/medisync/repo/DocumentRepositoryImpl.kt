@@ -3,6 +3,7 @@ package com.example.medisync.repo
 import com.cloudinary.android.MediaManager.get
 import com.example.medisync.model.DocumentMetadata
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.Dispatchers
@@ -177,5 +178,36 @@ class DocumentRepositoryImpl(private val firestore: FirebaseFirestore) : Documen
                 e.printStackTrace()
             }
         }
+    }
+
+    override suspend fun incrementReportOpenCount(): Result<Unit> {
+        return try {
+            firestore.collection("system").document("stats")
+                .update("reportsOpenedCount", FieldValue.increment(1))
+                .await()
+            Result.success(Unit)
+        } catch (_: Exception) {
+            // If the document doesn't exist yet, we create it
+            try {
+                val data = hashMapOf("reportsOpenedCount" to 1L)
+                firestore.collection("system").document("stats").set(data).await()
+                Result.success(Unit)
+            } catch (ex: Exception) {
+                Result.failure(ex)
+            }
+        }
+    }
+
+    override fun getReportOpenCount(): Flow<Long> = callbackFlow {
+        val listener = firestore.collection("system").document("stats")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(0L)
+                    return@addSnapshotListener
+                }
+                val count = snapshot?.getLong("reportsOpenedCount") ?: 0L
+                trySend(count)
+            }
+        awaitClose { listener.remove() }
     }
 }

@@ -101,6 +101,12 @@ import java.io.IOException
 import java.net.URL
 import kotlin.time.Duration.Companion.milliseconds
 
+import com.example.medisync.model.UserRole
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import com.example.medisync.repo.DocumentRepository
+import androidx.compose.runtime.collectAsState
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ReportDetailScreen(
@@ -110,6 +116,10 @@ fun ReportDetailScreen(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
+    
+    val profileViewModel: ProfileViewModel = koinViewModel()
+    val profileState by profileViewModel.profileState.collectAsState()
+    val documentRepository: DocumentRepository = koinInject()
 
     var isFullScreen by remember { mutableStateOf(false) }
     var currentPage by remember { mutableIntStateOf(1) }
@@ -120,6 +130,17 @@ fun ReportDetailScreen(
     var localPdfFile by remember { mutableStateOf<File?>(null) }
     var renderedPageUri by remember { mutableStateOf<String?>(null) }
     var isLoadingPdf by remember { mutableStateOf(isPdf) }
+    
+    var hasTrackedAnalytics by remember { mutableStateOf(false) }
+    LaunchedEffect(fileUrl, profileState) {
+        if (fileUrl.isNotEmpty() && !hasTrackedAnalytics && profileState is ProfileState.Success) {
+            val role = (profileState as ProfileState.Success).profile.role
+            if (role != UserRole.ADMIN) {
+                documentRepository.incrementReportOpenCount()
+            }
+            hasTrackedAnalytics = true
+        }
+    }
 
     LaunchedEffect(fileUrl) {
         if (fileUrl.isEmpty()) return@LaunchedEffect

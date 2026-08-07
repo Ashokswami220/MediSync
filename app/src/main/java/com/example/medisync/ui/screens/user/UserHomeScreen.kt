@@ -81,9 +81,9 @@ import androidx.core.net.toUri
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.ContactModel
-import com.example.medisync.ui.components.CallUsBottomSheet
-import com.example.medisync.ui.components.HealthStatBottomSheet
-import com.example.medisync.ui.components.HealthStatDetails
+import com.example.medisync.ui.components.sheets.CallUsBottomSheet
+import com.example.medisync.ui.components.sheets.HealthStatBottomSheet
+import com.example.medisync.ui.components.sheets.HealthStatDetails
 import com.example.medisync.ui.components.HomeTopBar
 import com.example.medisync.ui.components.HorizEmptyReportsState
 import com.example.medisync.ui.components.NotLoggedInState

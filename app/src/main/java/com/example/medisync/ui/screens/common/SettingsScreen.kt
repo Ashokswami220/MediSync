@@ -69,8 +69,8 @@ import com.example.medisync.data.SettingsManager
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.UserRole
 import com.example.medisync.repo.AuthRepository
-import com.example.medisync.ui.components.AppearanceBottomSheet
-import com.example.medisync.ui.components.LanguageBottomSheet
+import com.example.medisync.ui.components.sheets.AppearanceBottomSheet
+import com.example.medisync.ui.components.sheets.LanguageBottomSheet
 import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.ui.theme.LocalAppearance

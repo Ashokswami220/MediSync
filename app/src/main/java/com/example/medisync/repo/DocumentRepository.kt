@@ -20,4 +20,8 @@ interface DocumentRepository {
     suspend fun clearDataForUsers(uids: List<String>): Result<Unit>
 
     suspend fun deleteDocument(docId: String): Result<Unit>
+    
+    suspend fun incrementReportOpenCount(): Result<Unit>
+    
+    fun getReportOpenCount(): Flow<Long>
 }

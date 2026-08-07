@@ -80,7 +80,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.example.medisync.model.DocumentMetadata
-import com.example.medisync.ui.components.AddMemberBottomSheet
+import com.example.medisync.ui.components.sheets.AddMemberBottomSheet
 import com.example.medisync.ui.components.ClearAdminDataDialog
 import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.components.MemberSwitcher

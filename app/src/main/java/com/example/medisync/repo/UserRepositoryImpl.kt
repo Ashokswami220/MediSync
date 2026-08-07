@@ -82,7 +82,11 @@ class UserRepositoryImpl(
             try {
                 val snapshot = usersCollection.get()
                     .await()
-                val profiles = snapshot.toObjects(UserProfile::class.java)
+                val profiles = snapshot.documents.mapNotNull { doc ->
+                    val profile = doc.toObject(UserProfile::class.java)
+                    val isPlaceholder = doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder") ?: false
+                    profile?.copy(uid = doc.id, isPlaceholder = isPlaceholder)
+                }
                 db.withTransaction {
                     userDao.deleteAllUsers()
                     userDao.insertUsers(profiles.map { UserEntity.fromUserProfile(it) })

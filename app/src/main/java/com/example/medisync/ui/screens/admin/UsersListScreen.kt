@@ -63,7 +63,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.ui.components.ClearAdminDataDialog
-import com.example.medisync.ui.components.CreateUserBottomSheet
+import com.example.medisync.ui.components.sheets.CreateUserBottomSheet
 import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.UserAvatar

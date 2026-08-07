@@ -69,7 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.model.MemberVitals
 import com.example.medisync.model.UserProfile
-import com.example.medisync.ui.components.AddMemberBottomSheet
+import com.example.medisync.ui.components.sheets.AddMemberBottomSheet
 import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.utils.GlobalToastManager
 import org.koin.androidx.compose.koinViewModel

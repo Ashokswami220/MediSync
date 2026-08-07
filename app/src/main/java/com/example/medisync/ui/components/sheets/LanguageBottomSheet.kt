@@ -1,19 +1,14 @@
-package com.example.medisync.ui.components
+package com.example.medisync.ui.components.sheets
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.SettingsBrightness
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,17 +20,16 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppearanceBottomSheet(
-    currentAppearance: String,
-    onAppearanceSelected: (String) -> Unit,
-    onDismiss: () -> Unit
+fun LanguageBottomSheet(
+    currentLanguage: String = "English",
+    onDismissRequest: () -> Unit,
+    onLanguageSelected: (String) -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val appearances = listOf("System", "Light", "Dark")
+    val languages = listOf("English", "Hindi")
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = colorScheme.background,
+        onDismissRequest = onDismissRequest,
+        containerColor = MaterialTheme.colorScheme.background,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         dragHandle = null
     ) {
@@ -52,69 +46,48 @@ fun AppearanceBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Appearance",
+                    text = "App Language",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                IconButton(onClick = onDismiss) {
+                IconButton(onClick = onDismissRequest) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
                 }
             }
 
-            appearances.forEach { appearance ->
-                val isSelected = appearance == currentAppearance
-
-                val icon = when (appearance) {
-                    "Light" -> Icons.Default.LightMode
-                    "Dark" -> Icons.Default.DarkMode
-                    else -> Icons.Default.SettingsBrightness
-                }
-
-                val animatedCornerRadius by animateDpAsState(
-                    targetValue = if (isSelected) 50.dp else 12.dp,
-                    animationSpec = tween(durationMillis = 300),
-                    label = "cornerRadiusAnimation"
-                )
-
-                val animatedBackgroundColor by animateColorAsState(
-                    targetValue = if (isSelected) colorScheme.secondary else colorScheme.surfaceVariant,
-                    animationSpec = tween(durationMillis = 300),
-                    label = "backgroundColorAnimation"
-                )
-
+            languages.forEach { language ->
+                val isSelected = language == currentLanguage
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(animatedCornerRadius))
-                        .background(animatedBackgroundColor)
-                        .clickable {
-                            onAppearanceSelected(appearance)
-                        }
+                        .clip(if (isSelected) CircleShape else RoundedCornerShape(12.dp))
+                        .background(if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { onLanguageSelected(language) }
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = icon,
+                        imageVector = Icons.Default.Language,
                         contentDescription = null,
-                        tint = if (isSelected) colorScheme.onSecondary else colorScheme.onSurfaceVariant
+                        tint = if (isSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
+                    
                     Spacer(modifier = Modifier.width(16.dp))
-
+                    
                     Text(
-                        text = appearance,
+                        text = language,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                         fontSize = 16.sp,
-                        color = if (isSelected) colorScheme.onSecondary else colorScheme.onSurface,
+                        color = if (isSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
-
+                    
                     if (isSelected) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Selected",
-                            tint = colorScheme.onSecondary
+                            tint = MaterialTheme.colorScheme.onSecondary
                         )
                     }
                 }

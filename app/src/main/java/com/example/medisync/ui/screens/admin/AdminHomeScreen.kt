@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -25,15 +26,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import com.example.medisync.ui.components.CallUsBottomSheet
 import com.example.medisync.ui.components.HomeTopBar
+import com.example.medisync.ui.components.sheets.CallUsBottomSheet
+import com.example.medisync.ui.components.sheets.TotalUsersBottomSheet
 import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.ui.screens.user.AnimatedSloganText
-import com.example.medisync.ui.screens.user.HealthStatsGrid
 import com.example.medisync.ui.screens.user.PharmacistSection
 import com.example.medisync.ui.screens.user.PromotionCard
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminHomeScreen() {
     val scrollState = rememberScrollState()
@@ -43,6 +45,12 @@ fun AdminHomeScreen() {
     val configViewModel: ConfigViewModel = koinViewModel()
     val appConfig by configViewModel.appConfig.collectAsState()
 
+    val adminHomeViewModel: AdminHomeViewModel = koinViewModel()
+    val totalUsers by adminHomeViewModel.totalUsers.collectAsState()
+    val usersJoinedToday by adminHomeViewModel.usersJoinedToday.collectAsState()
+    val unclaimedPreRegUsers by adminHomeViewModel.unclaimedPreRegUsers.collectAsState()
+    val reportsOpenedCount by adminHomeViewModel.reportsOpenedCount.collectAsState()
+
     val collapseRangePx = with(density) { 70.dp.toPx() }
     val scrollFraction by remember {
         derivedStateOf {
@@ -51,6 +59,7 @@ fun AdminHomeScreen() {
     }
 
     var showCallUsSheet by remember { mutableStateOf(false) }
+    var showJoinedTodaySheet by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -65,14 +74,14 @@ fun AdminHomeScreen() {
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             ) {
-                HealthStatsGrid(
+                AdminStatsGrid(
                     onCallUsClick = { showCallUsSheet = true },
-                    onStatClick = { /* No-op */ },
+                    onTotalUsersClick = { showJoinedTodaySheet = true },
                     context = context,
                     colorScheme = colorScheme,
-                    bloodPressure = "",
-                    bloodType = "",
-                    bloodSugar = ""
+                    reportsOpenedCount = reportsOpenedCount,
+                    totalUsersCount = totalUsers,
+                    unclaimedPreRegCount = unclaimedPreRegUsers
                 )
             }
 
@@ -106,6 +115,15 @@ fun AdminHomeScreen() {
                     context.startActivity(intent)
                     showCallUsSheet = false
                 }
+            )
+        }
+
+        if (showJoinedTodaySheet) {
+            TotalUsersBottomSheet(
+                totalUsers = totalUsers,
+                usersJoinedToday = usersJoinedToday,
+                colorScheme = colorScheme,
+                onDismissRequest = { showJoinedTodaySheet = false }
             )
         }
     }
