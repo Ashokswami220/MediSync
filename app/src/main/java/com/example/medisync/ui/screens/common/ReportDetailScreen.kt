@@ -133,10 +133,13 @@ fun ReportDetailScreen(
     
     var hasTrackedAnalytics by remember { mutableStateOf(false) }
     LaunchedEffect(fileUrl, profileState) {
+        android.util.Log.d("MediSync", "Tracking check: fileUrl='${fileUrl.take(15)}...', hasTracked=$hasTrackedAnalytics, profileState=$profileState")
         if (fileUrl.isNotEmpty() && !hasTrackedAnalytics && profileState is ProfileState.Success) {
             val role = (profileState as ProfileState.Success).profile.role
+            android.util.Log.d("MediSync", "Tracking role: $role")
             if (role != UserRole.ADMIN) {
-                documentRepository.incrementReportOpenCount()
+                val res = documentRepository.incrementReportOpenCount()
+                android.util.Log.d("MediSync", "Tracking incremented result: $res")
             }
             hasTrackedAnalytics = true
         }

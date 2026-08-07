@@ -56,5 +56,12 @@ service cloud.firestore {
       allow write: if isAuthenticated() && isAdmin();
     }
 
+    // SYSTEM COLLECTION
+    match /system/{docId} {
+      allow read: if isAuthenticated() && isAdmin();
+      // Allow authenticated users to increment stats
+      allow write: if isAuthenticated();
+    }
+
   }
 }

@@ -7,5 +7,8 @@
       "**/node_modules/**"
     ],
     "appAssociation": "NONE"
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }
