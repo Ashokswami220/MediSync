@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.example.medisync.ui.components.HomeTopBar
 import com.example.medisync.ui.components.sheets.CallUsBottomSheet
+import com.example.medisync.ui.components.sheets.ReportsOpenedBottomSheet
 import com.example.medisync.ui.components.sheets.TotalUsersBottomSheet
 import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.ui.screens.user.AnimatedSloganText
@@ -50,6 +51,8 @@ fun AdminHomeScreen() {
     val usersJoinedToday by adminHomeViewModel.usersJoinedToday.collectAsState()
     val unclaimedPreRegUsers by adminHomeViewModel.unclaimedPreRegUsers.collectAsState()
     val reportsOpenedCount by adminHomeViewModel.reportsOpenedCount.collectAsState()
+    val reportsOpenedTodayCount by adminHomeViewModel.reportsOpenedTodayCount.collectAsState()
+    val totalUploadedReportsCount by adminHomeViewModel.totalUploadedReportsCount.collectAsState()
 
     val collapseRangePx = with(density) { 70.dp.toPx() }
     val scrollFraction by remember {
@@ -60,6 +63,7 @@ fun AdminHomeScreen() {
 
     var showCallUsSheet by remember { mutableStateOf(false) }
     var showJoinedTodaySheet by remember { mutableStateOf(false) }
+    var showReportsOpenedSheet by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -77,6 +81,7 @@ fun AdminHomeScreen() {
                 AdminStatsGrid(
                     onCallUsClick = { showCallUsSheet = true },
                     onTotalUsersClick = { showJoinedTodaySheet = true },
+                    onReportsOpenedClick = { showReportsOpenedSheet = true },
                     context = context,
                     colorScheme = colorScheme,
                     reportsOpenedCount = reportsOpenedCount,
@@ -124,6 +129,16 @@ fun AdminHomeScreen() {
                 usersJoinedToday = usersJoinedToday,
                 colorScheme = colorScheme,
                 onDismissRequest = { showJoinedTodaySheet = false }
+            )
+        }
+
+        if (showReportsOpenedSheet) {
+            ReportsOpenedBottomSheet(
+                reportsOpenedCount = reportsOpenedCount,
+                reportsOpenedTodayCount = reportsOpenedTodayCount,
+                totalUploadedReportsCount = totalUploadedReportsCount,
+                colorScheme = colorScheme,
+                onDismissRequest = { showReportsOpenedSheet = false }
             )
         }
     }

@@ -58,7 +58,7 @@ service cloud.firestore {
 
     // SYSTEM COLLECTION
     match /system/{docId} {
-      allow read: if isAuthenticated() && isAdmin();
+      allow read: if isAuthenticated();
       // Allow authenticated users to increment stats
       allow write: if isAuthenticated();
     }

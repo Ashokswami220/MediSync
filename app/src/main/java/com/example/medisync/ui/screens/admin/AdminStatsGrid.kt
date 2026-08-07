@@ -56,6 +56,7 @@ import com.example.medisync.ui.screens.user.openMedicalCoordinates
 fun AdminStatsGrid(
     onCallUsClick: () -> Unit,
     onTotalUsersClick: () -> Unit,
+    onReportsOpenedClick: () -> Unit,
     context: Context,
     colorScheme: ColorScheme,
     reportsOpenedCount: Long,
@@ -202,6 +203,11 @@ fun AdminStatsGrid(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = LocalIndication.current,
+                    onClick = onReportsOpenedClick
+                )
                 .background(colorScheme.surface)
         ) {
             // Left Content

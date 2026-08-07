@@ -3,15 +3,19 @@ package com.example.medisync.repo
 import com.cloudinary.android.MediaManager.get
 import com.example.medisync.model.DocumentMetadata
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import com.google.firebase.firestore.AggregateSource
 
 class DocumentRepositoryImpl(private val firestore: FirebaseFirestore) : DocumentRepository {
 
@@ -182,32 +186,66 @@ class DocumentRepositoryImpl(private val firestore: FirebaseFirestore) : Documen
 
     override suspend fun incrementReportOpenCount(): Result<Unit> {
         return try {
-            firestore.collection("system").document("stats")
-                .update("reportsOpenedCount", FieldValue.increment(1))
-                .await()
+            val docRef = firestore.collection("system").document("stats")
+            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val today = formatter.format(Date())
+
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                if (snapshot.exists()) {
+                    val lastDate = snapshot.getString("lastOpenedDate") ?: ""
+                    val currentTotal = snapshot.getLong("reportsOpenedCount") ?: 0L
+                    var currentToday = snapshot.getLong("reportsOpenedTodayCount") ?: 0L
+                    
+                    if (lastDate == today) {
+                        currentToday += 1
+                    } else {
+                        currentToday = 1
+                    }
+                    
+                    transaction.update(docRef, "reportsOpenedCount", currentTotal + 1)
+                    transaction.update(docRef, "reportsOpenedTodayCount", currentToday)
+                    transaction.update(docRef, "lastOpenedDate", today)
+                } else {
+                    transaction.set(docRef, hashMapOf(
+                        "reportsOpenedCount" to 1L,
+                        "reportsOpenedTodayCount" to 1L,
+                        "lastOpenedDate" to today
+                    ))
+                }
+            }.await()
             Result.success(Unit)
-        } catch (_: Exception) {
-            // If the document doesn't exist yet, we create it
-            try {
-                val data = hashMapOf("reportsOpenedCount" to 1L)
-                firestore.collection("system").document("stats").set(data).await()
-                Result.success(Unit)
-            } catch (ex: Exception) {
-                Result.failure(ex)
-            }
+        } catch (ex: Exception) {
+            Result.failure(ex)
         }
     }
 
-    override fun getReportOpenCount(): Flow<Long> = callbackFlow {
+    override fun getReportOpenCount(): Flow<ReportStats> = callbackFlow {
         val listener = firestore.collection("system").document("stats")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    trySend(0L)
+                    trySend(ReportStats())
                     return@addSnapshotListener
                 }
-                val count = snapshot?.getLong("reportsOpenedCount") ?: 0L
-                trySend(count)
+                
+                val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val today = formatter.format(Date())
+                
+                val lastDate = snapshot?.getString("lastOpenedDate") ?: ""
+                val totalCount = snapshot?.getLong("reportsOpenedCount") ?: 0L
+                val todayCount = if (lastDate == today) (snapshot?.getLong("reportsOpenedTodayCount") ?: 0L) else 0L
+                
+                trySend(ReportStats(totalOpened = totalCount, todayOpened = todayCount))
             }
         awaitClose { listener.remove() }
+    }
+
+    override fun getTotalReportsCount(): Flow<Long> = flow {
+        try {
+            val snapshot = firestore.collection("uploaded_documents").count().get(AggregateSource.SERVER).await()
+            emit(snapshot.count)
+        } catch (_: Exception) {
+            emit(0L)
+        }
     }
 }

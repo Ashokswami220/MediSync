@@ -30,6 +30,12 @@ class AdminHomeViewModel(
     private val _reportsOpenedCount = MutableStateFlow(0L)
     val reportsOpenedCount: StateFlow<Long> = _reportsOpenedCount.asStateFlow()
 
+    private val _reportsOpenedTodayCount = MutableStateFlow(0L)
+    val reportsOpenedTodayCount: StateFlow<Long> = _reportsOpenedTodayCount.asStateFlow()
+
+    private val _totalUploadedReportsCount = MutableStateFlow(0L)
+    val totalUploadedReportsCount: StateFlow<Long> = _totalUploadedReportsCount.asStateFlow()
+
     init {
         fetchUsersStats()
         fetchReportsStats()
@@ -65,8 +71,17 @@ class AdminHomeViewModel(
         viewModelScope.launch {
             documentRepository.getReportOpenCount()
                 .catch { /* ignore */ }
+                .collectLatest { stats ->
+                    _reportsOpenedCount.value = stats.totalOpened
+                    _reportsOpenedTodayCount.value = stats.todayOpened
+                }
+        }
+        
+        viewModelScope.launch {
+            documentRepository.getTotalReportsCount()
+                .catch { /* ignore */ }
                 .collectLatest { count ->
-                    _reportsOpenedCount.value = count
+                    _totalUploadedReportsCount.value = count
                 }
         }
     }
