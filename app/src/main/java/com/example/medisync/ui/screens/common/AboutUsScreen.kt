@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
@@ -40,49 +39,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap.Companion.Round
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.medisync.R
-
-@Composable
-fun Modifier.graphPaperBackground(
-    gridSize: Dp = 32.dp
-): Modifier {
-    val lineColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
-    val backgroundColor = MaterialTheme.colorScheme.background
-
-    return this
-        .background(backgroundColor)
-        .drawBehind {
-            val sizePx = gridSize.toPx()
-            val width = size.width
-            val height = size.height
-
-            // Draw vertical lines
-            var x = 0f
-            while (x < width) {
-                drawLine(
-                    color = lineColor,
-                    start = Offset(x, 0f),
-                    end = Offset(x, height),
-                    strokeWidth = 1.5f
-                )
-                x += sizePx
-            }
-
-            // Draw horizontal lines
-            var y = 0f
-            while (y < height) {
-                drawLine(
-                    color = lineColor,
-                    start = Offset(0f, y),
-                    end = Offset(width, y),
-                    strokeWidth = 1.5f
-                )
-                y += sizePx
-            }
-        }
-}
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.StartOffsetType
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.IntOffset
+import com.example.medisync.data.local.ContactConfig
+import kotlin.random.Random
+import kotlin.math.roundToInt
 
 
 @Composable
@@ -95,14 +70,17 @@ fun AboutUsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .graphPaperBackground()
+                .background(MaterialTheme.colorScheme.background)
         ) {
+            FallingShapesBackground(
+                modifier = Modifier.blur(8.dp)
+            )
+            
             IconButton(
                 onClick = onBackClick,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
+                    .align(Alignment.TopStart)
+                    .padding(start = 20.dp, top = paddingValues.calculateTopPadding())
             ) {
 
                 Icon(
@@ -113,7 +91,9 @@ fun AboutUsScreen(
             }
 
             Column(
-                modifier = Modifier.align(Alignment.Center),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(32.dp),
                 horizontalAlignment = Alignment.Start
             ) {
@@ -121,6 +101,7 @@ fun AboutUsScreen(
                 val spacing = 16.dp
                 val shapeColor = Color.Black.copy(alpha = 0.5f)
                 val iconColor = MaterialTheme.colorScheme.surface
+                val uriHandler = LocalUriHandler.current
 
                 // Top Section (Profile Box + Text)
                 Row(
@@ -129,7 +110,7 @@ fun AboutUsScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(110.dp)
+                            .size(90.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(shapeColor),
                         contentAlignment = Alignment.Center
@@ -159,26 +140,24 @@ fun AboutUsScreen(
 
                     // Left Column
                     Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-                        // Top Left: Triangle (LinkedIn)
+                        // Top Left: Fan (X)
                         Box(
                             modifier = Modifier
                                 .size(shapeSize)
-                                .pressableScale { },
+                                .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.twitter) },
                             contentAlignment = Alignment.Center
                         ) {
-                            // Rotation state for Triangle
-
                             Icon(
-                                painter = painterResource(id = R.drawable.triangle),
-                                contentDescription = "Triangle",
+                                painter = painterResource(id = R.drawable.fan_left),
+                                contentDescription = "Fan",
                                 tint = shapeColor,
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .scale(1.3f)
+                                    .scale(1.2f)
                             )
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_linkedin),
-                                contentDescription = "LinkedIn",
+                                painter = painterResource(id = R.drawable.ic_twitter_x),
+                                contentDescription = "X",
                                 tint = iconColor,
                                 modifier = Modifier.size(40.dp)
                             )
@@ -188,7 +167,7 @@ fun AboutUsScreen(
                         Box(
                             modifier = Modifier
                                 .size(shapeSize)
-                                .pressableScale { },
+                                .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.email) },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -210,24 +189,24 @@ fun AboutUsScreen(
 
                     // Middle Column
                     Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-                        // Top Middle: Fan (X)
+                        // Top Middle: Triangle (LinkedIn)
                         Box(
                             modifier = Modifier
                                 .size(shapeSize)
-                                .pressableScale { },
+                                .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.linkedin) },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.fan),
-                                contentDescription = "Fan",
+                                painter = painterResource(id = R.drawable.triangle),
+                                contentDescription = "Triangle",
                                 tint = shapeColor,
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .scale(1.3f)
                             )
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_twitter_x),
-                                contentDescription = "X",
+                                painter = painterResource(id = R.drawable.ic_linkedin),
+                                contentDescription = "LinkedIn",
                                 tint = iconColor,
                                 modifier = Modifier.size(40.dp)
                             )
@@ -237,7 +216,7 @@ fun AboutUsScreen(
                         Box(
                             modifier = Modifier
                                 .size(shapeSize)
-                                .pressableScale { },
+                                .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.instagram) },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -264,7 +243,8 @@ fun AboutUsScreen(
                             modifier = Modifier
                                 .width(150.dp)
                                 .height(shapeSize * 2 + spacing)
-                                .pressableScale(targetScale = 0.95f) { }
+                                .pressableScale(targetScale = 0.95f) { uriHandler.openUri(
+                                    ContactConfig.socialLinks.github) }
                                 .clip(RoundedCornerShape(40.dp))
                                 .background(MaterialTheme.colorScheme.secondary),
                             contentAlignment = Alignment.Center
@@ -309,7 +289,7 @@ fun Modifier.pressableScale(
 
 @Composable
 fun CustomAIcon(modifier: Modifier = Modifier) {
-    val onSecondary = MaterialTheme.colorScheme.onSecondary
+    val surface = MaterialTheme.colorScheme.surface
 
     Box(
         modifier = modifier.size(54.dp),
@@ -322,14 +302,14 @@ fun CustomAIcon(modifier: Modifier = Modifier) {
             val bottomRight = Offset(size.width - 4.dp.toPx(), size.height - 4.dp.toPx())
 
             drawLine(
-                color = onSecondary,
+                color = surface,
                 start = topPoint,
                 end = bottomLeft,
                 strokeWidth = strokeWidth,
                 cap = Round
             )
             drawLine(
-                color = onSecondary,
+                color = surface,
                 start = topPoint,
                 end = bottomRight,
                 strokeWidth = strokeWidth,
@@ -340,7 +320,7 @@ fun CustomAIcon(modifier: Modifier = Modifier) {
         Icon(
             painter = painterResource(id = R.drawable.syringe),
             contentDescription = "Syringe Crossbar",
-            tint = onSecondary,
+            tint = surface,
             modifier = Modifier
                 .requiredSize(64.dp)
                 .padding(top = 7.dp)
@@ -348,3 +328,103 @@ fun CustomAIcon(modifier: Modifier = Modifier) {
         )
     }
 }
+
+@Composable
+fun FallingShapesBackground(modifier: Modifier = Modifier) {
+    val drawables = listOf(
+        R.drawable.fan_left,
+        R.drawable.syringe,
+        R.drawable.pill,
+        R.drawable.triangle,
+        R.drawable.cookie_6
+    )
+
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+
+    // Pre-calculate randomized state for each shape
+    val shapes = remember(secondaryColor) {
+        val secondaryIndex = Random.nextInt(5)
+        List(5) { index ->
+            val drawableId = drawables.random()
+            val duration = Random.nextInt(7000, 15000)
+            val startXPercent = Random.nextFloat()
+            // Random start offset in time
+            val startDelayMillis = Random.nextInt(0, 15000)
+            val size = Random.nextInt(24, 44).dp
+            
+            // Only one shape is the secondary color
+            val isSecondary = (index == secondaryIndex)
+            val baseColor = if (isSecondary) secondaryColor else Color.Black
+            val shapeColor = baseColor.copy(alpha = Random.nextFloat() * 0.2f + 0.1f) // vary alpha slightly
+            
+            ShapeParams(drawableId, duration, startXPercent, startDelayMillis, size, shapeColor)
+        }
+    }
+
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val containerHeight = maxHeight
+
+        val density = LocalDensity.current
+        val heightPx = with(density) { containerHeight.toPx() }
+
+        val infiniteTransition = rememberInfiniteTransition(label = "falling_shapes")
+
+        shapes.forEach { shape ->
+            val yProgress by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(shape.duration, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                    initialStartOffset = StartOffset(offsetMillis = shape.startDelayMillis, offsetType = StartOffsetType.FastForward)
+                ),
+                label = "y_progress_${shape.duration}"
+            )
+
+            val rotation by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(shape.duration, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "rotation_${shape.duration}"
+            )
+
+            // yProgress 0 to 1 means from -shape.size to containerHeight + shape.size
+            val sizePx = with(density) { shape.size.toPx() }
+            val yPosPx = -sizePx + yProgress * (heightPx + sizePx * 2)
+
+            Box(
+                modifier = Modifier
+                    .size(shape.size)
+                    .offset {
+                        IntOffset(
+                            x = (shape.startXPercent * (constraints.maxWidth - sizePx)).roundToInt(),
+                            y = yPosPx.roundToInt()
+                        )
+                    }
+                    .graphicsLayer {
+                        rotationZ = rotation
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = shape.drawableId),
+                    contentDescription = null,
+                    tint = shape.shapeColor,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+}
+
+data class ShapeParams(
+    val drawableId: Int,
+    val duration: Int,
+    val startXPercent: Float,
+    val startDelayMillis: Int,
+    val size: androidx.compose.ui.unit.Dp,
+    val shapeColor: Color
+)
