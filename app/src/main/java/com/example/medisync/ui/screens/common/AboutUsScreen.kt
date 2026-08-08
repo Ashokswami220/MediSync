@@ -336,7 +336,8 @@ fun FallingShapesBackground(modifier: Modifier = Modifier) {
         R.drawable.syringe,
         R.drawable.pill,
         R.drawable.triangle,
-        R.drawable.cookie_6
+        R.drawable.cookie_6,
+        R.drawable.ghost
     )
 
     val secondaryColor = MaterialTheme.colorScheme.secondary
