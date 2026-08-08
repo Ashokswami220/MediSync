@@ -1,6 +1,11 @@
 package com.example.medisync.ui.screens.common
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,11 +13,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,15 +33,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap.Companion.Round
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.clickable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.medisync.R
@@ -85,13 +90,13 @@ fun AboutUsScreen(
     onBackClick: () -> Unit = {}
 ) {
     Scaffold(
-        modifier = Modifier.graphPaperBackground(),
-        containerColor = Color.Transparent
+        containerColor = MaterialTheme.colorScheme.surface,
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .graphPaperBackground()
         ) {
             IconButton(
                 onClick = onBackClick,
@@ -112,9 +117,10 @@ fun AboutUsScreen(
                 verticalArrangement = Arrangement.spacedBy(32.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                val shapeColor = MaterialTheme.colorScheme.primary
                 val shapeSize = 110.dp
                 val spacing = 16.dp
+                val shapeColor = Color.Black.copy(alpha = 0.5f)
+                val iconColor = MaterialTheme.colorScheme.surface
 
                 // Top Section (Profile Box + Text)
                 Row(
@@ -123,16 +129,12 @@ fun AboutUsScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(90.dp)
+                            .size(110.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(shapeColor),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "F",
-                            style = MaterialTheme.typography.displayLarge,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                        CustomAIcon()
                     }
 
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -154,55 +156,126 @@ fun AboutUsScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.Top
                 ) {
+
                     // Left Column
                     Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-                        // Top Left: Triangle
-                        Icon(
-                            painter = painterResource(id = R.drawable.triangle),
-                            contentDescription = "Triangle",
-                            tint = shapeColor,
-                            modifier = Modifier.size(shapeSize).scale(1.3f).pressableScale { }
-                        )
+                        // Top Left: Triangle (LinkedIn)
+                        Box(
+                            modifier = Modifier
+                                .size(shapeSize)
+                                .pressableScale { },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // Rotation state for Triangle
 
-                        // Bottom Left: Pill
-                        Icon(
-                            painter = painterResource(id = R.drawable.pill),
-                            contentDescription = "Pill",
-                            tint = shapeColor,
-                            modifier = Modifier.size(shapeSize).scale(1.3f).pressableScale { }
-                        )
+                            Icon(
+                                painter = painterResource(id = R.drawable.triangle),
+                                contentDescription = "Triangle",
+                                tint = shapeColor,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .scale(1.3f)
+                            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_linkedin),
+                                contentDescription = "LinkedIn",
+                                tint = iconColor,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+
+                        // Bottom Left: Pill (Mail)
+                        Box(
+                            modifier = Modifier
+                                .size(shapeSize)
+                                .pressableScale { },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.pill),
+                                contentDescription = "Pill",
+                                tint = shapeColor,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .scale(1.3f)
+                            )
+                            Icon(
+                                imageVector = Icons.Outlined.Email,
+                                contentDescription = "Mail",
+                                tint = iconColor,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
                     }
 
                     // Middle Column
                     Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-                        // Top Middle: Fan
-                        Icon(
-                            painter = painterResource(id = R.drawable.fan),
-                            contentDescription = "Fan",
-                            tint = shapeColor,
-                            modifier = Modifier.size(shapeSize).scale(1.3f).pressableScale { }
-                        )
+                        // Top Middle: Fan (X)
+                        Box(
+                            modifier = Modifier
+                                .size(shapeSize)
+                                .pressableScale { },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.fan),
+                                contentDescription = "Fan",
+                                tint = shapeColor,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .scale(1.3f)
+                            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_twitter_x),
+                                contentDescription = "X",
+                                tint = iconColor,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
 
-                        // Bottom Middle: 6-sided Cookie
-                        Icon(
-                            painter = painterResource(id = R.drawable.cookie_6),
-                            contentDescription = "Cookie",
-                            tint = shapeColor,
-                            modifier = Modifier.size(shapeSize).scale(1.3f).pressableScale { }
-                        )
+                        // Bottom Middle: 6-sided Cookie (Instagram)
+                        Box(
+                            modifier = Modifier
+                                .size(shapeSize)
+                                .pressableScale { },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.cookie_6),
+                                contentDescription = "Cookie",
+                                tint = shapeColor,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .scale(1.3f)
+                            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_instagram),
+                                contentDescription = "Instagram",
+                                tint = iconColor,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
                     }
 
                     // Right Column
                     Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-                        // Middle & Bottom Right: Tall Pill/Rectangle
+                        // Middle & Bottom Right: Tall Pill/Rectangle (GitHub)
                         Box(
                             modifier = Modifier
                                 .width(150.dp)
                                 .height(shapeSize * 2 + spacing)
                                 .pressableScale(targetScale = 0.95f) { }
                                 .clip(RoundedCornerShape(40.dp))
-                                .background(shapeColor)
-                        )
+                                .background(MaterialTheme.colorScheme.secondary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_github),
+                                contentDescription = "GitHub",
+                                tint = MaterialTheme.colorScheme.onSecondary,
+                                modifier = Modifier.size(80.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -232,4 +305,46 @@ fun Modifier.pressableScale(
             indication = null,
             onClick = onClick
         )
+}
+
+@Composable
+fun CustomAIcon(modifier: Modifier = Modifier) {
+    val onSecondary = MaterialTheme.colorScheme.onSecondary
+
+    Box(
+        modifier = modifier.size(54.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokeWidth = 7.dp.toPx()
+            val topPoint = Offset(size.width / 2, 4.dp.toPx())
+            val bottomLeft = Offset(4.dp.toPx(), size.height - 4.dp.toPx())
+            val bottomRight = Offset(size.width - 4.dp.toPx(), size.height - 4.dp.toPx())
+
+            drawLine(
+                color = onSecondary,
+                start = topPoint,
+                end = bottomLeft,
+                strokeWidth = strokeWidth,
+                cap = Round
+            )
+            drawLine(
+                color = onSecondary,
+                start = topPoint,
+                end = bottomRight,
+                strokeWidth = strokeWidth,
+                cap = Round
+            )
+        }
+
+        Icon(
+            painter = painterResource(id = R.drawable.syringe),
+            contentDescription = "Syringe Crossbar",
+            tint = onSecondary,
+            modifier = Modifier
+                .requiredSize(64.dp)
+                .padding(top = 7.dp)
+                .rotate(25f)
+        )
+    }
 }
