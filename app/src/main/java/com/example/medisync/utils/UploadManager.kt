@@ -7,6 +7,7 @@ import com.cloudinary.android.MediaManager
 import com.cloudinary.android.callback.ErrorInfo
 import com.cloudinary.android.callback.UploadCallback
 import com.example.medisync.repo.DocumentRepository
+import com.example.medisync.repo.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 object UploadManager : KoinComponent {
     private val repository: DocumentRepository by inject()
+    private val userRepository: UserRepository by inject()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -164,6 +166,13 @@ object UploadManager : KoinComponent {
                                                     _uploadStatus.value.copy(
                                                         state = UploadState.SUCCESS
                                                     )
+                                                // Trigger Push Notification
+                                                val profile = userRepository.getUserProfileSync(userUid).getOrNull()
+                                                val fcmToken = profile?.fcmToken
+                                                if (!fcmToken.isNullOrEmpty()) {
+                                                    NotificationService.triggerPushNotification(fcmToken, docName)
+                                                }
+
                                                 delay(4000L.milliseconds)
                                                 if (_uploadStatus.value.state == UploadState.SUCCESS) {
                                                     dismiss()

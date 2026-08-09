@@ -24,7 +24,8 @@ data class UserProfile(
     var isPlaceholder: Boolean = false,
     val claimedByUid: String? = null,
     val previousUids: List<String> = emptyList(),
-    val memberVitals: Map<String, MemberVitals> = emptyMap()
+    val memberVitals: Map<String, MemberVitals> = emptyMap(),
+    val fcmToken: String = ""
 )
 
 data class MemberVitals(

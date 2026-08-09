@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import com.google.firebase.messaging.FirebaseMessaging
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -138,6 +140,14 @@ class AuthViewModel(
                 if (profile.avatarUrl.isEmpty() && user.photoUrl != null) {
                     updates["avatarUrl"] = user.photoUrl.toString()
                 }
+                val fcmToken = try {
+                    FirebaseMessaging.getInstance().token.await()
+                } catch (_: Exception) {
+                    null
+                }
+                if (fcmToken != null && profile.fcmToken != fcmToken) {
+                    updates["fcmToken"] = fcmToken
+                }
                 if (updates.isNotEmpty()) {
                     userRepo.updateUserProfile(user.uid, updates)
                 }
@@ -198,7 +208,8 @@ class AuthViewModel(
                             bloodType = placeholder.bloodType,
                             bloodPressure = placeholder.bloodPressure,
                             bloodSugar = placeholder.bloodSugar,
-                            previousUids = listOf(placeholder.uid)
+                            previousUids = listOf(placeholder.uid),
+                            fcmToken = try { FirebaseMessaging.getInstance().token.await() } catch (_: Exception) { "" }
                         )
 
                         val result = userRepo.createUserProfile(newProfile)
@@ -218,7 +229,8 @@ class AuthViewModel(
                             lastName = lastName,
                             phoneNumber = phoneNumber,
                             email = emailToCheck,
-                            avatarUrl = currentUser.photoUrl?.toString() ?: ""
+                            avatarUrl = currentUser.photoUrl?.toString() ?: "",
+                            fcmToken = try { FirebaseMessaging.getInstance().token.await() } catch (_: Exception) { "" }
                         )
 
                         val result = userRepo.createUserProfile(newProfile)

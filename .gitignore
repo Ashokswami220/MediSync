@@ -18,3 +18,5 @@ app/google-services.json
 # Firebase Functions
 functions/node_modules/
 functions/.env
+
+.vercel

@@ -71,7 +71,11 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation("com.google.firebase:firebase-functions")
+    implementation("com.google.firebase:firebase-messaging")
     implementation(libs.kotlinx.coroutines.play.services)
+    
+    // OkHttp for triggering webhook
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // Cloudinary
     implementation("com.cloudinary:cloudinary-android:2.5.0")
