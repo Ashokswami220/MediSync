@@ -235,7 +235,7 @@ fun HomeTopBar(
         Image(
             painter = painterResource(R.drawable.doctor),
             contentDescription = "Background",
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.FillHeight,
             alignment = Alignment.TopCenter,
             modifier = Modifier.fillMaxSize()
         )

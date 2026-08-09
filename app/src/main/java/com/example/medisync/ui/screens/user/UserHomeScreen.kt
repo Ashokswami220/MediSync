@@ -18,6 +18,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -258,11 +259,27 @@ fun HealthStatsGrid(
     val btDateString = if (bloodTypeLastUpdated > 0L) formatter.format(Date(bloodTypeLastUpdated)) else "N/A"
     val bsDateString = if (bloodSugarLastUpdated > 0L) formatter.format(Date(bloodSugarLastUpdated)) else "N/A"
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, colorScheme.outlineVariant)
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth()
     ) {
+        val totalWidth = maxWidth
+        val dividerWidth = 1.dp
+        
+        // Top row calculations
+        val availableTopWidth = totalWidth - (dividerWidth * 2)
+        val topBox1Width = availableTopWidth * 0.38f
+        val topBox2Width = availableTopWidth * 0.38f
+        val topBox3Width = availableTopWidth - topBox1Width - topBox2Width
+        
+        // Bottom row calculations
+        val availableBottomWidth = totalWidth - dividerWidth
+        val bottomBoxWidth = availableBottomWidth / 2f
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, colorScheme.outlineVariant)
+        ) {
         val syringeInteractionSource = remember { MutableInteractionSource() }
         val isSyringePressed by syringeInteractionSource.collectIsPressedAsState()
         val syringeOffsetY by animateDpAsState(
@@ -282,15 +299,19 @@ fun HealthStatsGrid(
             // Call Us Cell (38%)
             Box(
                 modifier = Modifier
-                    .weight(0.38f)
-                    .fillMaxHeight()
-                    .background(colorScheme.surface)
-                    .clickable {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        onCallUsClick()
-                    },
+                    .width(topBox1Width)
+                    .fillMaxHeight(),
                 contentAlignment = Alignment.Center
             ) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(colorScheme.surface)
+                        .clickable {
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            onCallUsClick()
+                        }
+                )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -322,15 +343,19 @@ fun HealthStatsGrid(
             // Medical Cell (38%)
             Box(
                 modifier = Modifier
-                    .weight(0.38f)
-                    .fillMaxHeight()
-                    .background(colorScheme.surface)
-                    .clickable {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        openMedicalCoordinates(context)
-                    },
+                    .width(topBox2Width)
+                    .fillMaxHeight(),
                 contentAlignment = Alignment.Center
             ) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(colorScheme.surface)
+                        .clickable {
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            openMedicalCoordinates(context)
+                        }
+                )
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp)
@@ -370,17 +395,21 @@ fun HealthStatsGrid(
             // Empty Cell for SVG (24%)
             Box(
                 modifier = Modifier
-                    .weight(0.24f)
-                    .fillMaxHeight()
-                    .background(colorScheme.surface)
-                    .clickable(
-                        interactionSource = syringeInteractionSource,
-                        indication = LocalIndication.current
-                    ) {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                    },
+                    .width(topBox3Width)
+                    .fillMaxHeight(),
                 contentAlignment = Alignment.Center
             ) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(colorScheme.surface)
+                        .clickable(
+                            interactionSource = syringeInteractionSource,
+                            indication = LocalIndication.current
+                        ) {
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        }
+                )
                 Image(
                     painter = painterResource(id = R.drawable.syringe),
                     contentDescription = "Syringe",
@@ -396,24 +425,28 @@ fun HealthStatsGrid(
 
         // Blood Pressure Row
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(colorScheme.surface)
-                .clickable {
-                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                    onStatClick(
-                        HealthStatDetails(
-                            title = "Blood Pressure",
-                            value = bloodPressure.ifEmpty { "--/--" },
-                            unit = "mmHg",
-                            status = HealthStatusHelper.getBloodPressureStatus(bloodPressure),
-                            date = bpDateString,
-                            icon = Icons.Default.MonitorHeart,
-                            color = colorScheme.primary
-                        )
-                    )
-                }
+            modifier = Modifier.fillMaxWidth()
         ) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(colorScheme.surface)
+                    .clickable {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        onStatClick(
+                            HealthStatDetails(
+                                title = "Blood Pressure",
+                                value = bloodPressure.ifEmpty { "--/--" },
+                                unit = "mmHg",
+                                status = HealthStatusHelper.getBloodPressureStatus(bloodPressure),
+                                date = bpDateString,
+                                icon = Icons.Default.MonitorHeart,
+                                color = colorScheme.primary
+                            )
+                        )
+                    }
+            )
+
             // Left Content
             Column(
                 modifier = Modifier
@@ -471,7 +504,7 @@ fun HealthStatsGrid(
                 alignment = Alignment.BottomEnd,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .width(160.dp) // Maintain SVG scale width
+                    .width(160.dp) // Fixed width to prevent height inflation on tablets
             )
         }
 
@@ -485,24 +518,28 @@ fun HealthStatsGrid(
             // Blood Type Cell
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .width(bottomBoxWidth)
                     .fillMaxHeight()
-                    .background(colorScheme.surface)
-                    .clickable {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        onStatClick(
-                            HealthStatDetails(
-                                title = "Blood Type",
-                                value = bloodType.ifEmpty { "--" },
-                                unit = "",
-                                status = HealthStatusHelper.getBloodTypeStatus(bloodType),
-                                date = btDateString,
-                                icon = Icons.Default.Bloodtype,
-                                color = colorScheme.secondary
-                            )
-                        )
-                    }
             ) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(colorScheme.surface)
+                        .clickable {
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            onStatClick(
+                                HealthStatDetails(
+                                    title = "Blood Type",
+                                    value = bloodType.ifEmpty { "--" },
+                                    unit = "",
+                                    status = HealthStatusHelper.getBloodTypeStatus(bloodType),
+                                    date = btDateString,
+                                    icon = Icons.Default.Bloodtype,
+                                    color = colorScheme.secondary
+                                )
+                            )
+                        }
+                )
                 Column(modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
@@ -548,24 +585,28 @@ fun HealthStatsGrid(
             // Blood Sugar Cell
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .width(bottomBoxWidth)
                     .fillMaxHeight()
-                    .background(colorScheme.surface)
-                    .clickable {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        onStatClick(
-                            HealthStatDetails(
-                                title = "Blood Sugar",
-                                value = bloodSugar.ifEmpty { "--" },
-                                unit = "mg/dL",
-                                status = HealthStatusHelper.getBloodSugarStatus(bloodSugar),
-                                date = bsDateString,
-                                icon = Icons.Default.Bloodtype,
-                                color = colorScheme.error
-                            )
-                        )
-                    }
             ) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(colorScheme.surface)
+                        .clickable {
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            onStatClick(
+                                HealthStatDetails(
+                                    title = "Blood Sugar",
+                                    value = bloodSugar.ifEmpty { "--" },
+                                    unit = "mg/dL",
+                                    status = HealthStatusHelper.getBloodSugarStatus(bloodSugar),
+                                    date = bsDateString,
+                                    icon = Icons.Default.Bloodtype,
+                                    color = colorScheme.error
+                                )
+                            )
+                        }
+                )
                 Column(modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
@@ -604,12 +645,11 @@ fun HealthStatsGrid(
                             modifier = Modifier.padding(bottom = 6.dp)
                         )
                     }
-
-
                 }
             }
         }
     }
+}
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -704,15 +744,18 @@ fun RecentReportsSection(
                     ) {
                         recentDocs.forEachIndexed { index, doc ->
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(colorScheme.surface)
-                                    .clickable {
-                                        onNavigateToReportDetail(
-                                            doc.documentName, doc.fileUrl
-                                        )
-                                    }
+                                modifier = Modifier.fillMaxWidth()
                             ) {
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .background(colorScheme.surface)
+                                        .clickable {
+                                            onNavigateToReportDetail(
+                                                doc.documentName, doc.fileUrl
+                                            )
+                                        }
+                                )
                                 Row(
                                     modifier = Modifier.padding(16.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -852,7 +895,7 @@ fun PharmacistCard(
     colorScheme: ColorScheme,
     onCallClick: () -> Unit
 ) {
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
@@ -860,6 +903,11 @@ fun PharmacistCard(
             .background(colorScheme.surface)
             .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(12.dp))
     ) {
+        val totalWidth = maxWidth
+        // Dedicate a reasonable static ratio to the image, e.g. 40% of the card width
+        val imageWidth = totalWidth * 0.4f
+        val textWidth = totalWidth - imageWidth
+
         Row(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.Bottom
@@ -868,15 +916,16 @@ fun PharmacistCard(
             Image(
                 painter = painterResource(id = imageRes),
                 contentDescription = "Doctor Image",
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.Fit,
                 modifier = Modifier
+                    .width(imageWidth)
                     .fillMaxHeight()
             )
 
             // Details
             Column(
                 modifier = Modifier
-                    .weight(1f)
+                    .width(textWidth)
                     .fillMaxHeight()
                     .padding(top = 16.dp, bottom = 16.dp, end = 16.dp, start = 24.dp)
             ) {
@@ -904,28 +953,35 @@ fun PharmacistCard(
                 }
 
                 // Contact Button
-                Row(
+                Box(
                     modifier = Modifier
                         .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(50))
                         .clip(RoundedCornerShape(50))
-                        .clickable { onCallClick() }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Call,
-                        contentDescription = "Contact",
-                        tint = colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { onCallClick() }
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Contact",
-                        color = colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Call,
+                            contentDescription = "Contact",
+                            tint = colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Contact",
+                            color = colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
         }
