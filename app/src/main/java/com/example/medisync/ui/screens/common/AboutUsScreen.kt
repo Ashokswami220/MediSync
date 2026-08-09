@@ -73,7 +73,7 @@ fun AboutUsScreen(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             FallingShapesBackground(
-                modifier = Modifier.blur(8.dp)
+                modifier = Modifier.blur(7.dp)
             )
             
             IconButton(
