@@ -1,4 +1,6 @@
 package com.example.medisync.ui.components.sheets
+import com.example.medisync.utils.HapticHelper
+import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -74,6 +76,7 @@ fun CreateUserBottomSheet(
         }
     }
 
+    val context = LocalContext.current
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -110,7 +113,7 @@ fun CreateUserBottomSheet(
                         )
                     }
                 }
-                IconButton(onClick = onDismiss) {
+                IconButton(onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onDismiss() }) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
                 }
             }

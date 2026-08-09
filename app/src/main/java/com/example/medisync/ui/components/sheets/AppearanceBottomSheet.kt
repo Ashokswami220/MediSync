@@ -1,4 +1,6 @@
 package com.example.medisync.ui.components.sheets
+import com.example.medisync.utils.HapticHelper
+import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -31,6 +33,7 @@ fun AppearanceBottomSheet(
     onDismiss: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
     val appearances = listOf("System", "Light", "Dark")
 
     ModalBottomSheet(
@@ -57,7 +60,7 @@ fun AppearanceBottomSheet(
                     fontWeight = FontWeight.Bold,
                     color = colorScheme.onSurface,
                 )
-                IconButton(onClick = onDismiss) {
+                IconButton(onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onDismiss() }) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
                 }
             }

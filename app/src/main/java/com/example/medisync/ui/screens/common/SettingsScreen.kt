@@ -303,7 +303,9 @@ fun SettingsScreen(
                     title = "Haptic Feedback",
                     checked = isHaptic,
                     onCheckedChange = { checked ->
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        if (checked) {
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        }
                         coroutineScope.launch { settingsManager.setHapticsEnabled(checked) }
                     }
                 )

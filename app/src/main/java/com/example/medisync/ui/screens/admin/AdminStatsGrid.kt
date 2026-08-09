@@ -206,7 +206,10 @@ fun AdminStatsGrid(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = LocalIndication.current,
-                    onClick = onReportsOpenedClick
+                    onClick = {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        onReportsOpenedClick()
+                    }
                 )
                 .background(colorScheme.surface)
         ) {

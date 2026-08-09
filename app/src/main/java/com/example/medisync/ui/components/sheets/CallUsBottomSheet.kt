@@ -1,4 +1,6 @@
 package com.example.medisync.ui.components.sheets
+import com.example.medisync.utils.HapticHelper
+import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -82,6 +84,7 @@ fun CallUsBottomSheet(
     }
 
     @Suppress("DEPRECATION")
+    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -111,7 +114,7 @@ fun CallUsBottomSheet(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                IconButton(onClick = onDismissRequest) {
+                IconButton(onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onDismissRequest() }) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
                 }
             }

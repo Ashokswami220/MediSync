@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +69,7 @@ import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.ContactModel
 import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.utils.GlobalToastManager
+import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
 import java.util.UUID
 
@@ -78,7 +80,6 @@ fun AdminEditContactsScreen(
 ) {
     val config by configViewModel.appConfig.collectAsState()
     val colorScheme = MaterialTheme.colorScheme
-
     val doctor1 = config.contacts.find { it.imageResName == "doctor1" } ?: ContactModel(
         id = UUID.randomUUID()
             .toString(),
@@ -260,6 +261,7 @@ fun AdminEditContactsTopBar(colorScheme: ColorScheme, onNavigateBack: () -> Unit
 
 @Composable
 fun PharmacistCardItem(contact: ContactModel, colorScheme: ColorScheme, onEdit: () -> Unit) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -285,7 +287,10 @@ fun PharmacistCardItem(contact: ContactModel, colorScheme: ColorScheme, onEdit: 
                 Text(text = contact.phone, fontSize = 15.sp, color = colorScheme.onSurfaceVariant)
             }
             IconButton(
-                onClick = onEdit,
+                onClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    onEdit()
+                },
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
                 Icon(
@@ -327,6 +332,7 @@ fun SyringeDivider(colorScheme: ColorScheme) {
 
 @Composable
 fun ExtraContactsHeader(colorScheme: ColorScheme, onAddClick: () -> Unit) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -338,7 +344,10 @@ fun ExtraContactsHeader(colorScheme: ColorScheme, onAddClick: () -> Unit) {
             fontSize = 24.sp,
             color = colorScheme.onBackground
         )
-        IconButton(onClick = onAddClick) {
+        IconButton(onClick = {
+            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+            onAddClick()
+        }) {
             Icon(
                 imageVector = Icons.Default.Add, contentDescription = "Add Contact",
                 tint = colorScheme.secondary
@@ -351,6 +360,7 @@ fun ExtraContactsHeader(colorScheme: ColorScheme, onAddClick: () -> Unit) {
 fun ExtraContactCardItem(
     contact: ContactModel, colorScheme: ColorScheme, onEdit: () -> Unit, onDelete: () -> Unit
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -373,13 +383,19 @@ fun ExtraContactCardItem(
                 Text(text = contact.phone, fontSize = 14.sp, color = colorScheme.onSurfaceVariant)
             }
             Row {
-                IconButton(onClick = onEdit) {
+                IconButton(onClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    onEdit()
+                }) {
                     Icon(
                         imageVector = Icons.Default.Edit, contentDescription = "Edit",
                         tint = colorScheme.secondary
                     )
                 }
-                IconButton(onClick = onDelete) {
+                IconButton(onClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                    onDelete()
+                }) {
                     Icon(
                         imageVector = Icons.Default.Delete, contentDescription = "Delete",
                         tint = colorScheme.error

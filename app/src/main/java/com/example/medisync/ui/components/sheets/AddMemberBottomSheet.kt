@@ -1,4 +1,6 @@
 package com.example.medisync.ui.components.sheets
+import com.example.medisync.utils.HapticHelper
+import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -20,6 +22,7 @@ fun AddMemberBottomSheet(
     var memberName by remember { mutableStateOf("") }
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -43,7 +46,7 @@ fun AddMemberBottomSheet(
                     fontWeight = FontWeight.Bold,
                     color = colorScheme.onSurface
                 )
-                IconButton(onClick = onDismiss) {
+                IconButton(onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onDismiss() }) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
                 }
             }

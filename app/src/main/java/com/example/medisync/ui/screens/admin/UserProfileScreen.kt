@@ -2,6 +2,7 @@
 
 package com.example.medisync.ui.screens.admin
 
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -64,14 +65,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.model.MemberVitals
 import com.example.medisync.model.UserProfile
-import com.example.medisync.ui.components.sheets.AddMemberBottomSheet
 import com.example.medisync.ui.components.UserAvatar
+import com.example.medisync.ui.components.sheets.AddMemberBottomSheet
 import com.example.medisync.utils.GlobalToastManager
+import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,6 +85,7 @@ fun UserProfileScreen(
     viewModel: AdminUserProfileViewModel = koinViewModel()
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
 
     LaunchedEffect(userUid) {
         viewModel.loadUser(userUid)
@@ -156,7 +160,12 @@ fun UserProfileScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(
+                        onClick = {
+                            HapticHelper.trigger(
+                                context, HapticHelper.Type.LIGHT
+                            ); onBackClick()
+                        }) {
                         Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
                     }
                 },
@@ -328,6 +337,7 @@ fun ProfileDetailRow(
     onEditClick: (() -> Unit)?
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -346,7 +356,10 @@ fun ProfileDetailRow(
             modifier = Modifier.weight(1f)
         )
         if (onEditClick != null) {
-            IconButton(onClick = onEditClick, modifier = Modifier.size(28.dp)) {
+            IconButton(
+                onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onEditClick() },
+                modifier = Modifier.size(28.dp)
+            ) {
                 Icon(
                     Icons.Default.Edit, contentDescription = "Edit",
                     modifier = Modifier.size(18.dp), tint = colorScheme.outline
@@ -414,6 +427,7 @@ fun UserProfileVitals(
 @Composable
 fun UserProfileMembersHeader(onAddMemberClick: () -> Unit) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
 
     Column {
         Spacer(modifier = Modifier.height(8.dp))
@@ -428,7 +442,12 @@ fun UserProfileMembersHeader(onAddMemberClick: () -> Unit) {
                 color = colorScheme.onBackground,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = onAddMemberClick) {
+            IconButton(
+                onClick = {
+                    HapticHelper.trigger(
+                        context, HapticHelper.Type.LIGHT
+                    ); onAddMemberClick()
+                }) {
                 Icon(
                     Icons.Default.Add, contentDescription = "Add Member",
                     tint = colorScheme.secondary
@@ -449,6 +468,7 @@ fun EditFieldBottomSheet(
     onDismiss: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -474,7 +494,12 @@ fun EditFieldBottomSheet(
                     fontWeight = FontWeight.Bold,
                     color = colorScheme.onSurface
                 )
-                IconButton(onClick = onDismiss) {
+                IconButton(
+                    onClick = {
+                        HapticHelper.trigger(
+                            context, HapticHelper.Type.LIGHT
+                        ); onDismiss()
+                    }) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
                 }
             }
@@ -565,6 +590,7 @@ fun MemberEditItem(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val colorScheme = MaterialTheme.colorScheme
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -576,7 +602,9 @@ fun MemberEditItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT); expanded = !expanded
+                }
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -591,7 +619,8 @@ fun MemberEditItem(
                 color = colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = onDelete) {
+            IconButton(
+                onClick = { HapticHelper.trigger(context, HapticHelper.Type.HEAVY); onDelete() }) {
                 Icon(
                     Icons.Default.Delete, contentDescription = "Delete Member",
                     tint = colorScheme.error

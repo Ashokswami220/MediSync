@@ -32,7 +32,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.utils.GlobalToastManager
+import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.ui.platform.LocalContext
 
 enum class DeleteActionMode {
     ACCOUNT, DATA
@@ -48,6 +50,7 @@ fun DeleteActionScreen(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     var isProcessing by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val title = if (mode == DeleteActionMode.ACCOUNT) "Delete account" else "Delete my data"
     val subtitle = if (mode == DeleteActionMode.ACCOUNT) {
@@ -120,7 +123,10 @@ fun DeleteActionScreen(
         }
 
         Button(
-            onClick = { isProcessing = true },
+            onClick = { 
+                HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                isProcessing = true 
+            },
             enabled = !isProcessing,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
