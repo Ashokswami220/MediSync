@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -80,7 +81,7 @@ fun AboutUsScreen(
                 onClick = onBackClick,
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(start = 20.dp, top = paddingValues.calculateTopPadding())
+                    .padding(start = 20.dp, top = paddingValues.calculateTopPadding(), bottom = 16.dp)
             ) {
 
                 Icon(
@@ -90,171 +91,184 @@ fun AboutUsScreen(
                 )
             }
 
-            Column(
+            // Use BoxWithConstraints to calculate sizes dynamically based on screen width
+            BoxWithConstraints(
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(32.dp),
-                horizontalAlignment = Alignment.Start
+                    .fillMaxSize()
+                    .widthIn(max = 440.dp),
+                contentAlignment = Alignment.Center
             ) {
-                val shapeSize = 110.dp
+                val horizontalPadding = 20.dp
                 val spacing = 16.dp
+                val availableWidth = maxWidth - (horizontalPadding * 2)
+                val shapeSize = (availableWidth - spacing * 2) / 3.364f
+                val rightColumnWidth = shapeSize * 1.364f
+
                 val shapeColor = Color.Black.copy(alpha = 0.5f)
                 val iconColor = MaterialTheme.colorScheme.surface
                 val uriHandler = LocalUriHandler.current
+                // Scale icon sizes proportionally (original: 40.dp at shapeSize=110.dp)
+                val iconSize = shapeSize * (40f / 110f)
+                val githubIconSize = shapeSize * (80f / 110f)
 
-                // Top Section (Profile Box + Text)
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(24.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(horizontal = horizontalPadding),
+                    verticalArrangement = Arrangement.spacedBy(32.dp),
+                    horizontalAlignment = Alignment.Start
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(90.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(shapeColor),
-                        contentAlignment = Alignment.Center
+                    // Top Section (Profile Box + Text)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CustomAIcon()
-                    }
-
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "Ashok swami",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Developer & designer",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                // Grid of shapes matching the design exactly
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-
-                    // Left Column
-                    Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-                        // Top Left: Fan (X)
                         Box(
                             modifier = Modifier
-                                .size(shapeSize)
-                                .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.twitter) },
+                                .size(90.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(shapeColor),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.fan_left),
-                                contentDescription = "Fan",
-                                tint = shapeColor,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .scale(1.2f)
-                            )
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_twitter_x),
-                                contentDescription = "X",
-                                tint = iconColor,
-                                modifier = Modifier.size(40.dp)
-                            )
+                            CustomAIcon()
                         }
 
-                        // Bottom Left: Pill (Mail)
-                        Box(
-                            modifier = Modifier
-                                .size(shapeSize)
-                                .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.email) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.pill),
-                                contentDescription = "Pill",
-                                tint = shapeColor,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .scale(1.3f)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Ashok swami",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-                            Icon(
-                                imageVector = Icons.Outlined.Email,
-                                contentDescription = "Mail",
-                                tint = iconColor,
-                                modifier = Modifier.size(40.dp)
+                            Text(
+                                text = "Developer & designer",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    // Middle Column
-                    Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-                        // Top Middle: Triangle (LinkedIn)
-                        Box(
-                            modifier = Modifier
-                                .size(shapeSize)
-                                .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.linkedin) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.triangle),
-                                contentDescription = "Triangle",
-                                tint = shapeColor,
+                    // Grid of shapes - uses .size() exactly like the original so pressableScale works perfectly
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(spacing),
+                        verticalAlignment = Alignment.Top
+                    ) {
+
+                        // Left Column
+                        Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                            // Top Left: Fan (X)
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .scale(1.3f)
-                            )
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_linkedin),
-                                contentDescription = "LinkedIn",
-                                tint = iconColor,
-                                modifier = Modifier.size(40.dp)
-                            )
+                                    .size(shapeSize)
+                                    .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.twitter) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.fan_left),
+                                    contentDescription = "Fan",
+                                    tint = shapeColor,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .scale(1.2f)
+                                )
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_twitter_x),
+                                    contentDescription = "X",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
+
+                            // Bottom Left: Pill (Mail)
+                            Box(
+                                modifier = Modifier
+                                    .size(shapeSize)
+                                    .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.email) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.pill),
+                                    contentDescription = "Pill",
+                                    tint = shapeColor,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .scale(1.3f)
+                                )
+                                Icon(
+                                    imageVector = Icons.Outlined.Email,
+                                    contentDescription = "Mail",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
                         }
 
-                        // Bottom Middle: 6-sided Cookie (Instagram)
-                        Box(
-                            modifier = Modifier
-                                .size(shapeSize)
-                                .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.instagram) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.cookie_6),
-                                contentDescription = "Cookie",
-                                tint = shapeColor,
+                        // Middle Column
+                        Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                            // Top Middle: Triangle (LinkedIn)
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .scale(1.3f)
-                            )
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_instagram),
-                                contentDescription = "Instagram",
-                                tint = iconColor,
-                                modifier = Modifier.size(40.dp)
-                            )
-                        }
-                    }
+                                    .size(shapeSize)
+                                    .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.linkedin) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.triangle),
+                                    contentDescription = "Triangle",
+                                    tint = shapeColor,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .scale(1.3f)
+                                )
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_linkedin),
+                                    contentDescription = "LinkedIn",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
 
-                    // Right Column
-                    Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-                        // Middle & Bottom Right: Tall Pill/Rectangle (GitHub)
-                        Box(
-                            modifier = Modifier
-                                .width(150.dp)
-                                .height(shapeSize * 2 + spacing)
-                                .pressableScale(targetScale = 0.95f) { uriHandler.openUri(
-                                    ContactConfig.socialLinks.github) }
-                                .clip(RoundedCornerShape(40.dp))
-                                .background(MaterialTheme.colorScheme.secondary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_github),
-                                contentDescription = "GitHub",
-                                tint = MaterialTheme.colorScheme.onSecondary,
-                                modifier = Modifier.size(80.dp)
-                            )
+                            // Bottom Middle: 6-sided Cookie (Instagram)
+                            Box(
+                                modifier = Modifier
+                                    .size(shapeSize)
+                                    .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.instagram) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.cookie_6),
+                                    contentDescription = "Cookie",
+                                    tint = shapeColor,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .scale(1.3f)
+                                )
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_instagram),
+                                    contentDescription = "Instagram",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
+                        }
+
+                        // Right Column
+                        Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                            // Middle & Bottom Right: Tall Pill/Rectangle (GitHub)
+                            Box(
+                                modifier = Modifier
+                                    .width(rightColumnWidth)
+                                    .height(shapeSize * 2 + spacing)
+                                    .pressableScale(targetScale = 0.95f) { uriHandler.openUri(
+                                        ContactConfig.socialLinks.github) }
+                                    .clip(RoundedCornerShape(40.dp))
+                                    .background(MaterialTheme.colorScheme.secondary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_github),
+                                    contentDescription = "GitHub",
+                                    tint = MaterialTheme.colorScheme.onSecondary,
+                                    modifier = Modifier.size(githubIconSize)
+                                )
+                            }
                         }
                     }
                 }

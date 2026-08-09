@@ -56,11 +56,7 @@ class MainActivity : ComponentActivity() {
 
             val requestPermissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
-            ) { isGranted: Boolean ->
-                if (isGranted) {
-                    // Permission is granted. Wait for FCM token generation
-                }
-            }
+            ) { /* Handle permission result if necessary */ }
 
             LaunchedEffect(Unit) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

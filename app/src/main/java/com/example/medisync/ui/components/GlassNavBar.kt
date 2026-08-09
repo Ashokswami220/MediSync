@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -182,7 +183,8 @@ fun GlassNavBar(
 
     Row(
         modifier = modifier
-            .padding(start = 16.dp, end = 16.dp, bottom = 28.dp, top = 12.dp)
+            .navigationBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, bottom = 8.dp, top = 12.dp)
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
