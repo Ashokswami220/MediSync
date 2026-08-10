@@ -1,6 +1,5 @@
 package com.example.medisync.ui.components
 
-import androidx.compose.runtime.getValue
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -35,14 +34,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.R
 import com.example.medisync.utils.UploadManager
 
 @Composable
@@ -79,13 +81,13 @@ fun UploadProgressToast(
                             // Success State
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
-                                contentDescription = "Success",
+                                contentDescription = stringResource(R.string.success),
                                 tint = MaterialTheme.colorScheme.inverseOnSurface,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "Upload complete",
+                                text = stringResource(R.string.upload_complete),
                                 color = MaterialTheme.colorScheme.inverseOnSurface,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontSize = 15.sp,
@@ -103,7 +105,7 @@ fun UploadProgressToast(
                                 )
                             ) {
                                 Text(
-                                    text = "View",
+                                    text = stringResource(R.string.view),
                                     color = MaterialTheme.colorScheme.inverseOnSurface,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold
@@ -115,7 +117,7 @@ fun UploadProgressToast(
                             // Error State
                             Icon(
                                 imageVector = Icons.Default.Info,
-                                contentDescription = "Error",
+                                contentDescription = stringResource(R.string.error),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -135,7 +137,7 @@ fun UploadProgressToast(
                             // Uploading State
                             Icon(
                                 imageVector = Icons.Default.CloudUpload,
-                                contentDescription = "Uploading",
+                                contentDescription = stringResource(R.string.uploading),
                                 tint = MaterialTheme.colorScheme.inverseOnSurface,
                                 modifier = Modifier.size(20.dp)
                             )

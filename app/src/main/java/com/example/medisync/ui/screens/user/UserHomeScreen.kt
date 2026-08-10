@@ -74,6 +74,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -255,22 +256,26 @@ fun HealthStatsGrid(
     bloodSugarLastUpdated: Long
 ) {
     val formatter = SimpleDateFormat("dd MMM yyyy", LocalLocale.current.platformLocale)
-    val bpDateString = if (bloodPressureLastUpdated > 0L) formatter.format(Date(bloodPressureLastUpdated)) else "N/A"
-    val btDateString = if (bloodTypeLastUpdated > 0L) formatter.format(Date(bloodTypeLastUpdated)) else "N/A"
-    val bsDateString = if (bloodSugarLastUpdated > 0L) formatter.format(Date(bloodSugarLastUpdated)) else "N/A"
+    val bpDateString = if (bloodPressureLastUpdated > 0L) formatter.format(
+        Date(bloodPressureLastUpdated)
+    ) else "N/A"
+    val btDateString =
+        if (bloodTypeLastUpdated > 0L) formatter.format(Date(bloodTypeLastUpdated)) else "N/A"
+    val bsDateString =
+        if (bloodSugarLastUpdated > 0L) formatter.format(Date(bloodSugarLastUpdated)) else "N/A"
 
     BoxWithConstraints(
         modifier = Modifier.fillMaxWidth()
     ) {
         val totalWidth = maxWidth
         val dividerWidth = 1.dp
-        
+
         // Top row calculations
         val availableTopWidth = totalWidth - (dividerWidth * 2)
         val topBox1Width = availableTopWidth * 0.38f
         val topBox2Width = availableTopWidth * 0.38f
         val topBox3Width = availableTopWidth - topBox1Width - topBox2Width
-        
+
         // Bottom row calculations
         val availableBottomWidth = totalWidth - dividerWidth
         val bottomBoxWidth = availableBottomWidth / 2f
@@ -280,246 +285,152 @@ fun HealthStatsGrid(
                 .fillMaxWidth()
                 .border(1.dp, colorScheme.outlineVariant)
         ) {
-        val syringeInteractionSource = remember { MutableInteractionSource() }
-        val isSyringePressed by syringeInteractionSource.collectIsPressedAsState()
-        val syringeOffsetY by animateDpAsState(
-            targetValue = if (isSyringePressed) (-6).dp else 0.dp,
-            animationSpec = spring(
-                dampingRatio = DampingRatioMediumBouncy,
-                stiffness = StiffnessMedium
+            val syringeInteractionSource = remember { MutableInteractionSource() }
+            val isSyringePressed by syringeInteractionSource.collectIsPressedAsState()
+            val syringeOffsetY by animateDpAsState(
+                targetValue = if (isSyringePressed) (-6).dp else 0.dp,
+                animationSpec = spring(
+                    dampingRatio = DampingRatioMediumBouncy,
+                    stiffness = StiffnessMedium
+                )
             )
-        )
 
-        // New Top Info Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-        ) {
-            // Call Us Cell (38%)
-            Box(
+            // New Top Info Row
+            Row(
                 modifier = Modifier
-                    .width(topBox1Width)
-                    .fillMaxHeight(),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
             ) {
+                // Call Us Cell (38%)
                 Box(
                     modifier = Modifier
-                        .matchParentSize()
-                        .background(colorScheme.surface)
-                        .clickable {
-                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            onCallUsClick()
-                        }
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(vertical = 32.dp, horizontal = 8.dp)
+                        .width(topBox1Width)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "Call us",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        Icons.Default.Call,
-                        contentDescription = "Call us",
-                        tint = colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .fillMaxHeight()
-                    .background(colorScheme.outlineVariant)
-            )
-
-            // Medical Cell (38%)
-            Box(
-                modifier = Modifier
-                    .width(topBox2Width)
-                    .fillMaxHeight(),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(colorScheme.surface)
-                        .clickable {
-                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            openMedicalCoordinates(context)
-                        }
-                )
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Go to",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Icon(
-                            Icons.Default.Directions,
-                            contentDescription = "Directions",
-                            tint = colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        "Medical",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colorScheme.onSurface
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .fillMaxHeight()
-                    .background(colorScheme.outlineVariant)
-            )
-
-            // Empty Cell for SVG (24%)
-            Box(
-                modifier = Modifier
-                    .width(topBox3Width)
-                    .fillMaxHeight(),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(colorScheme.surface)
-                        .clickable(
-                            interactionSource = syringeInteractionSource,
-                            indication = LocalIndication.current
-                        ) {
-                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        }
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.syringe),
-                    contentDescription = "Syringe",
-                    modifier = Modifier
-                        .size(36.dp)
-                        .offset { IntOffset(0, syringeOffsetY.roundToPx()) }
-                        .rotate(-20f)
-                )
-            }
-        }
-
-        HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-
-        // Blood Pressure Row
-        Box(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(colorScheme.surface)
-                    .clickable {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        onStatClick(
-                            HealthStatDetails(
-                                title = "Blood Pressure",
-                                value = bloodPressure.ifEmpty { "--/--" },
-                                unit = "mmHg",
-                                status = HealthStatusHelper.getBloodPressureStatus(bloodPressure),
-                                date = bpDateString,
-                                icon = Icons.Default.MonitorHeart,
-                                color = colorScheme.primary
-                            )
-                        )
-                    }
-            )
-
-            // Left Content
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 16.dp, top = 24.dp, bottom = 24.dp)
-            ) {
-                // 1. Icon + Title
-                Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(colorScheme.primaryContainer.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
+                            .matchParentSize()
+                            .background(colorScheme.surface)
+                            .clickable {
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                onCallUsClick()
+                            }
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(vertical = 32.dp, horizontal = 8.dp)
                     ) {
+                        Text(
+                            stringResource(R.string.call_us),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Icon(
-                            Icons.Default.MonitorHeart, contentDescription = null,
-                            tint = colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            Icons.Default.Call,
+                            contentDescription = stringResource(R.string.call_us),
+                            tint = colorScheme.onSurface,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        "Blood Pressure", fontWeight = FontWeight.SemiBold,
-                        color = colorScheme.onSurface,
-                        fontSize = 16.sp
-                    )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(colorScheme.outlineVariant)
+                )
 
-                // 2. Huge Number + Unit
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        bloodPressure.ifEmpty { "--/--" }, fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorScheme.onBackground,
-                        lineHeight = 36.sp
+                // Medical Cell (38%)
+                Box(
+                    modifier = Modifier
+                        .width(topBox2Width)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(colorScheme.surface)
+                            .clickable {
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                openMedicalCoordinates(context)
+                            }
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        "mmHg", fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                        color = colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                stringResource(R.string.go_to),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Icon(
+                                Icons.Default.Directions,
+                                contentDescription = stringResource(R.string.directions),
+                                tint = colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            stringResource(R.string.medical),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colorScheme.onSurface
+                        )
+                    }
                 }
 
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(colorScheme.outlineVariant)
+                )
 
+                // Empty Cell for SVG (24%)
+                Box(
+                    modifier = Modifier
+                        .width(topBox3Width)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(colorScheme.surface)
+                            .clickable(
+                                interactionSource = syringeInteractionSource,
+                                indication = LocalIndication.current
+                            ) {
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            }
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.syringe),
+                        contentDescription = stringResource(R.string.syringe),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .offset { IntOffset(0, syringeOffsetY.roundToPx()) }
+                            .rotate(-20f)
+                    )
+                }
             }
 
-            // SVG Image (Bottom Right)
-            Image(
-                painter = painterResource(id = R.drawable.blood_test),
-                contentDescription = null,
-                alignment = Alignment.BottomEnd,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .width(160.dp) // Fixed width to prevent height inflation on tablets
-            )
-        }
+            HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
 
-        HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-        ) {
-            // Blood Type Cell
+            // Blood Pressure Row
             Box(
-                modifier = Modifier
-                    .width(bottomBoxWidth)
-                    .fillMaxHeight()
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Box(
                     modifier = Modifier
@@ -529,127 +440,229 @@ fun HealthStatsGrid(
                             HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                             onStatClick(
                                 HealthStatDetails(
-                                    title = "Blood Type",
-                                    value = bloodType.ifEmpty { "--" },
-                                    unit = "",
-                                    status = HealthStatusHelper.getBloodTypeStatus(bloodType),
-                                    date = btDateString,
-                                    icon = Icons.Default.Bloodtype,
-                                    color = colorScheme.secondary
+                                    title = context.getString(R.string.blood_pressure),
+                                    value = bloodPressure.ifEmpty { "--/--" },
+                                    unit = "mmHg",
+                                    status = HealthStatusHelper.getBloodPressureStatus(
+                                        bloodPressure
+                                    ),
+                                    date = bpDateString,
+                                    icon = Icons.Default.MonitorHeart,
+                                    color = colorScheme.primary
                                 )
                             )
                         }
                 )
-                Column(modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    colorScheme.secondaryContainer.copy(alpha = 0.15f)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Bloodtype, contentDescription = null,
-                                tint = colorScheme.secondary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Blood Type", fontWeight = FontWeight.SemiBold, fontSize = 13.sp
-                        )
-                    }
 
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        bloodType.ifEmpty { "--" }, fontSize = 36.sp, fontWeight = FontWeight.Bold,
-                        color = colorScheme.onBackground,
-                        lineHeight = 36.sp
-                    )
-
-
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .fillMaxHeight()
-                    .background(colorScheme.outlineVariant)
-            )
-
-            // Blood Sugar Cell
-            Box(
-                modifier = Modifier
-                    .width(bottomBoxWidth)
-                    .fillMaxHeight()
-            ) {
-                Box(
+                // Left Content
+                Column(
                     modifier = Modifier
-                        .matchParentSize()
-                        .background(colorScheme.surface)
-                        .clickable {
-                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            onStatClick(
-                                HealthStatDetails(
-                                    title = "Blood Sugar",
-                                    value = bloodSugar.ifEmpty { "--" },
-                                    unit = "mg/dL",
-                                    status = HealthStatusHelper.getBloodSugarStatus(bloodSugar),
-                                    date = bsDateString,
-                                    icon = Icons.Default.Bloodtype,
-                                    color = colorScheme.error
-                                )
-                            )
-                        }
-                )
-                Column(modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp)) {
+                        .align(Alignment.TopStart)
+                        .padding(start = 16.dp, top = 24.dp, bottom = 24.dp)
+                ) {
+                    // 1. Icon + Title
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(40.dp)
                                 .clip(CircleShape)
-                                .background(colorScheme.errorContainer.copy(alpha = 0.15f)),
+                                .background(colorScheme.primaryContainer.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Default.Bloodtype, contentDescription = null,
-                                tint = colorScheme.error,
-                                modifier = Modifier.size(16.dp)
+                                Icons.Default.MonitorHeart, contentDescription = null,
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "Blood Sugar", fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
+                            stringResource(R.string.blood_pressure),
+                            fontWeight = FontWeight.SemiBold,
+                            color = colorScheme.onSurface,
+                            fontSize = 16.sp
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
+                    // 2. Huge Number + Unit
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            bloodSugar.ifEmpty { "--" }, fontSize = 36.sp,
+                            bloodPressure.ifEmpty { "--/--" }, fontSize = 36.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorScheme.onBackground,
                             lineHeight = 36.sp
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            "mg/dL", fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                            stringResource(R.string.mmhg), fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
                             color = colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 6.dp)
                         )
+                    }
+
+
+                }
+
+                // SVG Image (Bottom Right)
+                Image(
+                    painter = painterResource(id = R.drawable.blood_test),
+                    contentDescription = null,
+                    alignment = Alignment.BottomEnd,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .width(160.dp) // Fixed width to prevent height inflation on tablets
+                )
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+            ) {
+                // Blood Type Cell
+                Box(
+                    modifier = Modifier
+                        .width(bottomBoxWidth)
+                        .fillMaxHeight()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(colorScheme.surface)
+                            .clickable {
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                onStatClick(
+                                    HealthStatDetails(
+                                        title = context.getString(R.string.blood_type),
+                                        value = bloodType.ifEmpty { "--" },
+                                        unit = "",
+                                        status = HealthStatusHelper.getBloodTypeStatus(bloodType),
+                                        date = btDateString,
+                                        icon = Icons.Default.Bloodtype,
+                                        color = colorScheme.secondary
+                                    )
+                                )
+                            }
+                    )
+                    Column(modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        colorScheme.secondaryContainer.copy(alpha = 0.15f)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Bloodtype, contentDescription = null,
+                                    tint = colorScheme.secondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                stringResource(R.string.blood_type),
+                                fontWeight = FontWeight.SemiBold, fontSize = 13.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            bloodType.ifEmpty { "--" }, fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colorScheme.onBackground,
+                            lineHeight = 36.sp
+                        )
+
+
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(colorScheme.outlineVariant)
+                )
+
+                // Blood Sugar Cell
+                Box(
+                    modifier = Modifier
+                        .width(bottomBoxWidth)
+                        .fillMaxHeight()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(colorScheme.surface)
+                            .clickable {
+                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                                onStatClick(
+                                    HealthStatDetails(
+                                        title = context.getString(R.string.blood_sugar),
+                                        value = bloodSugar.ifEmpty { "--" },
+                                        unit = "mg/dL",
+                                        status = HealthStatusHelper.getBloodSugarStatus(bloodSugar),
+                                        date = bsDateString,
+                                        icon = Icons.Default.Bloodtype,
+                                        color = colorScheme.error
+                                    )
+                                )
+                            }
+                    )
+                    Column(modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(colorScheme.errorContainer.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Bloodtype, contentDescription = null,
+                                    tint = colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                stringResource(R.string.blood_sugar),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                bloodSugar.ifEmpty { "--" }, fontSize = 36.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colorScheme.onBackground,
+                                lineHeight = 36.sp
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                stringResource(R.string.mg_dl), fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+                        }
                     }
                 }
             }
         }
     }
-}
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -671,7 +684,7 @@ fun RecentReportsSection(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Recent Reports",
+            text = stringResource(R.string.recent_reports),
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = colorScheme.onBackground
@@ -685,7 +698,10 @@ fun RecentReportsSection(
             shape = RoundedCornerShape(50),
             border = BorderStroke(1.dp, colorScheme.outlineVariant)
         ) {
-            Text("View All", fontWeight = FontWeight.SemiBold, color = colorScheme.primary)
+            Text(
+                stringResource(R.string.view_all), fontWeight = FontWeight.SemiBold,
+                color = colorScheme.primary
+            )
         }
     }
 
@@ -827,7 +843,7 @@ fun PharmacistSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = "Pharmacist",
+            text = stringResource(R.string.pharmacist),
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = colorScheme.onBackground,
@@ -915,7 +931,7 @@ fun PharmacistCard(
             // Image touches left and bottom
             Image(
                 painter = painterResource(id = imageRes),
-                contentDescription = "Doctor Image",
+                contentDescription = stringResource(R.string.doctor_image),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .width(imageWidth)
@@ -970,13 +986,13 @@ fun PharmacistCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Call,
-                            contentDescription = "Contact",
+                            contentDescription = stringResource(R.string.contact),
                             tint = colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Contact",
+                            text = stringResource(R.string.contact),
                             color = colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp
@@ -1009,7 +1025,7 @@ fun PromotionCard() {
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Shree BalaJi Medical & Labs",
+                    text = stringResource(R.string.shree_balaji_medical_labs),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -1064,14 +1080,14 @@ fun AnimatedSloganText(scrollState: ScrollState) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Every Medicine",
+            text = stringResource(R.string.every_medicine),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Any Emergency",
+            text = stringResource(R.string.any_emergency),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.secondary,

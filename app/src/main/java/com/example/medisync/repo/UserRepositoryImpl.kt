@@ -82,14 +82,20 @@ class UserRepositoryImpl(
             try {
                 val snapshot = usersCollection.get()
                     .await()
-                android.util.Log.d("UserRepositoryImpl", "Fetched ${snapshot.documents.size} from Firestore")
+                android.util.Log.d(
+                    "UserRepositoryImpl", "Fetched ${snapshot.documents.size} from Firestore"
+                )
                 val profiles = snapshot.documents.mapNotNull { doc ->
                     try {
                         val profile = doc.toObject(UserProfile::class.java)
-                        val isPlaceholder = doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder") ?: false
+                        val isPlaceholder =
+                            doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder")
+                            ?: false
                         profile?.copy(uid = doc.id, isPlaceholder = isPlaceholder)
                     } catch (e: Exception) {
-                        android.util.Log.e("UserRepositoryImpl", "Error mapping user document ${doc.id}", e)
+                        android.util.Log.e(
+                            "UserRepositoryImpl", "Error mapping user document ${doc.id}", e
+                        )
                         null
                     }
                 }
@@ -98,7 +104,9 @@ class UserRepositoryImpl(
                     userDao.deleteAllUsers()
                     userDao.insertUsers(profiles.map { UserEntity.fromUserProfile(it) })
                 }
-                android.util.Log.d("UserRepositoryImpl", "Inserted ${profiles.size} users into Room")
+                android.util.Log.d(
+                    "UserRepositoryImpl", "Inserted ${profiles.size} users into Room"
+                )
             } catch (e: Exception) {
                 android.util.Log.e("UserRepositoryImpl", "Error fetching users from Firestore", e)
                 // Network errors are ignored here, relying on offline Room cache
@@ -163,12 +171,17 @@ class UserRepositoryImpl(
 
             for (doc in phoneQuery.documents) {
                 // Read raw fields — handle both "isPlaceholder" and "placeholder" (JavaBeans naming issue)
-                val isPlaceholder = doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder") ?: false
+                val isPlaceholder =
+                    doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder") ?: false
                 val claimedByUid = doc.getString("claimedByUid")
-                android.util.Log.d("MediSync", "  Doc ${doc.id}: isPlaceholder=$isPlaceholder, claimedByUid=$claimedByUid, fields=${doc.data?.keys}")
+                android.util.Log.d(
+                    "MediSync",
+                    "  Doc ${doc.id}: isPlaceholder=$isPlaceholder, claimedByUid=$claimedByUid, fields=${doc.data?.keys}"
+                )
                 if (isPlaceholder && claimedByUid == null) {
                     android.util.Log.d("MediSync", "  → MATCH! Returning placeholder ${doc.id}")
-                    return doc.toObject(UserProfile::class.java)?.copy(uid = doc.id, isPlaceholder = true)
+                    return doc.toObject(UserProfile::class.java)
+                        ?.copy(uid = doc.id, isPlaceholder = true)
                 }
             }
 
@@ -181,12 +194,17 @@ class UserRepositoryImpl(
             android.util.Log.d("MediSync", "Email query returned ${emailQuery.size()} documents")
 
             for (doc in emailQuery.documents) {
-                val isPlaceholder = doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder") ?: false
+                val isPlaceholder =
+                    doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder") ?: false
                 val claimedByUid = doc.getString("claimedByUid")
-                android.util.Log.d("MediSync", "  Doc ${doc.id}: isPlaceholder=$isPlaceholder, claimedByUid=$claimedByUid, fields=${doc.data?.keys}")
+                android.util.Log.d(
+                    "MediSync",
+                    "  Doc ${doc.id}: isPlaceholder=$isPlaceholder, claimedByUid=$claimedByUid, fields=${doc.data?.keys}"
+                )
                 if (isPlaceholder && claimedByUid == null) {
                     android.util.Log.d("MediSync", "  → MATCH! Returning placeholder ${doc.id}")
-                    return doc.toObject(UserProfile::class.java)?.copy(uid = doc.id, isPlaceholder = true)
+                    return doc.toObject(UserProfile::class.java)
+                        ?.copy(uid = doc.id, isPlaceholder = true)
                 }
             }
 
@@ -204,7 +222,9 @@ class UserRepositoryImpl(
         realUserName: String
     ): Result<Unit> {
         return try {
-            android.util.Log.d("MediSync", "Claiming placeholder $placeholderUid → $realUserUid ($realUserName)")
+            android.util.Log.d(
+                "MediSync", "Claiming placeholder $placeholderUid → $realUserUid ($realUserName)"
+            )
 
             // 1. FIRST: Mark placeholder as claimed (this must succeed)
             usersCollection.document(placeholderUid)
@@ -229,7 +249,8 @@ class UserRepositoryImpl(
                         )
                     )
                 }
-                batch.commit().await()
+                batch.commit()
+                    .await()
                 android.util.Log.d("MediSync", "Transferred ${docsSnapshot.size()} documents")
             } else {
                 android.util.Log.d("MediSync", "No documents to transfer")
@@ -237,12 +258,16 @@ class UserRepositoryImpl(
 
             // 3. Try to delete the old placeholder (best-effort)
             try {
-                usersCollection.document(placeholderUid).delete().await()
+                usersCollection.document(placeholderUid)
+                    .delete()
+                    .await()
                 db.withTransaction { userDao.deleteUsersByUids(listOf(placeholderUid)) }
                 android.util.Log.d("MediSync", "Deleted placeholder from Firestore + Room")
             } catch (deleteEx: Exception) {
                 // Delete failed (e.g. security rules) — that's OK, it's already marked as claimed
-                android.util.Log.w("MediSync", "Could not delete placeholder (claimed anyway): ${deleteEx.message}")
+                android.util.Log.w(
+                    "MediSync", "Could not delete placeholder (claimed anyway): ${deleteEx.message}"
+                )
             }
 
             Result.success(Unit)

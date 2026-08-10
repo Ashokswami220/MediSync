@@ -1,16 +1,16 @@
 package com.example.medisync
 
 import android.app.Application
-import org.koin.core.context.startKoin
-import org.koin.android.ext.koin.androidContext
-import com.example.medisync.di.appModule
 import com.cloudinary.android.MediaManager
+import com.example.medisync.di.appModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
 class MediSyncApp : Application() {
-    
+
     override fun onCreate() {
         super.onCreate()
-        
+
         startKoin {
             androidContext(this@MediSyncApp)
             modules(appModule)

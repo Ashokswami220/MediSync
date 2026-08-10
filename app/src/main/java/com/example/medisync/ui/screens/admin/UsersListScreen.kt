@@ -57,16 +57,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.R
 import com.example.medisync.ui.components.ClearAdminDataDialog
-import com.example.medisync.ui.components.sheets.CreateUserBottomSheet
 import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.UserAvatar
+import com.example.medisync.ui.components.sheets.CreateUserBottomSheet
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
@@ -93,19 +95,20 @@ fun UserListScreen(
         viewModel.fetchUsers()
     }
 
+    val dataUpdatingMsg = stringResource(R.string.data_is_updating)
     LaunchedEffect(isLoading) {
         if (isLoading) {
-            GlobalToastManager.showToast("Data is updating...")
+            GlobalToastManager.showToast(dataUpdatingMsg)
         }
     }
 
     val sortedUsers = remember(users, selectedFilter, searchQuery) {
         var result = users
         if (searchQuery.isNotBlank()) {
-            result = result.filter { 
+            result = result.filter {
                 it.name.contains(searchQuery, ignoreCase = true) ||
-                it.phoneNumber.contains(searchQuery) ||
-                it.email.contains(searchQuery, ignoreCase = true)
+                        it.phoneNumber.contains(searchQuery) ||
+                        it.email.contains(searchQuery, ignoreCase = true)
             }
         }
         when (selectedFilter) {
@@ -141,210 +144,217 @@ fun UserListScreen(
                 .fillMaxSize()
                 .background(colorScheme.background)
         ) {
-        if (selectedUsers.isNotEmpty()) {
-            SelectionTopBar(
-                selectedCount = selectedUsers.size,
-                onClearSelection = { selectedUsers.clear() },
-                onDeleteClick = { showDeleteDialog = true },
-                onClearDataClick = { showClearDataDialog = true }
-            )
-        } else {
-            TopBar(
-                title = "Users",
-                showName = false,
-                isSearchActive = isSearchActive,
-                searchQuery = searchQuery,
-                onSearchActiveChange = { isSearchActive = it },
-                onSearchQueryChange = { searchQuery = it },
-                extraActions = {
-                    Box {
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.5f))
-                                .clickable { showFilterMenu = true }
-                                .padding(10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FilterAlt,
-                                contentDescription = "Filter",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        MaterialTheme(
-                            colorScheme = MaterialTheme.colorScheme,
-                            shapes = MaterialTheme.shapes.copy(
-                                extraSmall = RoundedCornerShape(12.dp)
-                            )
-                        ) {
-                            DropdownMenu(
-                                expanded = showFilterMenu,
-                                onDismissRequest = { showFilterMenu = false },
+            if (selectedUsers.isNotEmpty()) {
+                SelectionTopBar(
+                    selectedCount = selectedUsers.size,
+                    onClearSelection = { selectedUsers.clear() },
+                    onDeleteClick = { showDeleteDialog = true },
+                    onClearDataClick = { showClearDataDialog = true }
+                )
+            } else {
+                TopBar(
+                    title = stringResource(R.string.users),
+                    showName = false,
+                    isSearchActive = isSearchActive,
+                    searchQuery = searchQuery,
+                    onSearchActiveChange = { isSearchActive = it },
+                    onSearchQueryChange = { searchQuery = it },
+                    extraActions = {
+                        Box {
+                            Box(
                                 modifier = Modifier
-                                    .background(colorScheme.surface)
-                                    .width(140.dp),
-                                offset = DpOffset(62.dp, 8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Black.copy(alpha = 0.5f))
+                                    .clickable { showFilterMenu = true }
+                                    .padding(10.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                val options =
-                                    listOf("Default", "A-Z", "Z-A", "Newest first", "Oldest first")
-                                options.forEach { option ->
-                                    DropdownMenuItem(
-                                        modifier = Modifier.height(40.dp),
-                                        contentPadding = PaddingValues(
-                                            horizontal = 16.dp, vertical = 0.dp
-                                        ),
-                                        text = { Text(option) },
-                                        onClick = {
-                                            selectedFilter = option
-                                            showFilterMenu = false
-                                        },
-                                        trailingIcon = if (selectedFilter == option) {
-                                            {
-                                                Icon(
-                                                    Icons.Default.Check,
-                                                    contentDescription = "Selected"
-                                                )
-                                            }
-                                        } else null
-                                    )
+                                Icon(
+                                    imageVector = Icons.Default.FilterAlt,
+                                    contentDescription = stringResource(R.string.filter),
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            MaterialTheme(
+                                colorScheme = MaterialTheme.colorScheme,
+                                shapes = MaterialTheme.shapes.copy(
+                                    extraSmall = RoundedCornerShape(12.dp)
+                                )
+                            ) {
+                                DropdownMenu(
+                                    expanded = showFilterMenu,
+                                    onDismissRequest = { showFilterMenu = false },
+                                    modifier = Modifier
+                                        .background(colorScheme.surface)
+                                        .width(140.dp),
+                                    offset = DpOffset(62.dp, 8.dp)
+                                ) {
+                                    val options =
+                                        listOf(
+                                            "Default", "A-Z", "Z-A", "Newest first", "Oldest first"
+                                        )
+                                    options.forEach { option ->
+                                        DropdownMenuItem(
+                                            modifier = Modifier.height(40.dp),
+                                            contentPadding = PaddingValues(
+                                                horizontal = 16.dp, vertical = 0.dp
+                                            ),
+                                            text = { Text(option) },
+                                            onClick = {
+                                                selectedFilter = option
+                                                showFilterMenu = false
+                                            },
+                                            trailingIcon = if (selectedFilter == option) {
+                                                {
+                                                    Icon(
+                                                        Icons.Default.Check,
+                                                        contentDescription = stringResource(
+                                                            R.string.selected
+                                                        )
+                                                    )
+                                                }
+                                            } else null
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            )
-        }
-
-        if (!isSearchActive) {
-            HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-        }
-
-        if (isLoading && users.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                LoadingIndicator(
-                    color = MaterialTheme.colorScheme.secondary,
-                    polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
                 )
             }
-        } else if (users.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No users found", color = colorScheme.onSurfaceVariant)
+
+            if (!isSearchActive) {
+                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
-            ) {
-                items(sortedUsers) { user ->
-                    val isSelected = selectedUsers.contains(user.uid)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                if (isSelected) colorScheme.secondary.copy(
-                                    alpha = 0.15f
-                                ) else Color.Transparent
-                            )
-                            .combinedClickable(
-                                onClick = {
-                                    if (selectedUsers.isNotEmpty()) {
+
+            if (isLoading && users.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    LoadingIndicator(
+                        color = MaterialTheme.colorScheme.secondary,
+                        polygons = LoadingIndicatorDefaults.IndeterminateIndicatorPolygons
+                    )
+                }
+            } else if (users.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        stringResource(R.string.no_users_found),
+                        color = colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
+                ) {
+                    items(sortedUsers) { user ->
+                        val isSelected = selectedUsers.contains(user.uid)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (isSelected) colorScheme.secondary.copy(
+                                        alpha = 0.15f
+                                    ) else Color.Transparent
+                                )
+                                .combinedClickable(
+                                    onClick = {
+                                        if (selectedUsers.isNotEmpty()) {
+                                            if (isSelected) selectedUsers.remove(user.uid)
+                                            else selectedUsers.add(user.uid)
+                                        } else {
+                                            onNavigateToUserDetail(user.uid)
+                                        }
+                                    },
+                                    onLongClick = {
                                         if (isSelected) selectedUsers.remove(user.uid)
                                         else selectedUsers.add(user.uid)
-                                    } else {
-                                        onNavigateToUserDetail(user.uid)
                                     }
-                                },
-                                onLongClick = {
-                                    if (isSelected) selectedUsers.remove(user.uid)
-                                    else selectedUsers.add(user.uid)
-                                }
-                            )
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // User Avatar with larger clickable area
-                        Box(
-                            modifier = Modifier
-                                .clickable { onNavigateToUserProfile(user.uid) }
-                                .padding(end = 12.dp, top = 8.dp, bottom = 8.dp)
-                        ) {
-                            Box(modifier = Modifier.size(50.dp)) {
-                                UserAvatar(
-                                    avatarUrl = user.avatarUrl,
-                                    size = 50.dp,
-                                    borderWidth = 0.dp
                                 )
-                                if (isSelected) {
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // User Avatar with larger clickable area
+                            Box(
+                                modifier = Modifier
+                                    .clickable { onNavigateToUserProfile(user.uid) }
+                                    .padding(end = 12.dp, top = 8.dp, bottom = 8.dp)
+                            ) {
+                                Box(modifier = Modifier.size(50.dp)) {
+                                    UserAvatar(
+                                        avatarUrl = user.avatarUrl,
+                                        size = 50.dp,
+                                        borderWidth = 0.dp
+                                    )
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = stringResource(R.string.selected),
+                                            tint = colorScheme.secondary,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .size(20.dp)
+                                                .background(Color.White, CircleShape)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(4.dp))
+
+                            // Name and Subtitle
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = user.name,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 16.sp,
+                                        color = colorScheme.onBackground,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = user.lastReportTime,
+                                        fontSize = 12.sp,
+                                        color = colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = "Selected",
-                                        tint = colorScheme.secondary,
-                                        modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .size(20.dp)
-                                            .background(Color.White, CircleShape)
+                                        imageVector = if (user.hasViewed) Icons.Default.DoneAll else Icons.Default.Check,
+                                        contentDescription = if (user.hasViewed) "Viewed" else "Sent",
+                                        tint = if (user.hasViewed) colorScheme.primary else colorScheme.outline,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = user.lastReportName,
+                                        fontSize = 14.sp,
+                                        color = colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        // Name and Subtitle
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = user.name,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 16.sp,
-                                    color = colorScheme.onBackground,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = user.lastReportTime,
-                                    fontSize = 12.sp,
-                                    color = colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = if (user.hasViewed) Icons.Default.DoneAll else Icons.Default.Check,
-                                    contentDescription = if (user.hasViewed) "Viewed" else "Sent",
-                                    tint = if (user.hasViewed) colorScheme.primary else colorScheme.outline,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = user.lastReportName,
-                                    fontSize = 14.sp,
-                                    color = colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 82.dp, end = 16.dp),
+                            thickness = 0.5.dp,
+                            color = colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
                     }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = 82.dp, end = 16.dp),
-                        thickness = 0.5.dp,
-                        color = colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    )
                 }
             }
-        }
         }
 
         // Floating Action Button
@@ -358,7 +368,10 @@ fun UserListScreen(
             containerColor = colorScheme.secondary,
             contentColor = colorScheme.onSecondary
         ) {
-            Icon(Icons.Default.PersonAdd, contentDescription = "Pre-register User")
+            Icon(
+                Icons.Default.PersonAdd,
+                contentDescription = stringResource(R.string.pre_register_user)
+            )
         }
     }
 
@@ -366,7 +379,9 @@ fun UserListScreen(
         CreateUserBottomSheet(
             onDismiss = { showCreateUserSheet = false },
             onCreate = { firstName, lastName, contactMethod, contactValue ->
-                viewModel.createPlaceholderUser(firstName, lastName, contactMethod, contactValue) { success, msg ->
+                viewModel.createPlaceholderUser(
+                    firstName, lastName, contactMethod, contactValue
+                ) { success, msg ->
                     GlobalToastManager.showToast(message = msg)
                     if (success) {
                         showCreateUserSheet = false
@@ -395,7 +410,7 @@ fun UserListScreen(
 
     if (showClearDataDialog) {
         ClearAdminDataDialog(
-            userCount = selectedUsers.size,
+
             onConfirm = {
                 viewModel.clearDataForSelectedUsers(selectedUsers.toList()) { success, msg ->
                     GlobalToastManager.showToast(message = msg)
@@ -435,7 +450,7 @@ fun SelectionTopBar(
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowBackIosNew,
-                contentDescription = "Clear Selection",
+                contentDescription = stringResource(R.string.clear_selection),
                 tint = colorScheme.onSurface,
                 modifier = Modifier
                     .size(24.dp)
@@ -456,7 +471,7 @@ fun SelectionTopBar(
                 IconButton(onClick = { showSelectionMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More",
+                        contentDescription = stringResource(R.string.more),
                         tint = colorScheme.onSurface,
                         modifier = Modifier.size(24.dp)
                     )
@@ -472,7 +487,11 @@ fun SelectionTopBar(
                         offset = DpOffset(0.dp, 8.dp)
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Delete Users", color = colorScheme.error) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.delete_users), color = colorScheme.error
+                                )
+                            },
                             onClick = {
                                 showSelectionMenu = false
                                 onDeleteClick()
@@ -485,7 +504,11 @@ fun SelectionTopBar(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Clear Data", color = colorScheme.error) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.clear_data), color = colorScheme.error
+                                )
+                            },
                             onClick = {
                                 showSelectionMenu = false
                                 onClearDataClick()

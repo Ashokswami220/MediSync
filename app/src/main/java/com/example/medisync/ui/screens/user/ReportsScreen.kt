@@ -55,14 +55,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.R
 import com.example.medisync.model.DocumentMetadata
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.ui.components.CustomToast
-import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.NotLoggedInState
+import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.VertEmptyReportsState
 import com.example.medisync.utils.HapticHelper
 import kotlinx.coroutines.delay
@@ -123,7 +125,7 @@ fun UserReportsScreen(
             .background(colorScheme.background)
     ) {
         TopBar(
-            title = "Reports",
+            title = stringResource(R.string.reports),
             isSearchActive = isSearchActive,
             searchQuery = searchQuery,
             onSearchActiveChange = { active ->
@@ -171,7 +173,9 @@ fun UserReportsScreen(
 
                 if (!isLoggedIn) {
                     NotLoggedInState(
-                        modifier = Modifier.height(480.dp).padding(top = 48.dp),
+                        modifier = Modifier
+                            .height(480.dp)
+                            .padding(top = 48.dp),
                         onNavigateToLogin = onNavigateToLogin,
                         colorScheme = colorScheme
                     )
@@ -194,7 +198,9 @@ fun UserReportsScreen(
 
                         is ReportsState.Empty -> {
                             VertEmptyReportsState(
-                                modifier = Modifier.height(480.dp).padding(top = 48.dp),
+                                modifier = Modifier
+                                    .height(480.dp)
+                                    .padding(top = 48.dp),
                                 colorScheme = colorScheme
                             )
                         }
@@ -212,23 +218,29 @@ fun UserReportsScreen(
                                 } else {
                                     doc.linkedMember == selectedMember
                                 }
-                                val matchesSearch = searchQuery.isBlank() || doc.documentName.contains(searchQuery, ignoreCase = true)
+                                val matchesSearch =
+                                    searchQuery.isBlank() || doc.documentName.contains(
+                                        searchQuery, ignoreCase = true
+                                    )
                                 val matchesCategory = if (selectedCategory == "All") {
                                     true
                                 } else {
                                     doc.documentName.contains(selectedCategory, ignoreCase = true)
                                 }
                                 matchesMember && matchesSearch && matchesCategory
-                            }.sortedWith { a, b ->
-                                if (selectedSort == "Oldest First") {
-                                    a.uploadedAt.compareTo(b.uploadedAt)
-                                } else {
-                                    b.uploadedAt.compareTo(a.uploadedAt)
-                                }
                             }
+                                .sortedWith { a, b ->
+                                    if (selectedSort == "Oldest First") {
+                                        a.uploadedAt.compareTo(b.uploadedAt)
+                                    } else {
+                                        b.uploadedAt.compareTo(a.uploadedAt)
+                                    }
+                                }
                             if (filteredDocuments.isEmpty()) {
                                 VertEmptyReportsState(
-                                    modifier = Modifier.height(480.dp).padding(top = 48.dp),
+                                    modifier = Modifier
+                                        .height(480.dp)
+                                        .padding(top = 48.dp),
                                     colorScheme = colorScheme
                                 )
                             } else {
@@ -243,7 +255,9 @@ fun UserReportsScreen(
                         is ReportsState.Error -> {
                             // Show error or empty state
                             VertEmptyReportsState(
-                                modifier = Modifier.height(480.dp).padding(top = 48.dp),
+                                modifier = Modifier
+                                    .height(480.dp)
+                                    .padding(top = 48.dp),
                                 colorScheme = colorScheme
                             )
                         }
@@ -368,7 +382,7 @@ fun ReportsFilterRow(
                 }) {
                     Icon(
                         Icons.Default.FilterAlt,
-                        contentDescription = "Filter",
+                        contentDescription = stringResource(R.string.filter),
                         tint = colorScheme.onSurface
                     )
                 }
@@ -389,7 +403,7 @@ fun ReportsFilterRow(
                                 if (selectedSort == sortOption) {
                                     Icon(
                                         Icons.Default.Check,
-                                        contentDescription = "Selected",
+                                        contentDescription = stringResource(R.string.selected),
                                         tint = colorScheme.secondary
                                     )
                                 }
@@ -401,7 +415,6 @@ fun ReportsFilterRow(
         }
     }
 }
-
 
 
 @Composable
@@ -495,7 +508,7 @@ fun ReportsList(
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "View Details",
+                        contentDescription = stringResource(R.string.view_details),
                         tint = colorScheme.onSurfaceVariant
                     )
                 }

@@ -23,7 +23,7 @@ class AdminHomeViewModel(
 
     private val _usersJoinedToday = MutableStateFlow(0)
     val usersJoinedToday: StateFlow<Int> = _usersJoinedToday.asStateFlow()
-    
+
     private val _unclaimedPreRegUsers = MutableStateFlow(0)
     val unclaimedPreRegUsers: StateFlow<Int> = _unclaimedPreRegUsers.asStateFlow()
 
@@ -46,7 +46,8 @@ class AdminHomeViewModel(
             userRepository.getAllUsers()
                 .catch { /* ignore */ }
                 .collectLatest { profiles ->
-                    _totalUsers.value = profiles.count { it.role != UserRole.ADMIN && !it.isPlaceholder }
+                    _totalUsers.value =
+                        profiles.count { it.role != UserRole.ADMIN && !it.isPlaceholder }
 
                     // Calculate joined today (only real users)
                     val calendar = Calendar.getInstance()
@@ -56,10 +57,10 @@ class AdminHomeViewModel(
                     calendar.set(Calendar.MILLISECOND, 0)
                     val startOfToday = calendar.timeInMillis
 
-                    _usersJoinedToday.value = profiles.count { 
-                        it.role != UserRole.ADMIN && !it.isPlaceholder && it.accountCreatedTime >= startOfToday 
+                    _usersJoinedToday.value = profiles.count {
+                        it.role != UserRole.ADMIN && !it.isPlaceholder && it.accountCreatedTime >= startOfToday
                     }
-                    
+
                     _unclaimedPreRegUsers.value = profiles.count {
                         it.isPlaceholder && it.claimedByUid.isNullOrEmpty()
                     }
@@ -76,7 +77,7 @@ class AdminHomeViewModel(
                     _reportsOpenedTodayCount.value = stats.todayOpened
                 }
         }
-        
+
         viewModelScope.launch {
             documentRepository.getTotalReportsCount()
                 .catch { /* ignore */ }

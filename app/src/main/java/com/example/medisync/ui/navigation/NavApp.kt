@@ -38,9 +38,9 @@ import com.example.medisync.data.SettingsManager
 import com.example.medisync.model.MemberVitals
 import com.example.medisync.model.UserRole
 import com.example.medisync.ui.components.UploadProgressToast
+import com.example.medisync.ui.screens.admin.AdminEditContactsScreen
 import com.example.medisync.ui.screens.admin.UserDetailScreen
 import com.example.medisync.ui.screens.admin.UserProfileScreen
-import com.example.medisync.ui.screens.admin.AdminEditContactsScreen
 import com.example.medisync.ui.screens.auth.AuthFlowScreen
 import com.example.medisync.ui.screens.auth.AuthState
 import com.example.medisync.ui.screens.auth.AuthViewModel
@@ -155,7 +155,7 @@ fun NavApp(
     val currentProfile = (profileState as? ProfileState.Success)?.profile
     val mainUserName = currentProfile?.firstName?.ifEmpty { "User" } ?: "User"
     val isMainUser = selectedHomeMember == mainUserName
-    
+
     val currentVitals = if (isMainUser) {
         MemberVitals(
             bloodType = currentProfile?.bloodType ?: "",

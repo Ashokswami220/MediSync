@@ -2,6 +2,7 @@ package com.example.medisync.ui.navigation
 
 object Routes {
     const val MAIN_TABS = "main_tabs"
+
     // Admin Screens
     const val ADMIN_HOME = "admin_home_screen"
     const val UPLOAD_DATA = "upload_data_screen"

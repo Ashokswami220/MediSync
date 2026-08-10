@@ -167,10 +167,14 @@ object UploadManager : KoinComponent {
                                                         state = UploadState.SUCCESS
                                                     )
                                                 // Trigger Push Notification
-                                                val profile = userRepository.getUserProfileSync(userUid).getOrNull()
+                                                val profile =
+                                                    userRepository.getUserProfileSync(userUid)
+                                                        .getOrNull()
                                                 val fcmToken = profile?.fcmToken
                                                 if (!fcmToken.isNullOrEmpty()) {
-                                                    NotificationService.triggerPushNotification(fcmToken, docName)
+                                                    NotificationService.triggerPushNotification(
+                                                        fcmToken, docName
+                                                    )
                                                 }
 
                                                 delay(4000L.milliseconds)

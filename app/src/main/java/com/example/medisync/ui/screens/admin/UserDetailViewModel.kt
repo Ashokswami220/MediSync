@@ -2,9 +2,9 @@ package com.example.medisync.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.model.DocumentMetadata
 import com.example.medisync.model.UserProfile
+import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.repo.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,7 +37,7 @@ class UserDetailViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             documentRepository.getDocuments(userUid)
-                .catch { e -> 
+                .catch { e ->
                     e.printStackTrace()
                     _isLoading.value = false
                 }

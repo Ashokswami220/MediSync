@@ -1,15 +1,15 @@
 package com.example.medisync
 
-import android.graphics.Color.TRANSPARENT
-import android.os.Bundle
 import android.Manifest
+import android.graphics.Color.TRANSPARENT
 import android.os.Build
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.os.Bundle
 import androidx.activity.SystemBarStyle.Companion.auto
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -34,10 +34,9 @@ import com.example.medisync.ui.theme.LocalAppearance
 import com.example.medisync.ui.theme.MediSyncTheme
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
-
 import org.koin.android.ext.android.inject
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private val settingsManager: SettingsManager by inject()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,30 +94,29 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(Color.Black)
                 )
-                return@setContent
-            }
-
-            val startDest = if (onboardingCompleted == true) {
-                Routes.MAIN_TABS
             } else {
-                Routes.CAROUSEL
-            }
+                val startDest = if (onboardingCompleted == true) {
+                    Routes.MAIN_TABS
+                } else {
+                    Routes.CAROUSEL
+                }
 
-            CompositionLocalProvider(LocalAppearance provides appearanceState) {
-                MediSyncTheme(darkTheme = darkTheme) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        NavApp(startDestination = startDest)
+                CompositionLocalProvider(LocalAppearance provides appearanceState) {
+                    MediSyncTheme(darkTheme = darkTheme) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            NavApp(startDestination = startDest)
 
-                        val toastState by GlobalToastManager.toastState.collectAsState()
-                        CustomToast(
-                            message = toastState.message,
-                            isVisible = toastState.isVisible,
-                            icon = toastState.icon,
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 105.dp),
-                            onDismiss = { GlobalToastManager.dismissToast() }
-                        )
+                            val toastState by GlobalToastManager.toastState.collectAsState()
+                            CustomToast(
+                                message = toastState.message,
+                                isVisible = toastState.isVisible,
+                                icon = toastState.icon,
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 105.dp),
+                                onDismiss = { GlobalToastManager.dismissToast() }
+                            )
+                        }
                     }
                 }
             }

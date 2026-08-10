@@ -9,7 +9,18 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,20 +28,31 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.R
 import com.example.medisync.model.UserProfile
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +65,7 @@ fun AnimatedVisibilityScope.UserSelectionDialog(
     BackHandler { onDismiss() }
 
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     val animationProgress by transition.animateFloat(
         transitionSpec = { tween(400, easing = FastOutSlowInEasing) },
         label = "UserSelectionAnimation"
@@ -52,9 +74,9 @@ fun AnimatedVisibilityScope.UserSelectionDialog(
     }
 
     var searchQuery by remember { mutableStateOf("") }
-    val filteredUsers = users.filter { 
+    val filteredUsers = users.filter {
         val fullName = "${it.firstName} ${it.lastName}"
-        fullName.contains(searchQuery, ignoreCase = true) 
+        fullName.contains(searchQuery, ignoreCase = true)
     }
 
     Box(
@@ -92,17 +114,17 @@ fun AnimatedVisibilityScope.UserSelectionDialog(
             ) {
                 // Top bar with title and close button
                 UserSelectionTopBar(onDismiss = onDismiss)
-                
+
                 Spacer(modifier = Modifier.height(20.dp))
-                
+
                 // Search Field
                 UserSelectionSearchField(
                     searchQuery = searchQuery,
                     onSearchQueryChange = { searchQuery = it }
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // User List
                 UserSelectionList(
                     filteredUsers = filteredUsers,
@@ -122,7 +144,7 @@ fun UserSelectionTopBar(onDismiss: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Select User",
+            text = stringResource(R.string.select_user),
             fontSize = 22.sp,
             fontWeight = FontWeight.ExtraBold,
             color = MaterialTheme.colorScheme.onSurface
@@ -138,7 +160,7 @@ fun UserSelectionTopBar(onDismiss: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Close",
+                contentDescription = stringResource(R.string.close),
                 tint = Color.White,
                 modifier = Modifier.size(20.dp)
             )
@@ -151,9 +173,12 @@ fun UserSelectionSearchField(searchQuery: String, onSearchQueryChange: (String) 
     OutlinedTextField(
         value = searchQuery,
         onValueChange = onSearchQueryChange,
-        placeholder = { Text("Search users...") },
+        placeholder = { Text(stringResource(R.string.search_users)) },
         leadingIcon = {
-            Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = stringResource(R.string.search)
+            )
         },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -198,7 +223,7 @@ fun UserSelectionList(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Person,
-                            contentDescription = "User",
+                            contentDescription = stringResource(R.string.user),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -221,13 +246,15 @@ fun UserSelectionList(
                 }
             }
             if (index < filteredUsers.size - 1) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                )
             }
         }
         if (filteredUsers.isEmpty()) {
             item {
                 Text(
-                    text = "No users found",
+                    text = stringResource(R.string.no_users_found),
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

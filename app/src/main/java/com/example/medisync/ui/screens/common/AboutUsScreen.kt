@@ -1,6 +1,14 @@
 package com.example.medisync.ui.screens.common
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.StartOffsetType
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,10 +16,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -32,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -39,26 +50,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap.Companion.Round
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import com.example.medisync.R
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.StartOffset
-import androidx.compose.animation.core.StartOffsetType
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.offset
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
-import kotlin.random.Random
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 
 @Composable
@@ -76,17 +77,19 @@ fun AboutUsScreen(
             FallingShapesBackground(
                 modifier = Modifier.blur(7.dp)
             )
-            
+
             IconButton(
                 onClick = onBackClick,
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(start = 20.dp, top = paddingValues.calculateTopPadding(), bottom = 16.dp)
+                    .padding(
+                        start = 20.dp, top = paddingValues.calculateTopPadding(), bottom = 16.dp
+                    )
             ) {
 
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Close",
+                    contentDescription = stringResource(R.string.close),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -133,12 +136,12 @@ fun AboutUsScreen(
 
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
-                                text = "Ashok swami",
+                                text = stringResource(R.string.ashok_swami),
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Developer & designer",
+                                text = stringResource(R.string.developer_designer),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -157,12 +160,16 @@ fun AboutUsScreen(
                             Box(
                                 modifier = Modifier
                                     .size(shapeSize)
-                                    .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.twitter) },
+                                    .pressableScale {
+                                        uriHandler.openUri(
+                                            ContactConfig.socialLinks.twitter
+                                        )
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.fan_left),
-                                    contentDescription = "Fan",
+                                    contentDescription = stringResource(R.string.fan),
                                     tint = shapeColor,
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -170,7 +177,7 @@ fun AboutUsScreen(
                                 )
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_twitter_x),
-                                    contentDescription = "X",
+                                    contentDescription = stringResource(R.string.x),
                                     tint = iconColor,
                                     modifier = Modifier.size(iconSize)
                                 )
@@ -180,12 +187,16 @@ fun AboutUsScreen(
                             Box(
                                 modifier = Modifier
                                     .size(shapeSize)
-                                    .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.email) },
+                                    .pressableScale {
+                                        uriHandler.openUri(
+                                            ContactConfig.socialLinks.email
+                                        )
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.pill),
-                                    contentDescription = "Pill",
+                                    contentDescription = stringResource(R.string.pill),
                                     tint = shapeColor,
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -193,7 +204,7 @@ fun AboutUsScreen(
                                 )
                                 Icon(
                                     imageVector = Icons.Outlined.Email,
-                                    contentDescription = "Mail",
+                                    contentDescription = stringResource(R.string.mail),
                                     tint = iconColor,
                                     modifier = Modifier.size(iconSize)
                                 )
@@ -206,12 +217,16 @@ fun AboutUsScreen(
                             Box(
                                 modifier = Modifier
                                     .size(shapeSize)
-                                    .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.linkedin) },
+                                    .pressableScale {
+                                        uriHandler.openUri(
+                                            ContactConfig.socialLinks.linkedin
+                                        )
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.triangle),
-                                    contentDescription = "Triangle",
+                                    contentDescription = stringResource(R.string.triangle),
                                     tint = shapeColor,
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -219,7 +234,7 @@ fun AboutUsScreen(
                                 )
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_linkedin),
-                                    contentDescription = "LinkedIn",
+                                    contentDescription = stringResource(R.string.linkedin),
                                     tint = iconColor,
                                     modifier = Modifier.size(iconSize)
                                 )
@@ -229,12 +244,16 @@ fun AboutUsScreen(
                             Box(
                                 modifier = Modifier
                                     .size(shapeSize)
-                                    .pressableScale { uriHandler.openUri(ContactConfig.socialLinks.instagram) },
+                                    .pressableScale {
+                                        uriHandler.openUri(
+                                            ContactConfig.socialLinks.instagram
+                                        )
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.cookie_6),
-                                    contentDescription = "Cookie",
+                                    contentDescription = stringResource(R.string.cookie),
                                     tint = shapeColor,
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -242,7 +261,7 @@ fun AboutUsScreen(
                                 )
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_instagram),
-                                    contentDescription = "Instagram",
+                                    contentDescription = stringResource(R.string.instagram),
                                     tint = iconColor,
                                     modifier = Modifier.size(iconSize)
                                 )
@@ -256,15 +275,18 @@ fun AboutUsScreen(
                                 modifier = Modifier
                                     .width(rightColumnWidth)
                                     .height(shapeSize * 2 + spacing)
-                                    .pressableScale(targetScale = 0.95f) { uriHandler.openUri(
-                                        ContactConfig.socialLinks.github) }
+                                    .pressableScale(targetScale = 0.95f) {
+                                        uriHandler.openUri(
+                                            ContactConfig.socialLinks.github
+                                        )
+                                    }
                                     .clip(RoundedCornerShape(40.dp))
                                     .background(MaterialTheme.colorScheme.secondary),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_github),
-                                    contentDescription = "GitHub",
+                                    contentDescription = stringResource(R.string.github),
                                     tint = MaterialTheme.colorScheme.onSecondary,
                                     modifier = Modifier.size(githubIconSize)
                                 )
@@ -333,7 +355,7 @@ fun CustomAIcon(modifier: Modifier = Modifier) {
 
         Icon(
             painter = painterResource(id = R.drawable.syringe),
-            contentDescription = "Syringe Crossbar",
+            contentDescription = stringResource(R.string.syringe_crossbar),
             tint = surface,
             modifier = Modifier
                 .requiredSize(64.dp)
@@ -366,12 +388,13 @@ fun FallingShapesBackground(modifier: Modifier = Modifier) {
             // Random start offset in time
             val startDelayMillis = Random.nextInt(0, 15000)
             val size = Random.nextInt(24, 44).dp
-            
+
             // Only one shape is the secondary color
             val isSecondary = (index == secondaryIndex)
             val baseColor = if (isSecondary) secondaryColor else Color.Black
-            val shapeColor = baseColor.copy(alpha = Random.nextFloat() * 0.2f + 0.1f) // vary alpha slightly
-            
+            val shapeColor =
+                baseColor.copy(alpha = Random.nextFloat() * 0.2f + 0.1f) // vary alpha slightly
+
             ShapeParams(drawableId, duration, startXPercent, startDelayMillis, size, shapeColor)
         }
     }
@@ -391,7 +414,10 @@ fun FallingShapesBackground(modifier: Modifier = Modifier) {
                 animationSpec = infiniteRepeatable(
                     animation = tween(shape.duration, easing = LinearEasing),
                     repeatMode = RepeatMode.Restart,
-                    initialStartOffset = StartOffset(offsetMillis = shape.startDelayMillis, offsetType = StartOffsetType.FastForward)
+                    initialStartOffset = StartOffset(
+                        offsetMillis = shape.startDelayMillis,
+                        offsetType = StartOffsetType.FastForward
+                    )
                 ),
                 label = "y_progress_${shape.duration}"
             )

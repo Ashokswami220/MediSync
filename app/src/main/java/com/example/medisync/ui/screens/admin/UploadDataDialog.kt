@@ -69,13 +69,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import com.example.medisync.R
 import com.example.medisync.model.UserProfile
 import com.example.medisync.model.UserRole
-
 import com.example.medisync.repo.UserRepository
 import com.example.medisync.ui.components.MemberSwitcher
 import com.example.medisync.utils.GlobalToastManager
@@ -102,9 +103,10 @@ fun AnimatedVisibilityScope.UploadDataDialog(
 
     val allUsersList by userRepository.getAllUsers()
         .collectAsState(initial = emptyList())
-    
+
     val users = remember(allUsersList) {
-        val claimedPlaceholderUids = allUsersList.flatMap { it.previousUids }.toSet()
+        val claimedPlaceholderUids = allUsersList.flatMap { it.previousUids }
+            .toSet()
         allUsersList.filter { it.uid !in claimedPlaceholderUids }
     }
 
@@ -451,7 +453,7 @@ fun UploadDocCard(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.InsertDriveFile,
-                        contentDescription = "Document Preview",
+                        contentDescription = stringResource(R.string.document_preview),
                         modifier = Modifier.size(36.dp),
                         tint = MaterialTheme.colorScheme.secondary
                     )
@@ -465,7 +467,7 @@ fun UploadDocCard(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Document Selected",
+                        text = stringResource(R.string.document_selected),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
@@ -481,7 +483,7 @@ fun UploadDocCard(
                         )
                     ) {
                         Text(
-                            text = "Remove",
+                            text = stringResource(R.string.remove),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -492,13 +494,13 @@ fun UploadDocCard(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                     imageVector = Icons.Default.CloudUpload,
-                    contentDescription = "Upload",
+                    contentDescription = stringResource(R.string.upload),
                     tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(48.dp)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    "Tap to select a document",
+                    stringResource(R.string.tap_to_select_a_document),
                     color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
@@ -513,7 +515,7 @@ fun DocumentNameField(docName: String, onDocNameChange: (String) -> Unit) {
     OutlinedTextField(
         value = docName,
         onValueChange = onDocNameChange,
-        label = { Text("Document Name") },
+        label = { Text(stringResource(R.string.document_name)) },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
@@ -524,7 +526,8 @@ fun DocumentNameField(docName: String, onDocNameChange: (String) -> Unit) {
         ),
         suffix = {
             Text(
-                "Report", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                stringResource(R.string.report),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )
         }
     )
@@ -553,7 +556,7 @@ fun SelectUserCard(selectedUser: UserProfile?, onShowDialog: () -> Unit) {
             if (selectedUser == null) {
                 Column {
                     Text(
-                        text = "Select User",
+                        text = stringResource(R.string.select_user),
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -569,7 +572,7 @@ fun SelectUserCard(selectedUser: UserProfile?, onShowDialog: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = Icons.Default.Person,
-                            contentDescription = "User",
+                            contentDescription = stringResource(R.string.user),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
@@ -585,7 +588,7 @@ fun SelectUserCard(selectedUser: UserProfile?, onShowDialog: () -> Unit) {
             }
             Icon(
                 imageVector = Icons.Default.ExpandMore,
-                contentDescription = "Select User",
+                contentDescription = stringResource(R.string.select_user),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -626,7 +629,7 @@ fun SelectMemberCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
-                    contentDescription = "Member",
+                    contentDescription = stringResource(R.string.member),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                         alpha = if (isEnabled) 1f else 0.5f
                     ),
@@ -635,7 +638,7 @@ fun SelectMemberCard(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Member",
+                text = stringResource(R.string.member),
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(
                     alpha = if (isEnabled) 1f else 0.5f
@@ -679,7 +682,7 @@ fun SelectMemberCard(
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             imageVector = Icons.Default.ExpandMore,
-                            contentDescription = "Expand",
+                            contentDescription = stringResource(R.string.expand),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                                 alpha = if (isEnabled) 1f else 0.5f
                             ),
@@ -709,7 +712,7 @@ fun UploadActionButtons(onDismiss: () -> Unit, onUpload: () -> Unit) {
             border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
         ) {
             Text(
-                "Cancel", fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                stringResource(R.string.cancel), fontSize = 16.sp, fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -725,7 +728,7 @@ fun UploadActionButtons(onDismiss: () -> Unit, onUpload: () -> Unit) {
             )
         ) {
             Text(
-                "Upload", fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                stringResource(R.string.upload), fontSize = 16.sp, fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSecondary
             )
         }

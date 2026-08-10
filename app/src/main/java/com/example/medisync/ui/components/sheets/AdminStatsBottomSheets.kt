@@ -1,6 +1,4 @@
 package com.example.medisync.ui.components.sheets
-import com.example.medisync.utils.HapticHelper
-import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -29,10 +27,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.R
+import com.example.medisync.utils.HapticHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -84,14 +86,22 @@ fun TotalUsersBottomSheet(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        text = "Total Users",
+                        text = stringResource(R.string.total_users),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = colorScheme.onSurface
                     )
                 }
-                IconButton(onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onDismissRequest() }) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                IconButton(
+                    onClick = {
+                        HapticHelper.trigger(
+                            context, HapticHelper.Type.LIGHT
+                        ); onDismissRequest()
+                    }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
                 }
             }
 
@@ -190,14 +200,22 @@ fun ReportsOpenedBottomSheet(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        text = "Reports Opened",
+                        text = stringResource(R.string.reports_opened),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = colorScheme.onSurface
                     )
                 }
-                IconButton(onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onDismissRequest() }) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                IconButton(
+                    onClick = {
+                        HapticHelper.trigger(
+                            context, HapticHelper.Type.LIGHT
+                        ); onDismissRequest()
+                    }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
                 }
             }
 
@@ -247,7 +265,7 @@ fun ReportsOpenedBottomSheet(
 
             // Second Section
             Text(
-                text = "Total Reports",
+                text = stringResource(R.string.total_reports),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = colorScheme.onSurface,

@@ -3,7 +3,8 @@ package com.example.medisync.model
 import java.util.UUID
 
 data class ContactModel(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String = UUID.randomUUID()
+        .toString(),
     val name: String = "",
     val role: String = "Pharmacist",
     val experience: String = "",

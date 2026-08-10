@@ -38,7 +38,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import com.example.medisync.ui.components.UserAvatar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -54,9 +53,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.R
+import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.utils.GlobalToastManager
 import com.google.firebase.auth.FirebaseAuth
 import org.koin.androidx.compose.koinViewModel
@@ -126,7 +128,7 @@ fun EditProfileScreen(
                             .wrapContentWidth()
                     ) {
                         Text(
-                            text = "Edit Profile",
+                            text = stringResource(R.string.edit_profile),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
                             maxLines = 1,
@@ -147,7 +149,7 @@ fun EditProfileScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBackIosNew,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                             tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
@@ -346,7 +348,10 @@ fun ProfileItem(
                                 .height(40.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
-                            Text("Cancel", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(
+                                stringResource(R.string.cancel), fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
 
                         Button(
@@ -360,7 +365,10 @@ fun ProfileItem(
                                 contentColor = colorScheme.onSecondary
                             )
                         ) {
-                            Text("Save", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                stringResource(R.string.save), fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

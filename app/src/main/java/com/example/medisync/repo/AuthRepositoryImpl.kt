@@ -29,7 +29,8 @@ class AuthRepositoryImpl(
     }
 
     override suspend fun signInWithCredential(credential: AuthCredential): FirebaseUser? {
-        val result = auth.signInWithCredential(credential).await()
+        val result = auth.signInWithCredential(credential)
+            .await()
         return result.user
     }
 
@@ -39,7 +40,8 @@ class AuthRepositoryImpl(
 
     override suspend fun deleteCurrentUser(): Result<Unit> {
         return try {
-            auth.currentUser?.delete()?.await()
+            auth.currentUser?.delete()
+                ?.await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

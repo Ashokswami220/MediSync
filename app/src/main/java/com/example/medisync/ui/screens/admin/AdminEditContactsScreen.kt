@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -104,6 +105,9 @@ fun AdminEditContactsScreen(
         config.contacts.filter { it.imageResName != "doctor1" && it.imageResName != "doctor2" }
 
     var showAddSheet by remember { mutableStateOf(false) }
+
+    val contactUpdatedMsg = stringResource(R.string.contact_updated)
+    val contactRemovedMsg = stringResource(R.string.contact_removed)
     var editingContact by remember { mutableStateOf<ContactModel?>(null) }
 
     fun updateContact(updatedContact: ContactModel) {
@@ -119,13 +123,13 @@ fun AdminEditContactsScreen(
             newList.add(updatedContact)
         }
         configViewModel.updateConfig(config.copy(contacts = newList))
-        GlobalToastManager.showToast("Contact updated")
+        GlobalToastManager.showToast(contactUpdatedMsg)
     }
 
     fun deleteContact(contactId: String) {
         val newList = config.contacts.filter { it.id != contactId }
         configViewModel.updateConfig(config.copy(contacts = newList))
-        GlobalToastManager.showToast("Contact removed")
+        GlobalToastManager.showToast(contactRemovedMsg)
     }
 
     Column(
@@ -144,7 +148,7 @@ fun AdminEditContactsScreen(
         ) {
 
             Text(
-                text = "Pharmacists",
+                text = stringResource(R.string.pharmacists),
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
                 color = colorScheme.onBackground
@@ -224,7 +228,7 @@ fun AdminEditContactsTopBar(colorScheme: ColorScheme, onNavigateBack: () -> Unit
                         .wrapContentWidth()
                 ) {
                     Text(
-                        text = "Edit Contacts",
+                        text = stringResource(R.string.edit_contacts),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
                         maxLines = 1,
@@ -245,7 +249,7 @@ fun AdminEditContactsTopBar(colorScheme: ColorScheme, onNavigateBack: () -> Unit
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.back),
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
@@ -294,7 +298,8 @@ fun PharmacistCardItem(contact: ContactModel, colorScheme: ColorScheme, onEdit: 
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Edit, contentDescription = "Edit",
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = stringResource(R.string.edit),
                     tint = colorScheme.secondary
                 )
             }
@@ -339,7 +344,7 @@ fun ExtraContactsHeader(colorScheme: ColorScheme, onAddClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Extra Contacts",
+            text = stringResource(R.string.extra_contacts),
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp,
             color = colorScheme.onBackground
@@ -349,7 +354,8 @@ fun ExtraContactsHeader(colorScheme: ColorScheme, onAddClick: () -> Unit) {
             onAddClick()
         }) {
             Icon(
-                imageVector = Icons.Default.Add, contentDescription = "Add Contact",
+                imageVector = Icons.Default.Add,
+                contentDescription = stringResource(R.string.add_contact),
                 tint = colorScheme.secondary
             )
         }
@@ -388,7 +394,8 @@ fun ExtraContactCardItem(
                     onEdit()
                 }) {
                     Icon(
-                        imageVector = Icons.Default.Edit, contentDescription = "Edit",
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.edit),
                         tint = colorScheme.secondary
                     )
                 }
@@ -397,7 +404,8 @@ fun ExtraContactCardItem(
                     onDelete()
                 }) {
                     Icon(
-                        imageVector = Icons.Default.Delete, contentDescription = "Delete",
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.delete),
                         tint = colorScheme.error
                     )
                 }
@@ -413,6 +421,7 @@ fun AddContactSheet(
     onDismiss: () -> Unit,
     onAdd: (ContactModel) -> Unit
 ) {
+    val nameIsRequiredMsg = stringResource(R.string.name_is_required)
     val keyboardController = LocalSoftwareKeyboardController.current
 
     ModalBottomSheet(
@@ -436,15 +445,21 @@ fun AddContactSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Add Extra Contact", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(
+                    stringResource(R.string.add_extra_contact), fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
                 IconButton(onClick = onDismiss) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
                 }
             }
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.name)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
@@ -462,11 +477,14 @@ fun AddContactSheet(
                         showError = false
                     }
                 },
-                label = { Text("Phone Number") },
+                label = { Text(stringResource(R.string.phone_number)) },
                 isError = showError,
                 supportingText = {
                     if (showError) {
-                        Text("Enter exactly 10 digits", color = colorScheme.error)
+                        Text(
+                            stringResource(R.string.enter_exactly_10_digits),
+                            color = colorScheme.error
+                        )
                     }
                 },
                 singleLine = true,
@@ -498,7 +516,7 @@ fun AddContactSheet(
                         )
                         onAdd(newContact)
                     } else if (name.isBlank()) {
-                        GlobalToastManager.showToast("Name is required")
+                        GlobalToastManager.showToast(nameIsRequiredMsg)
                     }
                 },
                 modifier = Modifier
@@ -506,7 +524,7 @@ fun AddContactSheet(
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colorScheme.secondary)
             ) {
-                Text("Add", color = colorScheme.onSecondary)
+                Text(stringResource(R.string.add), color = colorScheme.onSecondary)
             }
         }
     }
@@ -520,6 +538,7 @@ fun EditContactSheet(
     onDismiss: () -> Unit,
     onSave: (ContactModel) -> Unit
 ) {
+    val nameIsRequiredMsg = stringResource(R.string.name_is_required)
     val isPharmacist = contact.imageResName == "doctor1" || contact.imageResName == "doctor2"
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -545,15 +564,21 @@ fun EditContactSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Edit Contact", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(
+                    stringResource(R.string.edit_contact), fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
                 IconButton(onClick = onDismiss) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
                 }
             }
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.name)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
@@ -567,7 +592,7 @@ fun EditContactSheet(
                 OutlinedTextField(
                     value = experience,
                     onValueChange = { experience = it },
-                    label = { Text("Experience") },
+                    label = { Text(stringResource(R.string.experience)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth(),
@@ -586,11 +611,14 @@ fun EditContactSheet(
                         showError = false
                     }
                 },
-                label = { Text("Phone Number") },
+                label = { Text(stringResource(R.string.phone_number)) },
                 isError = showError,
                 supportingText = {
                     if (showError) {
-                        Text("Enter exactly 10 digits", color = colorScheme.error)
+                        Text(
+                            stringResource(R.string.enter_exactly_10_digits),
+                            color = colorScheme.error
+                        )
                     }
                 },
                 singleLine = true,
@@ -613,7 +641,7 @@ fun EditContactSheet(
                     if (name.isNotBlank() && phone.length == 10) {
                         onSave(contact.copy(name = name, experience = experience, phone = phone))
                     } else if (name.isBlank()) {
-                        GlobalToastManager.showToast("Name is required")
+                        GlobalToastManager.showToast(nameIsRequiredMsg)
                     }
                 },
                 modifier = Modifier
@@ -621,7 +649,7 @@ fun EditContactSheet(
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colorScheme.secondary)
             ) {
-                Text("Save Changes", color = colorScheme.onSecondary)
+                Text(stringResource(R.string.save_changes), color = colorScheme.onSecondary)
             }
         }
     }

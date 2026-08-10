@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -106,7 +107,8 @@ fun CarouselScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Text(
-                text = "Skip", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 16.sp
+                text = stringResource(R.string.skip), color = Color.White,
+                fontWeight = FontWeight.Medium, fontSize = 16.sp
             )
         }
 
@@ -126,16 +128,16 @@ fun CarouselScreen(
                         (slideInVertically(
                             animationSpec = tween(800)
                         ) { height -> height } + fadeIn(tween(800))).togetherWith(
-                                slideOutVertically(
-                                    animationSpec = tween(800)
-                                ) { height -> -height } + fadeOut(tween(800)))
+                            slideOutVertically(
+                                animationSpec = tween(800)
+                            ) { height -> -height } + fadeOut(tween(800)))
                     } else {
                         (slideInVertically(
                             animationSpec = tween(800)
                         ) { height -> -height } + fadeIn(tween(800))).togetherWith(
-                                slideOutVertically(
-                                    animationSpec = tween(800)
-                                ) { height -> height } + fadeOut(tween(800)))
+                            slideOutVertically(
+                                animationSpec = tween(800)
+                            ) { height -> height } + fadeOut(tween(800)))
                     }
                 }, label = "text_animation"
             ) { page ->
@@ -196,12 +198,13 @@ fun CarouselScreen(
                 )
             ) {
                 Text(
-                    text = "Next", fontSize = 18.sp, fontWeight = FontWeight.SemiBold
+                    text = stringResource(R.string.next), fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Next"
+                    contentDescription = stringResource(R.string.next)
                 )
             }
         }

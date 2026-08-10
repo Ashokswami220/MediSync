@@ -1,8 +1,14 @@
 package com.example.medisync.ui.screens.common
 
 import android.app.DownloadManager
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.pdf.PdfRenderer
+import android.net.Uri
+import android.os.Environment
+import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,6 +56,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -69,7 +76,9 @@ import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -79,6 +88,9 @@ import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import com.example.medisync.R
+import com.example.medisync.model.UserRole
+import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import kotlinx.coroutines.Dispatchers.IO
@@ -86,26 +98,15 @@ import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color as AndroidColor
-import android.net.Uri
-import android.os.Environment
-import android.os.ParcelFileDescriptor
-import androidx.compose.ui.unit.IntSize
-import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import java.io.File
 import java.io.IOException
 import java.net.URL
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
-
-import com.example.medisync.model.UserRole
-import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
-import com.example.medisync.repo.DocumentRepository
-import androidx.compose.runtime.collectAsState
+import android.graphics.Color as AndroidColor
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -116,7 +117,7 @@ fun ReportDetailScreen(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
-    
+
     val profileViewModel: ProfileViewModel = koinViewModel()
     val profileState by profileViewModel.profileState.collectAsState()
     val documentRepository: DocumentRepository = koinInject()
@@ -130,10 +131,16 @@ fun ReportDetailScreen(
     var localPdfFile by remember { mutableStateOf<File?>(null) }
     var renderedPageUri by remember { mutableStateOf<String?>(null) }
     var isLoadingPdf by remember { mutableStateOf(isPdf) }
-    
+
     var hasTrackedAnalytics by remember { mutableStateOf(false) }
     LaunchedEffect(fileUrl, profileState) {
-        android.util.Log.d("MediSync", "Tracking check: fileUrl='${fileUrl.take(15)}...', hasTracked=$hasTrackedAnalytics, profileState=$profileState")
+        android.util.Log.d(
+            "MediSync", "Tracking check: fileUrl='${
+                fileUrl.take(
+                    15
+                )
+            }...', hasTracked=$hasTrackedAnalytics, profileState=$profileState"
+        )
         if (fileUrl.isNotEmpty() && !hasTrackedAnalytics && profileState is ProfileState.Success) {
             val role = (profileState as ProfileState.Success).profile.role
             android.util.Log.d("MediSync", "Tracking role: $role")
@@ -147,7 +154,7 @@ fun ReportDetailScreen(
 
     LaunchedEffect(fileUrl) {
         if (fileUrl.isEmpty()) return@LaunchedEffect
-        
+
         val timeoutJob = launch {
             delay(5000.milliseconds)
             withContext(Main) {
@@ -255,7 +262,7 @@ fun ReportDetailScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBackIosNew,
-                                contentDescription = "Back",
+                                contentDescription = stringResource(R.string.back),
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -410,7 +417,7 @@ fun ReportDetailScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.FullscreenExit,
-                                contentDescription = "Exit Full Screen",
+                                contentDescription = stringResource(R.string.exit_full_screen),
                                 tint = Color.White
                             )
                         }
@@ -457,7 +464,7 @@ fun ReportDetailBottomControls(
             ) {
                 Icon(
                     imageVector = Icons.Default.ChevronLeft,
-                    contentDescription = "Previous Page",
+                    contentDescription = stringResource(R.string.previous_page),
                     modifier = Modifier.size(24.dp),
                     tint = if (currentPage > 1) colorScheme.onSurfaceVariant else colorScheme.onSurfaceVariant.copy(
                         alpha = 0.5f
@@ -481,7 +488,7 @@ fun ReportDetailBottomControls(
             ) {
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Next Page",
+                    contentDescription = stringResource(R.string.next_page),
                     modifier = Modifier.size(24.dp),
                     tint = if (isPdf) colorScheme.onSurfaceVariant else colorScheme.onSurfaceVariant.copy(
                         alpha = 0.5f
@@ -571,7 +578,7 @@ fun ReportDetailBottomControls(
             ) {
                 Icon(
                     imageVector = Icons.Default.Share,
-                    contentDescription = "Share",
+                    contentDescription = stringResource(R.string.share),
                     modifier = Modifier.size(24.dp),
                     tint = colorScheme.onSurfaceVariant
                 )
@@ -631,7 +638,7 @@ fun ReportDetailBottomControls(
             ) {
                 Icon(
                     imageVector = Icons.Default.Download,
-                    contentDescription = "Download or View Original",
+                    contentDescription = stringResource(R.string.download_or_view_original),
                     modifier = Modifier.size(24.dp),
                     tint = Color.White
                 )
@@ -648,7 +655,7 @@ fun ReportDetailBottomControls(
             ) {
                 Icon(
                     imageVector = Icons.Default.Fullscreen,
-                    contentDescription = "Full Screen",
+                    contentDescription = stringResource(R.string.full_screen),
                     modifier = Modifier.size(24.dp),
                     tint = colorScheme.onSurfaceVariant
                 )
@@ -713,13 +720,13 @@ fun ZoomableReportImage(
             },
         contentAlignment = Alignment.Center
     ) {
-        @OptIn( ExperimentalMaterial3ExpressiveApi::class)
+        @OptIn(ExperimentalMaterial3ExpressiveApi::class)
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(fileUrl)
                 .crossfade(true)
                 .build(),
-            contentDescription = "Report Document",
+            contentDescription = stringResource(R.string.report_document),
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .fillMaxSize()
@@ -753,20 +760,20 @@ fun ZoomableReportImage(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ErrorOutline,
-                        contentDescription = "Error",
+                        contentDescription = stringResource(R.string.error),
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Document is missing or corrupted.",
+                        text = stringResource(R.string.document_is_missing_or_corrupt),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Please contact Support.",
+                        text = stringResource(R.string.please_contact_support),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -776,7 +783,7 @@ fun ZoomableReportImage(
     }
 }
 
-@OptIn( ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PdfPageImage(
     pdfFile: File?,

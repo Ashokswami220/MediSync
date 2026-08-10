@@ -10,6 +10,7 @@ class PharmacistPhones {
     val govind = "+1-555-987-6543"
     val thirdNum = "9876543210"
 }
+
 class SocialLinks {
     val telegram = "https://t.me/swamiashok220"
     val github = "https://github.com/Ashokswami220"

@@ -19,12 +19,12 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import com.google.firebase.messaging.FirebaseMessaging
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -177,17 +177,26 @@ class AuthViewModel(
                     val firebaseUid = currentUser.uid
                     val emailToCheck = currentUser.email ?: ""
 
-                    Log.d("MediSync", "completeProfile: firebaseUid=$firebaseUid, phone=$phoneNumber, email=$emailToCheck")
+                    Log.d(
+                        "MediSync",
+                        "completeProfile: firebaseUid=$firebaseUid, phone=$phoneNumber, email=$emailToCheck"
+                    )
 
                     // 1. BEFORE creating anything, check for a placeholder
                     val placeholderByPhone = userRepo.findPlaceholder(phoneNumber)
-                    val placeholderByEmail = if (emailToCheck.isNotBlank()) userRepo.findPlaceholder(emailToCheck) else null
+                    val placeholderByEmail =
+                        if (emailToCheck.isNotBlank()) userRepo.findPlaceholder(
+                            emailToCheck
+                        ) else null
                     val placeholder = placeholderByPhone ?: placeholderByEmail
 
                     // 2. If placeholder found — claim it (transfer docs, delete old)
                     if (placeholder != null) {
-                        Log.d("MediSync", "Placeholder FOUND: uid=${placeholder.uid}, name=${placeholder.firstName} ${placeholder.lastName}")
-                        
+                        Log.d(
+                            "MediSync",
+                            "Placeholder FOUND: uid=${placeholder.uid}, name=${placeholder.firstName} ${placeholder.lastName}"
+                        )
+
                         // Claim: transfers all documents and deletes old placeholder
                         userRepo.claimPlaceholder(
                             placeholderUid = placeholder.uid,
@@ -209,12 +218,18 @@ class AuthViewModel(
                             bloodPressure = placeholder.bloodPressure,
                             bloodSugar = placeholder.bloodSugar,
                             previousUids = listOf(placeholder.uid),
-                            fcmToken = try { FirebaseMessaging.getInstance().token.await() } catch (_: Exception) { "" }
+                            fcmToken = try {
+                                FirebaseMessaging.getInstance().token.await()
+                            } catch (_: Exception) {
+                                ""
+                            }
                         )
 
                         val result = userRepo.createUserProfile(newProfile)
                         if (result.isSuccess) {
-                            Log.d("MediSync", "Profile created with placeholder data at $firebaseUid")
+                            Log.d(
+                                "MediSync", "Profile created with placeholder data at $firebaseUid"
+                            )
                             _authState.value = AuthState.Success
                         } else {
                             _authState.value = AuthState.Error("Failed to save profile.")
@@ -222,7 +237,7 @@ class AuthViewModel(
                     } else {
                         // 3. No placeholder — create fresh profile
                         Log.d("MediSync", "No placeholder found, creating fresh profile")
-                        
+
                         val newProfile = UserProfile(
                             uid = firebaseUid,
                             firstName = firstName,
@@ -230,7 +245,11 @@ class AuthViewModel(
                             phoneNumber = phoneNumber,
                             email = emailToCheck,
                             avatarUrl = currentUser.photoUrl?.toString() ?: "",
-                            fcmToken = try { FirebaseMessaging.getInstance().token.await() } catch (_: Exception) { "" }
+                            fcmToken = try {
+                                FirebaseMessaging.getInstance().token.await()
+                            } catch (_: Exception) {
+                                ""
+                            }
                         )
 
                         val result = userRepo.createUserProfile(newProfile)

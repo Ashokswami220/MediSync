@@ -1,16 +1,15 @@
 package com.example.medisync.ui.screens.user
 
-import kotlinx.coroutines.Job
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.model.DocumentMetadata
+import com.example.medisync.repo.AuthRepository
+import com.example.medisync.repo.DocumentRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import com.example.medisync.repo.AuthRepository
 
 sealed class ReportsState {
     object Loading : ReportsState()
@@ -53,7 +52,8 @@ class ReportsViewModel(
             }
             repository.getDocuments(userUid)
                 .catch { e ->
-                    _reportsState.value = ReportsState.Error(e.message ?: "Failed to load documents")
+                    _reportsState.value =
+                        ReportsState.Error(e.message ?: "Failed to load documents")
                 }
                 .collect { docs ->
                     if (docs.isEmpty()) {

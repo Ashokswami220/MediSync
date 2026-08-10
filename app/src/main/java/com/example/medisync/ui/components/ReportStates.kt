@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -66,7 +67,7 @@ fun NotLoggedInState(
             )
             Image(
                 painter = painterResource(id = R.drawable.person_with_doc),
-                contentDescription = "Login Illustration",
+                contentDescription = stringResource(R.string.login_illustration),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(280.dp)
@@ -102,7 +103,8 @@ fun NotLoggedInState(
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                "Login to see reports", color = colorScheme.onSurface, fontSize = 16.sp
+                stringResource(R.string.login_to_see_reports), color = colorScheme.onSurface,
+                fontSize = 16.sp
             )
         }
     }
@@ -120,19 +122,19 @@ fun VertEmptyReportsState(
     ) {
         Image(
             painter = painterResource(id = R.drawable.no_doc),
-            contentDescription = "No reports",
+            contentDescription = stringResource(R.string.no_reports),
             modifier = Modifier.size(110.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "No Reports available",
+            text = stringResource(R.string.no_reports_available),
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
             color = colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "Try changing member",
+            text = stringResource(R.string.try_changing_member),
             fontSize = 16.sp,
             color = colorScheme.onSurfaceVariant
         )
@@ -156,30 +158,30 @@ fun HorizEmptyReportsState(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.no_doc),
-            contentDescription = "No reports",
-            modifier = Modifier.size(110.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "No Reports available",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Medium,
-                color = colorScheme.onSurface
+            Image(
+                painter = painterResource(id = R.drawable.no_doc),
+                contentDescription = stringResource(R.string.no_reports),
+                modifier = Modifier.size(110.dp)
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Try changing member",
-                fontSize = 22.sp,
-                color = colorScheme.onSurfaceVariant
-            )
-        }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.no_reports_available),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.try_changing_member),
+                    fontSize = 22.sp,
+                    color = colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

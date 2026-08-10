@@ -1,6 +1,4 @@
 package com.example.medisync.ui.components.sheets
-import com.example.medisync.utils.HapticHelper
-import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,13 +36,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.ui.screens.common.ConfigViewModel
+import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
 
 data class ContactOption(
@@ -85,6 +86,8 @@ fun CallUsBottomSheet(
 
     @Suppress("DEPRECATION")
     val context = LocalContext.current
+
+    @Suppress("DEPRECATION")
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -109,13 +112,21 @@ fun CallUsBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Contact Support",
+                    text = stringResource(R.string.contact_support),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                IconButton(onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onDismissRequest() }) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                IconButton(
+                    onClick = {
+                        HapticHelper.trigger(
+                            context, HapticHelper.Type.LIGHT
+                        ); onDismissRequest()
+                    }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
                 }
             }
 
@@ -176,7 +187,7 @@ fun CallUsBottomSheet(
                         )
                         Icon(
                             imageVector = Icons.Default.Call,
-                            contentDescription = "Call",
+                            contentDescription = stringResource(R.string.call),
                             tint = MaterialTheme.colorScheme.onSecondary,
                             modifier = Modifier.size(24.dp)
                         )

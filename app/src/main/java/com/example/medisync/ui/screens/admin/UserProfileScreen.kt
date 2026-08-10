@@ -2,7 +2,6 @@
 
 package com.example.medisync.ui.screens.admin
 
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -66,9 +65,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.R
 import com.example.medisync.model.MemberVitals
 import com.example.medisync.model.UserProfile
 import com.example.medisync.ui.components.UserAvatar
@@ -166,7 +167,10 @@ fun UserProfileScreen(
                                 context, HapticHelper.Type.LIGHT
                             ); onBackClick()
                         }) {
-                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
+                        Icon(
+                            Icons.Default.ArrowBackIosNew,
+                            contentDescription = stringResource(R.string.back)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -361,7 +365,7 @@ fun ProfileDetailRow(
                 modifier = Modifier.size(28.dp)
             ) {
                 Icon(
-                    Icons.Default.Edit, contentDescription = "Edit",
+                    Icons.Default.Edit, contentDescription = stringResource(R.string.edit),
                     modifier = Modifier.size(18.dp), tint = colorScheme.outline
                 )
             }
@@ -379,7 +383,7 @@ fun UserProfileVitals(
     Column {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Vitals",
+            text = stringResource(R.string.vitals),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = colorScheme.onBackground,
@@ -390,7 +394,7 @@ fun UserProfileVitals(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             VitalCard(
-                title = "Blood Pressure",
+                title = stringResource(R.string.blood_pressure),
                 value = profile.bloodPressure,
                 unit = "mmHg",
                 icon = Icons.Default.Favorite,
@@ -398,7 +402,7 @@ fun UserProfileVitals(
                 onClick = { onEditClick("bloodPressure", profile.bloodPressure) }
             )
             VitalCard(
-                title = "Blood Sugar",
+                title = stringResource(R.string.blood_sugar),
                 value = profile.bloodSugar,
                 unit = "mg/dL",
                 icon = Icons.Default.WaterDrop,
@@ -412,7 +416,7 @@ fun UserProfileVitals(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             VitalCard(
-                title = "Blood Type",
+                title = stringResource(R.string.blood_type),
                 value = profile.bloodType,
                 unit = "",
                 icon = Icons.Default.Bloodtype,
@@ -436,7 +440,7 @@ fun UserProfileMembersHeader(onAddMemberClick: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Members",
+                text = stringResource(R.string.members),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = colorScheme.onBackground,
@@ -449,7 +453,7 @@ fun UserProfileMembersHeader(onAddMemberClick: () -> Unit) {
                     ); onAddMemberClick()
                 }) {
                 Icon(
-                    Icons.Default.Add, contentDescription = "Add Member",
+                    Icons.Default.Add, contentDescription = stringResource(R.string.add_member),
                     tint = colorScheme.secondary
                 )
             }
@@ -500,7 +504,10 @@ fun EditFieldBottomSheet(
                             context, HapticHelper.Type.LIGHT
                         ); onDismiss()
                     }) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -523,7 +530,8 @@ fun EditFieldBottomSheet(
                 colors = ButtonDefaults.buttonColors(containerColor = colorScheme.secondary)
             ) {
                 Text(
-                    "Save Changes", fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                    stringResource(R.string.save_changes), fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = colorScheme.onSecondary
                 )
             }
@@ -622,13 +630,14 @@ fun MemberEditItem(
             IconButton(
                 onClick = { HapticHelper.trigger(context, HapticHelper.Type.HEAVY); onDelete() }) {
                 Icon(
-                    Icons.Default.Delete, contentDescription = "Delete Member",
+                    Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.delete_member),
                     tint = colorScheme.error
                 )
             }
             Icon(
                 if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = "Expand",
+                contentDescription = stringResource(R.string.expand),
                 tint = colorScheme.onSurfaceVariant
             )
         }
@@ -640,7 +649,7 @@ fun MemberEditItem(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     VitalCard(
-                        title = "Blood Pressure",
+                        title = stringResource(R.string.blood_pressure),
                         value = vitals.bloodPressure,
                         unit = "mmHg",
                         icon = Icons.Default.Favorite,
@@ -648,7 +657,7 @@ fun MemberEditItem(
                         onClick = { onEditClick("bloodPressure", vitals.bloodPressure) }
                     )
                     VitalCard(
-                        title = "Blood Sugar",
+                        title = stringResource(R.string.blood_sugar),
                         value = vitals.bloodSugar,
                         unit = "mg/dL",
                         icon = Icons.Default.WaterDrop,
@@ -662,7 +671,7 @@ fun MemberEditItem(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     VitalCard(
-                        title = "Blood Type",
+                        title = stringResource(R.string.blood_type),
                         value = vitals.bloodType,
                         unit = "",
                         icon = Icons.Default.Bloodtype,

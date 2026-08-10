@@ -74,17 +74,19 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import com.example.medisync.R
 import com.example.medisync.model.DocumentMetadata
-import com.example.medisync.ui.components.sheets.AddMemberBottomSheet
 import com.example.medisync.ui.components.ClearAdminDataDialog
 import com.example.medisync.ui.components.DeleteUsersDialog
 import com.example.medisync.ui.components.MemberSwitcher
 import com.example.medisync.ui.components.UserAvatar
+import com.example.medisync.ui.components.sheets.AddMemberBottomSheet
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
@@ -152,7 +154,8 @@ fun UserDetailScreen(
             } else {
                 doc.linkedMember == selectedMember
             }
-        }.reversed()
+        }
+            .reversed()
 
         UserDetailReportsList(
             selectedMember = selectedMember,
@@ -211,7 +214,6 @@ fun UserDetailScreen(
 
     if (showClearDataDialog) {
         ClearAdminDataDialog(
-            userCount = 1,
             onConfirm = {
                 viewModel.clearUserData(userUid) { _, msg ->
                     GlobalToastManager.showToast(message = msg)
@@ -273,7 +275,7 @@ fun UserDetailTopBar(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.back),
                         tint = colorScheme.onBackground
                     )
                 }
@@ -293,7 +295,7 @@ fun UserDetailTopBar(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Call,
-                        contentDescription = "Call",
+                        contentDescription = stringResource(R.string.call),
                         tint = colorScheme.onBackground
                     )
                 }
@@ -306,7 +308,7 @@ fun UserDetailTopBar(
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More",
+                            contentDescription = stringResource(R.string.more),
                             tint = colorScheme.onBackground
                         )
                     }
@@ -323,7 +325,12 @@ fun UserDetailTopBar(
                             offset = DpOffset(0.dp, 8.dp)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Delete Users", color = colorScheme.error) },
+                                text = {
+                                    Text(
+                                        stringResource(R.string.delete_users),
+                                        color = colorScheme.error
+                                    )
+                                },
                                 onClick = {
                                     showTopMenu = false
                                     onDeleteClick()
@@ -336,7 +343,12 @@ fun UserDetailTopBar(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Clear Data", color = colorScheme.error) },
+                                text = {
+                                    Text(
+                                        stringResource(R.string.clear_data),
+                                        color = colorScheme.error
+                                    )
+                                },
                                 onClick = {
                                     showTopMenu = false
                                     onClearDataClick()
@@ -402,7 +414,10 @@ fun UserDetailBottomBar(
                 contentColor = colorScheme.onSurfaceVariant,
                 shape = CircleShape
             ) {
-                Icon(imageVector = Icons.Default.PersonAdd, contentDescription = "Add Member")
+                Icon(
+                    imageVector = Icons.Default.PersonAdd,
+                    contentDescription = stringResource(R.string.add_member)
+                )
             }
             FloatingActionButton(
                 onClick = onUploadClick,
@@ -414,14 +429,18 @@ fun UserDetailBottomBar(
                     onUploadButtonPositioned(bounds.center)
                 }
             ) {
-                Icon(imageVector = Icons.Default.Upload, contentDescription = "Upload")
+                Icon(
+                    imageVector = Icons.Default.Upload,
+                    contentDescription = stringResource(R.string.upload)
+                )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3ExpressiveApi::class,
-       ExperimentalMaterial3Api::class
+@OptIn(
+    ExperimentalMaterialApi::class, ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalMaterial3Api::class
 )
 @Composable
 fun UserDetailReportsList(
@@ -553,7 +572,7 @@ fun UserDetailReportsList(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "More options",
+                                    contentDescription = stringResource(R.string.more_options),
                                     tint = colorScheme.onSurfaceVariant
                                 )
                             }
@@ -571,7 +590,7 @@ fun UserDetailReportsList(
                                         .width(140.dp)
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Info") },
+                                        text = { Text(stringResource(R.string.info)) },
                                         onClick = {
                                             reportMenuExpandedFor = null
                                             showInfoSheet = report
@@ -584,7 +603,12 @@ fun UserDetailReportsList(
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Delete", color = colorScheme.error) },
+                                        text = {
+                                            Text(
+                                                stringResource(R.string.delete),
+                                                color = colorScheme.error
+                                            )
+                                        },
                                         onClick = {
                                             reportMenuExpandedFor = null
                                             onDeleteReport(report.id)
@@ -617,7 +641,7 @@ fun UserDetailReportsList(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Report Info",
+                    text = stringResource(R.string.report_info),
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
                     color = colorScheme.onSurface,

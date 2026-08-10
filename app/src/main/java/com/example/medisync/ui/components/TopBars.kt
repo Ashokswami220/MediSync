@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
@@ -93,7 +94,7 @@ fun TopBar(
                 // Search Bar
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.back),
                     tint = colorScheme.onBackground,
                     modifier = Modifier
                         .padding(start = 8.dp)
@@ -110,7 +111,12 @@ fun TopBar(
                     modifier = Modifier
                         .weight(1f)
                         .focusRequester(focusRequester),
-                    placeholder = { Text("Search...", color = colorScheme.onSurfaceVariant) },
+                    placeholder = {
+                        Text(
+                            stringResource(R.string.search_115),
+                            color = colorScheme.onSurfaceVariant
+                        )
+                    },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
@@ -124,7 +130,7 @@ fun TopBar(
                         if (searchQuery.isNotEmpty()) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Clear",
+                                contentDescription = stringResource(R.string.clear),
                                 tint = colorScheme.onSurfaceVariant,
                                 modifier = Modifier.clickable {
                                     HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
@@ -234,7 +240,7 @@ fun HomeTopBar(
         // Background Image (Doctor SVG) stays below content
         Image(
             painter = painterResource(R.drawable.doctor),
-            contentDescription = "Background",
+            contentDescription = stringResource(R.string.background),
             contentScale = ContentScale.FillHeight,
             alignment = Alignment.TopCenter,
             modifier = Modifier.fillMaxSize()
@@ -273,7 +279,7 @@ fun HomeTopBar(
         ) {
             // Left: BalaJiMedic
             Text(
-                text = "BalaJiMedic",
+                text = stringResource(R.string.balajimedic),
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp
@@ -314,7 +320,8 @@ fun HomeTopBar(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications", tint = Color.White,
+                        contentDescription = stringResource(R.string.notifications),
+                        tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
                 }

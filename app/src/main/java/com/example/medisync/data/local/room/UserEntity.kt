@@ -36,7 +36,11 @@ data class UserEntity(
             lastName = lastName,
             email = email,
             phoneNumber = phoneNumber,
-            role = try { UserRole.valueOf(role) } catch (_: Exception) { UserRole.USER },
+            role = try {
+                UserRole.valueOf(role)
+            } catch (_: Exception) {
+                UserRole.USER
+            },
             bloodType = bloodType,
             bloodPressure = bloodPressure,
             bloodSugar = bloodSugar,

@@ -52,7 +52,9 @@ class Converters {
                     bloodSugarLastUpdated = obj.optLong("bloodSugarLastUpdated", 0L)
                 )
             }
-        } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         return map
     }
 }

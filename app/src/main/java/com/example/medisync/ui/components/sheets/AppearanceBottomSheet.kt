@@ -1,14 +1,17 @@
 package com.example.medisync.ui.components.sheets
-import com.example.medisync.utils.HapticHelper
-import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.runtime.getValue
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -16,14 +19,24 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SettingsBrightness
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.R
+import com.example.medisync.utils.HapticHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,13 +68,21 @@ fun AppearanceBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Appearance",
+                    text = stringResource(R.string.appearance),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = colorScheme.onSurface,
                 )
-                IconButton(onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onDismiss() }) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                IconButton(
+                    onClick = {
+                        HapticHelper.trigger(
+                            context, HapticHelper.Type.LIGHT
+                        ); onDismiss()
+                    }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
                 }
             }
 
@@ -116,7 +137,7 @@ fun AppearanceBottomSheet(
                     if (isSelected) {
                         Icon(
                             imageVector = Icons.Default.Check,
-                            contentDescription = "Selected",
+                            contentDescription = stringResource(R.string.selected),
                             tint = colorScheme.onSecondary
                         )
                     }

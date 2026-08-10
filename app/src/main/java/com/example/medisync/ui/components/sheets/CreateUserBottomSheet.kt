@@ -1,6 +1,4 @@
 package com.example.medisync.ui.components.sheets
-import com.example.medisync.utils.HapticHelper
-import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -16,8 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,12 +38,16 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.medisync.R
+import com.example.medisync.utils.HapticHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,26 +103,35 @@ fun CreateUserBottomSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Pre-register User",
+                        text = stringResource(R.string.pre_register_user),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                     IconButton(onClick = { showInfo = !showInfo }) {
                         Icon(
-                            imageVector = Icons.Default.Info, contentDescription = "Info",
+                            imageVector = Icons.Default.Info,
+                            contentDescription = stringResource(R.string.info),
                             tint = MaterialTheme.colorScheme.outline
                         )
                     }
                 }
-                IconButton(onClick = { HapticHelper.trigger(context, HapticHelper.Type.LIGHT); onDismiss() }) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                IconButton(
+                    onClick = {
+                        HapticHelper.trigger(
+                            context, HapticHelper.Type.LIGHT
+                        ); onDismiss()
+                    }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
                 }
             }
 
             AnimatedVisibility(visible = showInfo) {
                 Text(
-                    text = "Create a placeholder profile to upload documents before the user creates an account. Link them by their phone number or email.",
+                    text = stringResource(R.string.create_a_placeholder_profile_t),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 24.dp)
@@ -135,7 +146,7 @@ fun CreateUserBottomSheet(
                 OutlinedTextField(
                     value = firstName,
                     onValueChange = { firstName = it },
-                    placeholder = { Text("First Name") },
+                    placeholder = { Text(stringResource(R.string.first_name)) },
                     modifier = Modifier
                         .weight(1f)
                         .onFocusChanged { if (it.isFocused) keyboardController?.show() },
@@ -157,7 +168,7 @@ fun CreateUserBottomSheet(
                 OutlinedTextField(
                     value = lastName,
                     onValueChange = { lastName = it },
-                    placeholder = { Text("Last Name") },
+                    placeholder = { Text(stringResource(R.string.last_name)) },
                     modifier = Modifier
                         .weight(1f)
                         .focusRequester(lastNameFocusRequester)
@@ -187,7 +198,7 @@ fun CreateUserBottomSheet(
                         contactValue = it
                     }
                 },
-                placeholder = { Text("Phone Number or Email Address") },
+                placeholder = { Text(stringResource(R.string.phone_number_or_email_address)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
@@ -239,7 +250,8 @@ fun CreateUserBottomSheet(
                     )
                 } else {
                     Text(
-                        "Create Profile", color = MaterialTheme.colorScheme.onPrimary,
+                        stringResource(R.string.create_profile),
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 16.sp, fontWeight = FontWeight.SemiBold
                     )
                 }

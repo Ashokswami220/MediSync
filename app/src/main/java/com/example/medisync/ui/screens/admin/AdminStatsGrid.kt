@@ -44,13 +44,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.R
-import com.example.medisync.utils.HapticHelper
 import com.example.medisync.ui.screens.user.openMedicalCoordinates
+import com.example.medisync.utils.HapticHelper
 
 @Composable
 fun AdminStatsGrid(
@@ -102,7 +103,7 @@ fun AdminStatsGrid(
                     modifier = Modifier.padding(vertical = 32.dp, horizontal = 8.dp)
                 ) {
                     Text(
-                        "Call us",
+                        stringResource(R.string.call_us),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = colorScheme.onSurface
@@ -110,7 +111,7 @@ fun AdminStatsGrid(
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         Icons.Default.Call,
-                        contentDescription = "Call us",
+                        contentDescription = stringResource(R.string.call_us),
                         tint = colorScheme.onSurface,
                         modifier = Modifier.size(18.dp)
                     )
@@ -142,7 +143,7 @@ fun AdminStatsGrid(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Go to",
+                            stringResource(R.string.go_to),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = colorScheme.onSurfaceVariant
@@ -150,14 +151,14 @@ fun AdminStatsGrid(
                         Spacer(modifier = Modifier.width(2.dp))
                         Icon(
                             Icons.Default.Directions,
-                            contentDescription = "Directions",
+                            contentDescription = stringResource(R.string.directions),
                             tint = colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
                     }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        "Medical",
+                        stringResource(R.string.medical),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = colorScheme.onSurface
@@ -188,7 +189,7 @@ fun AdminStatsGrid(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.syringe),
-                    contentDescription = "Syringe",
+                    contentDescription = stringResource(R.string.syringe),
                     modifier = Modifier
                         .size(36.dp)
                         .offset { IntOffset(0, syringeOffsetY.roundToPx()) }
@@ -236,7 +237,7 @@ fun AdminStatsGrid(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        "Reports Opened", fontWeight = FontWeight.SemiBold,
+                        stringResource(R.string.reports_opened), fontWeight = FontWeight.SemiBold,
                         color = colorScheme.onSurface,
                         fontSize = 16.sp
                     )
@@ -254,7 +255,8 @@ fun AdminStatsGrid(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        "total views", fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                        stringResource(R.string.total_views), fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
                         color = colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
@@ -309,7 +311,8 @@ fun AdminStatsGrid(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Total Users", fontWeight = FontWeight.SemiBold, fontSize = 13.sp
+                            stringResource(R.string.total_users), fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
                         )
                     }
 
@@ -354,7 +357,8 @@ fun AdminStatsGrid(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Pre-Reg Users", fontWeight = FontWeight.SemiBold,
+                            stringResource(R.string.pre_reg_users),
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
                         )
                     }

@@ -28,7 +28,9 @@ class AdminUserProfileViewModel(
         }
     }
 
-    fun updateUserField(uid: String, fieldName: String, value: Any, onResult: (Boolean, String) -> Unit) {
+    fun updateUserField(
+        uid: String, fieldName: String, value: Any, onResult: (Boolean, String) -> Unit
+    ) {
         viewModelScope.launch {
             val result = userRepository.updateUserProfile(uid, mapOf(fieldName to value))
             if (result.isSuccess) {
@@ -39,24 +41,38 @@ class AdminUserProfileViewModel(
         }
     }
 
-    fun updateMemberVital(uid: String, memberName: String, field: String, value: String, onResult: (Boolean, String) -> Unit) {
+    fun updateMemberVital(
+        uid: String, memberName: String, field: String, value: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
         val currentProfile = _userProfile.value ?: return
         val currentVitals = currentProfile.memberVitals[memberName] ?: MemberVitals()
-        
+
         val updatedVitals = when (field) {
-            "bloodType" -> currentVitals.copy(bloodType = value, bloodTypeLastUpdated = System.currentTimeMillis())
-            "bloodPressure" -> currentVitals.copy(bloodPressure = value, bloodPressureLastUpdated = System.currentTimeMillis())
-            "bloodSugar" -> currentVitals.copy(bloodSugar = value, bloodSugarLastUpdated = System.currentTimeMillis())
+            "bloodType" -> currentVitals.copy(
+                bloodType = value, bloodTypeLastUpdated = System.currentTimeMillis()
+            )
+
+            "bloodPressure" -> currentVitals.copy(
+                bloodPressure = value, bloodPressureLastUpdated = System.currentTimeMillis()
+            )
+
+            "bloodSugar" -> currentVitals.copy(
+                bloodSugar = value, bloodSugarLastUpdated = System.currentTimeMillis()
+            )
+
             else -> currentVitals
         }
-        
+
         val newMap = currentProfile.memberVitals.toMutableMap()
         newMap[memberName] = updatedVitals
-        
+
         updateUserField(uid, "memberVitals", newMap, onResult)
     }
 
-    fun updateUserFields(uid: String, updates: Map<String, Any>, onResult: (Boolean, String) -> Unit) {
+    fun updateUserFields(
+        uid: String, updates: Map<String, Any>, onResult: (Boolean, String) -> Unit
+    ) {
         viewModelScope.launch {
             val result = userRepository.updateUserProfile(uid, updates)
             if (result.isSuccess) {

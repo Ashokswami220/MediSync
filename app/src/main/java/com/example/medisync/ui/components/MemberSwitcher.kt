@@ -29,11 +29,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import com.example.medisync.R
 import com.example.medisync.utils.HapticHelper
 
 @Composable
@@ -92,7 +94,7 @@ fun MemberSwitcher(
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(
                         imageVector = icon,
-                        contentDescription = "Expand",
+                        contentDescription = stringResource(R.string.expand),
                         tint = contentColor,
                         modifier = if (chatStyle) Modifier else Modifier.size(16.dp)
                     )

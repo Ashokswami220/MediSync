@@ -77,6 +77,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -86,10 +87,12 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.R
+import com.example.medisync.data.SettingsManager
 import com.example.medisync.utils.GlobalToastManager
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 
 enum class AuthStep(val title: String) {
@@ -104,6 +107,7 @@ fun AuthFlowScreen(
     onNavigateNext: () -> Unit,
     viewModel: AuthViewModel = koinViewModel()
 ) {
+    val settingsManager = koinInject<SettingsManager>()
     var currentStep by remember { mutableStateOf(AuthStep.LANGUAGE) }
     val context = LocalContext.current
     val authState by viewModel.authState.collectAsState()
@@ -194,6 +198,7 @@ fun AuthFlowScreen(
 
                 // Bottom Sheets Container
                 AuthSheetsStack(
+                    settingsManager = settingsManager,
                     currentStep = currentStep,
                     onStepChange = { currentStep = it },
                     onGoogleSignIn = { viewModel.signInWithGoogle(context) },
@@ -213,7 +218,7 @@ fun AuthFlowScreen(
                         .padding(horizontal = 16.dp)
                 ) {
                     Text(
-                        text = "Skip",
+                        text = stringResource(R.string.skip),
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Medium,
                         fontSize = 16.sp
@@ -226,6 +231,7 @@ fun AuthFlowScreen(
 
 @Composable
 fun AuthSheetsStack(
+    settingsManager: SettingsManager,
     currentStep: AuthStep,
     onStepChange: (AuthStep) -> Unit,
     onGoogleSignIn: () -> Unit,
@@ -256,7 +262,9 @@ fun AuthSheetsStack(
                         .padding(24.dp)
                         .navigationBarsPadding()
                 ) {
-                    LangSelectionSheet(onNext = { onStepChange(AuthStep.LOGIN) })
+                    LangSelectionSheet(
+                        settingsManager = settingsManager,
+                        onNext = { onStepChange(AuthStep.LOGIN) })
                 }
             }
         }
@@ -356,23 +364,24 @@ fun AuthBackgroundShapes() {
 }
 
 @Composable
-fun LangSelectionSheet(onNext: () -> Unit) {
+fun LangSelectionSheet(settingsManager: SettingsManager, onNext: () -> Unit) {
+    val coroutineScope = rememberCoroutineScope()
     var selectedLanguage by remember { mutableStateOf("English") }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             LanguageCard(
                 modifier = Modifier.fillMaxWidth(),
-                title = "English",
-                subtitle = "Select English as your primary language",
+                title = stringResource(R.string.english),
+                subtitle = stringResource(R.string.select_english_as_your_primary),
                 iconText = "A",
                 isSelected = selectedLanguage == "English",
                 onClick = { selectedLanguage = "English" }
             )
             LanguageCard(
                 modifier = Modifier.fillMaxWidth(),
-                title = "हिंदी",
-                subtitle = "अपनी प्राथमिक भाषा के रूप में हिंदी चुनें",
+                title = stringResource(R.string.str_4470697654581234656),
+                subtitle = stringResource(R.string.str_8421783446223237316),
                 iconText = "अ",
                 isSelected = selectedLanguage == "Hindi",
                 onClick = { selectedLanguage = "Hindi" }
@@ -380,7 +389,10 @@ fun LangSelectionSheet(onNext: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(32.dp))
         Button(
-            onClick = onNext,
+            onClick = {
+                coroutineScope.launch { settingsManager.setLanguage(selectedLanguage) }
+                onNext()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -388,7 +400,8 @@ fun LangSelectionSheet(onNext: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
         ) {
             Text(
-                "Done", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp,
+                stringResource(R.string.done), color = MaterialTheme.colorScheme.onPrimary,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -443,7 +456,7 @@ fun LanguageCard(
         // Arrow Icon
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-            contentDescription = "Select",
+            contentDescription = stringResource(R.string.select),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -471,7 +484,7 @@ fun LoginSheet(onGoogleSignIn: () -> Unit, isLoading: Boolean) {
             )
             Image(
                 painter = painterResource(id = R.drawable.login_svg2),
-                contentDescription = "Login Illustration",
+                contentDescription = stringResource(R.string.login_illustration),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(280.dp)
@@ -523,7 +536,7 @@ fun GoogleSignInButtonContent(isLoading: Boolean) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "G", color = MaterialTheme.colorScheme.onPrimary,
+                    stringResource(R.string.g), color = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -543,7 +556,7 @@ fun GoogleSignInButtonContent(isLoading: Boolean) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        "Sign in with Google",
+                        stringResource(R.string.sign_in_with_google),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 16.sp,
                         maxLines = 1
@@ -581,7 +594,7 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "You are signed in as",
+            text = stringResource(R.string.you_are_signed_in_as),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -621,7 +634,7 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Log out",
+                    contentDescription = stringResource(R.string.log_out),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -640,7 +653,7 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                     },
                     isError = showErrorFirstName,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("First Name") },
+                    placeholder = { Text(stringResource(R.string.first_name)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(
@@ -657,7 +670,8 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                 )
                 if (showErrorFirstName) {
                     Text(
-                        "Enter first name", color = MaterialTheme.colorScheme.error,
+                        stringResource(R.string.enter_first_name),
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp, modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                     )
                 }
@@ -671,7 +685,7 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                     },
                     isError = showErrorLastName,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Last Name") },
+                    placeholder = { Text(stringResource(R.string.last_name)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(
@@ -688,7 +702,8 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
                 )
                 if (showErrorLastName) {
                     Text(
-                        "Enter last name", color = MaterialTheme.colorScheme.error,
+                        stringResource(R.string.enter_last_name),
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp, modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                     )
                 }
@@ -703,10 +718,11 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
             },
             isError = showErrorPhone,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Phone Number") },
+            placeholder = { Text(stringResource(R.string.phone_number)) },
             leadingIcon = {
                 Text(
-                    "+91", modifier = Modifier.padding(start = 16.dp, end = 8.dp),
+                    stringResource(R.string.str_5417608170849053457),
+                    modifier = Modifier.padding(start = 16.dp, end = 8.dp),
                     fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface
                 )
             },
@@ -765,7 +781,8 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
         ) {
             Text(
-                "Continue", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp,
+                stringResource(R.string.continue_action),
+                color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }

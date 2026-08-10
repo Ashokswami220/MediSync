@@ -28,13 +28,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.ui.platform.LocalContext
 
 enum class DeleteActionMode {
     ACCOUNT, DATA
@@ -123,9 +123,9 @@ fun DeleteActionScreen(
         }
 
         Button(
-            onClick = { 
+            onClick = {
                 HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
-                isProcessing = true 
+                isProcessing = true
             },
             enabled = !isProcessing,
             modifier = Modifier

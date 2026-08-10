@@ -11,7 +11,8 @@ class ConfigRepositoryImpl(
     firestore: FirebaseFirestore
 ) : ConfigRepository {
 
-    private val configRef = firestore.collection("config").document("appConfig")
+    private val configRef = firestore.collection("config")
+        .document("appConfig")
 
     override fun getConfig(): Flow<AppConfig> = callbackFlow {
         val listener = configRef.addSnapshotListener { snapshot, error ->
@@ -35,6 +36,7 @@ class ConfigRepositoryImpl(
     }
 
     override suspend fun updateConfig(config: AppConfig): Result<Unit> = runCatching {
-        configRef.set(config).await()
+        configRef.set(config)
+            .await()
     }
 }

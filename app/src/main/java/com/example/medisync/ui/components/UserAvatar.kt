@@ -16,9 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.medisync.R
 
 @Composable
 fun UserAvatar(
@@ -41,14 +43,16 @@ fun UserAvatar(
         if (!avatarUrl.isNullOrEmpty()) {
             AsyncImage(
                 model = avatarUrl,
-                contentDescription = "User Avatar",
-                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                contentDescription = stringResource(R.string.user_avatar),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape),
                 contentScale = ContentScale.Crop
             )
         } else {
             Icon(
                 imageVector = Icons.Default.Person,
-                contentDescription = "Default Avatar",
+                contentDescription = stringResource(R.string.default_avatar),
                 tint = iconTint,
                 modifier = Modifier.size(size * 0.6f)
             )

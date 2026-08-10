@@ -59,20 +59,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import com.example.medisync.R
 import com.example.medisync.data.SettingsManager
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.UserRole
 import com.example.medisync.repo.AuthRepository
-import com.example.medisync.ui.components.sheets.AppearanceBottomSheet
-import com.example.medisync.ui.components.sheets.LanguageBottomSheet
 import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.UserAvatar
+import com.example.medisync.ui.components.sheets.AppearanceBottomSheet
+import com.example.medisync.ui.components.sheets.LanguageBottomSheet
 import com.example.medisync.ui.theme.LocalAppearance
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
@@ -131,7 +133,7 @@ fun SettingsScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var showLanguageSheet by remember { mutableStateOf(false) }
-    var currentLanguage by remember { mutableStateOf("English") }
+    val currentLanguage by settingsManager.languageFlow.collectAsState(initial = "English")
 
     Column(
         modifier = Modifier
@@ -139,7 +141,7 @@ fun SettingsScreen(
             .background(colorScheme.background)
     ) {
         TopBar(
-            title = "Settings",
+            title = stringResource(R.string.settings),
             showName = false,
             showSearchIcon = false
         )
@@ -200,7 +202,7 @@ fun SettingsScreen(
                     }
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Edit Profile",
+                        contentDescription = stringResource(R.string.edit_profile),
                         tint = colorScheme.onSurfaceVariant
                     )
                 }
@@ -231,7 +233,7 @@ fun SettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Contacts,
-                                contentDescription = "Edit Contacts",
+                                contentDescription = stringResource(R.string.edit_contacts),
                                 tint = colorScheme.secondary,
                                 modifier = Modifier.size(32.dp)
                             )
@@ -239,21 +241,21 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(20.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Edit Contacts",
+                                text = stringResource(R.string.edit_contacts),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = colorScheme.onBackground
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Manage pharmacists and support",
+                                text = stringResource(R.string.manage_pharmacists_and_support),
                                 fontSize = 14.sp,
                                 color = colorScheme.onSurfaceVariant
                             )
                         }
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Go",
+                            contentDescription = stringResource(R.string.go),
                             tint = colorScheme.onSurfaceVariant
                         )
                     }
@@ -263,7 +265,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "APP PREFERENCES",
+                text = stringResource(R.string.app_preferences),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = colorScheme.onSurfaceVariant,
@@ -280,7 +282,7 @@ fun SettingsScreen(
             ) {
                 SettingsItem(
                     icon = Icons.Default.Language,
-                    title = "App Language",
+                    title = stringResource(R.string.app_language),
                     value = currentLanguage,
                     onClick = {
                         HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
@@ -290,7 +292,7 @@ fun SettingsScreen(
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
                 SettingsItem(
                     icon = Icons.Default.DarkMode,
-                    title = "Appearance",
+                    title = stringResource(R.string.appearance),
                     value = currentAppearance,
                     onClick = {
                         HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
@@ -300,7 +302,7 @@ fun SettingsScreen(
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
                 SettingsSwitchItem(
                     icon = Icons.Default.Vibration,
-                    title = "Haptic Feedback",
+                    title = stringResource(R.string.haptic_feedback),
                     checked = isHaptic,
                     onCheckedChange = { checked ->
                         if (checked) {
@@ -314,7 +316,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "SUPPORT",
+                text = stringResource(R.string.support),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = colorScheme.onSurfaceVariant,
@@ -353,12 +355,14 @@ fun SettingsScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                Icons.Default.Email, contentDescription = "Contact Us",
+                                Icons.Default.Email,
+                                contentDescription = stringResource(R.string.contact_us),
                                 tint = colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                "Contact Us", fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                                stringResource(R.string.contact_us), fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
                                 color = colorScheme.onSurface
                             )
                         }
@@ -377,12 +381,14 @@ fun SettingsScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                Icons.Default.Star, contentDescription = "Rate App",
+                                Icons.Default.Star,
+                                contentDescription = stringResource(R.string.rate_app),
                                 tint = colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                "Rate App", fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                                stringResource(R.string.rate_app), fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
                                 color = colorScheme.onSurface
                             )
                         }
@@ -398,21 +404,28 @@ fun SettingsScreen(
                                 HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                                 val shareIntent = Intent().apply {
                                     action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_TEXT, "Check out MediSync! The smartest way to manage your health: https://medisync-4c8c0.web.app")
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        "Check out MediSync! The smartest way to manage your health: https://medisync-4c8c0.web.app"
+                                    )
                                     type = "text/plain"
                                 }
-                                context.startActivity(Intent.createChooser(shareIntent, "Share MediSync via"))
+                                context.startActivity(
+                                    Intent.createChooser(shareIntent, "Share MediSync via")
+                                )
                             }
                             .padding(16.dp), contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                Icons.Default.Share, contentDescription = "Share",
+                                Icons.Default.Share,
+                                contentDescription = stringResource(R.string.share),
                                 tint = colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                "Share", fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                                stringResource(R.string.share), fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
                                 color = colorScheme.onSurface
                             )
                         }
@@ -428,7 +441,7 @@ fun SettingsScreen(
                 ) {
                     SettingsItem(
                         icon = Icons.Default.Info,
-                        title = "About Us",
+                        title = stringResource(R.string.about_us),
                         showArrow = true,
                         onClick = {
                             HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
@@ -441,7 +454,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "DATA & ACCOUNT",
+                text = stringResource(R.string.data_account),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = colorScheme.onSurfaceVariant,
@@ -458,7 +471,7 @@ fun SettingsScreen(
             ) {
                 SettingsItem(
                     icon = Icons.Default.Delete,
-                    title = "Delete My Data",
+                    title = stringResource(R.string.delete_my_data),
                     titleColor = if (isLoggedIn) colorScheme.error else colorScheme.onSurfaceVariant,
                     showArrow = false,
                     onClick = {
@@ -471,7 +484,7 @@ fun SettingsScreen(
                 HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
                 SettingsItem(
                     icon = Icons.Default.PersonRemove,
-                    title = "Delete My Account",
+                    title = stringResource(R.string.delete_my_account),
                     titleColor = if (isLoggedIn) colorScheme.error else colorScheme.onSurfaceVariant,
                     showArrow = false,
                     onClick = {
@@ -508,12 +521,12 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = "Sign Out",
+                        contentDescription = stringResource(R.string.sign_out),
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Sign Out",
+                        text = stringResource(R.string.sign_out),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -527,7 +540,7 @@ fun SettingsScreen(
                 currentLanguage = currentLanguage,
                 onDismissRequest = { showLanguageSheet = false },
                 onLanguageSelected = { language ->
-                    currentLanguage = language
+                    coroutineScope.launch { settingsManager.setLanguage(language) }
                     showLanguageSheet = false
                 }
             )
@@ -586,7 +599,7 @@ fun SettingsItem(
         if (showArrow) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Next",
+                contentDescription = stringResource(R.string.next),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
