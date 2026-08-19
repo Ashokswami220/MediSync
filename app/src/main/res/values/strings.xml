@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">MediSync</string>
+    <string name="app_name" translatable="false">BalaJiMedic</string>
     <string name="default_web_client_id" translatable="false">590270466349-6esu0sc0ec33tcnhvc8g4ag5qpqdjev7.apps.googleusercontent.com</string>
     <string name="str_5417608170849053457">+91</string>
     <string name="app_preferences">APP PREFERENCES</string>
