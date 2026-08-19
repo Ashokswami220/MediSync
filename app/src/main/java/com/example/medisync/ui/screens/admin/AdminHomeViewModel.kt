@@ -62,7 +62,7 @@ class AdminHomeViewModel(
                     }
 
                     _unclaimedPreRegUsers.value = profiles.count {
-                        it.isPlaceholder && it.claimedByUid.isNullOrEmpty()
+                        it.isPlaceholder && (it.claimedByUid.isNullOrEmpty() || profiles.none { p -> p.uid == it.claimedByUid })
                     }
                 }
         }

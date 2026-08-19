@@ -281,11 +281,28 @@ fun UserListScreen(
                                     .padding(end = 12.dp, top = 8.dp, bottom = 8.dp)
                             ) {
                                 Box(modifier = Modifier.size(50.dp)) {
-                                    UserAvatar(
-                                        avatarUrl = user.avatarUrl,
-                                        size = 50.dp,
-                                        borderWidth = 0.dp
-                                    )
+                                    if (user.isPreRegistered) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(50.dp)
+                                                .background(colorScheme.secondary.copy(0.2f), CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.PersonAdd,
+                                                contentDescription = "Pre-Registered User",
+                                                tint = colorScheme.secondary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    } else {
+                                        UserAvatar(
+                                            avatarUrl = user.avatarUrl,
+                                            size = 50.dp,
+                                            borderWidth = 0.dp
+                                        )
+                                    }
+
                                     if (isSelected) {
                                         Icon(
                                             imageVector = Icons.Default.CheckCircle,

@@ -24,7 +24,8 @@ data class UserAdminModel(
     val timestamp: Long = 0L,
     val avatarUrl: String = "",
     val phoneNumber: String = "",
-    val email: String = ""
+    val email: String = "",
+    val isPreRegistered: Boolean = false
 )
 
 class UserListViewModel(
@@ -86,7 +87,8 @@ class UserListViewModel(
                             timestamp = latestDoc?.uploadedAt ?: profile.accountCreatedTime,
                             avatarUrl = profile.avatarUrl,
                             phoneNumber = profile.phoneNumber,
-                            email = profile.email
+                            email = profile.email,
+                            isPreRegistered = profile.isPlaceholder
                         )
                     }
 
