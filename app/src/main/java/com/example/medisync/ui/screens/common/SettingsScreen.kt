@@ -471,6 +471,17 @@ fun SettingsScreen(
             ) {
                 SettingsItem(
                     icon = Icons.Default.Delete,
+                    title = "Clear Downloaded Reports",
+                    titleColor = colorScheme.onSurfaceVariant,
+                    showArrow = false,
+                    onClick = {
+                        HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                        onNavigateToDeleteAction(DeleteActionMode.REPORTS)
+                    }
+                )
+                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+                SettingsItem(
+                    icon = Icons.Default.Delete,
                     title = stringResource(R.string.delete_my_data),
                     titleColor = if (isLoggedIn) colorScheme.error else colorScheme.onSurfaceVariant,
                     showArrow = false,

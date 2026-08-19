@@ -6,7 +6,23 @@ import com.example.medisync.di.appModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
-class MediSyncApp : Application() {
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.disk.DiskCache
+import java.io.File
+
+class MediSyncApp : Application(), ImageLoaderFactory {
+
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(File(filesDir, "image_cache"))
+                    .maxSizePercent(0.05)
+                    .build()
+            }
+            .build()
+    }
 
     override fun onCreate() {
         super.onCreate()

@@ -130,7 +130,7 @@ fun ReportDetailScreen(
 
     var localPdfFile by remember { mutableStateOf<File?>(null) }
     var renderedPageUri by remember { mutableStateOf<String?>(null) }
-    var isLoadingPdf by remember { mutableStateOf(isPdf) }
+    var isLoadingPdf by remember { mutableStateOf(false) }
 
     var hasTrackedAnalytics by remember { mutableStateOf(false) }
     LaunchedEffect(fileUrl, profileState) {
@@ -166,16 +166,16 @@ fun ReportDetailScreen(
         }
 
         if (isPdf) {
-            isLoadingPdf = true
             withContext(IO) {
                 try {
                     val safeUrl = if (fileUrl.startsWith("http://")) fileUrl.replace(
                         "http://", "https://"
                     ) else fileUrl
-                    val pdfFile =
-                        File(context.cacheDir, "temp_view_report_${fileUrl.hashCode()}.pdf")
+                    val savedReportsDir = File(context.filesDir, "saved_reports").apply { mkdirs() }
+                    val pdfFile = File(savedReportsDir, "report_${fileUrl.hashCode()}.pdf")
 
                     if (!pdfFile.exists()) {
+                        isLoadingPdf = true
                         val request = okhttp3.Request.Builder()
                             .url(safeUrl)
                             .header("User-Agent", "Mozilla/5.0")

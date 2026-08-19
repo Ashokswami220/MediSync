@@ -35,9 +35,10 @@ import androidx.compose.ui.unit.sp
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class DeleteActionMode {
-    ACCOUNT, DATA
+    ACCOUNT, DATA, REPORTS
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -46,40 +47,58 @@ fun DeleteActionScreen(
     mode: DeleteActionMode,
     profileViewModel: ProfileViewModel = koinViewModel(),
     onAccountDeleted: () -> Unit,
-    onDataDeleted: () -> Unit
+    onDataDeleted: () -> Unit,
+    onReportsDeleted: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
     var isProcessing by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    val title = if (mode == DeleteActionMode.ACCOUNT) "Delete account" else "Delete my data"
-    val subtitle = if (mode == DeleteActionMode.ACCOUNT) {
-        "If you proceed with the deletion of your account, you will lose access to all your synced medical reports, history, and preferences. This action is permanent and cannot be undone."
-    } else {
-        "If you proceed with the deletion of your data, all your synced medical reports, history, and preferences will be permanently wiped. This action cannot be undone."
+    val title = when (mode) {
+        DeleteActionMode.ACCOUNT -> "Delete account"
+        DeleteActionMode.DATA -> "Delete my data"
+        DeleteActionMode.REPORTS -> "Clear local reports"
+    }
+    val subtitle = when (mode) {
+        DeleteActionMode.ACCOUNT -> "If you proceed with the deletion of your account, you will lose access to all your synced medical reports, history, and preferences. This action is permanent and cannot be undone."
+        DeleteActionMode.DATA -> "If you proceed with the deletion of your data, all your synced medical reports, history, and preferences will be permanently wiped. This action cannot be undone."
+        DeleteActionMode.REPORTS -> "This will remove downloaded reports from your device to free up space. Your reports will NOT be deleted from the database and you can view them again anytime."
     }
 
     LaunchedEffect(isProcessing) {
         if (isProcessing) {
-            if (mode == DeleteActionMode.ACCOUNT) {
-                profileViewModel.deleteAccount { success, msg ->
-                    if (success) {
-                        GlobalToastManager.showToast(msg, Icons.Default.Delete)
-                        onAccountDeleted()
-                    } else {
-                        GlobalToastManager.showToast(msg, Icons.Default.Error)
-                        isProcessing = false
+            when (mode) {
+                DeleteActionMode.ACCOUNT -> {
+                    profileViewModel.deleteAccount { success, msg ->
+                        if (success) {
+                            GlobalToastManager.showToast(msg, Icons.Default.Delete)
+                            onAccountDeleted()
+                        } else {
+                            GlobalToastManager.showToast(msg, Icons.Default.Error)
+                            isProcessing = false
+                        }
                     }
                 }
-            } else {
-                profileViewModel.deleteData { success, msg ->
-                    if (success) {
-                        GlobalToastManager.showToast(msg, Icons.Default.Delete)
-                        onDataDeleted()
-                    } else {
-                        GlobalToastManager.showToast(msg, Icons.Default.Error)
-                        isProcessing = false
+                DeleteActionMode.DATA -> {
+                    profileViewModel.deleteData { success, msg ->
+                        if (success) {
+                            GlobalToastManager.showToast(msg, Icons.Default.Delete)
+                            onDataDeleted()
+                        } else {
+                            GlobalToastManager.showToast(msg, Icons.Default.Error)
+                            isProcessing = false
+                        }
                     }
+                }
+                DeleteActionMode.REPORTS -> {
+                    kotlinx.coroutines.delay(800.milliseconds) // slight delay for visual effect
+                    val reportsDir = java.io.File(context.filesDir, "saved_reports")
+                    if (reportsDir.exists()) {
+                        reportsDir.listFiles()?.forEach { it.delete() }
+                    }
+                    GlobalToastManager.showToast("Local reports cleared", Icons.Default.Delete)
+                    onReportsDeleted()
+                    isProcessing = false
                 }
             }
         }

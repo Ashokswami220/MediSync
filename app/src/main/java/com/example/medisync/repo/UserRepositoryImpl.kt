@@ -77,48 +77,46 @@ class UserRepositoryImpl(
     }
 
     override fun getAllUsers(): Flow<List<UserProfile>> = channelFlow {
-        // 1. Launch a background job to fetch latest from Firestore and save to Room
-        launch {
-            try {
-                val snapshot = usersCollection.get()
-                    .await()
-                android.util.Log.d(
-                    "UserRepositoryImpl", "Fetched ${snapshot.documents.size} from Firestore"
-                )
-                val profiles = snapshot.documents.mapNotNull { doc ->
+        val listenerRegistration = usersCollection.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                android.util.Log.e("UserRepositoryImpl", "Error listening to users", error)
+                return@addSnapshotListener
+            }
+            if (snapshot != null) {
+                launch {
                     try {
-                        val profile = doc.toObject(UserProfile::class.java)
-                        val isPlaceholder =
-                            doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder")
-                            ?: false
-                        profile?.copy(uid = doc.id, isPlaceholder = isPlaceholder)
+                        val profiles = snapshot.documents.mapNotNull { doc ->
+                            try {
+                                val profile = doc.toObject(UserProfile::class.java)
+                                val isPlaceholder =
+                                    doc.getBoolean("isPlaceholder") ?: doc.getBoolean("placeholder")
+                                    ?: false
+                                profile?.copy(uid = doc.id, isPlaceholder = isPlaceholder)
+                            } catch (e: Exception) {
+                                android.util.Log.e("UserRepositoryImpl", "Error mapping user document ${doc.id}", e)
+                                null
+                            }
+                        }
+                        db.withTransaction {
+                            userDao.deleteAllUsers()
+                            userDao.insertUsers(profiles.map { UserEntity.fromUserProfile(it) })
+                        }
                     } catch (e: Exception) {
-                        android.util.Log.e(
-                            "UserRepositoryImpl", "Error mapping user document ${doc.id}", e
-                        )
-                        null
+                        android.util.Log.e("UserRepositoryImpl", "Error transacting users from Firestore", e)
                     }
                 }
-                android.util.Log.d("UserRepositoryImpl", "Mapped ${profiles.size} profiles")
-                db.withTransaction {
-                    userDao.deleteAllUsers()
-                    userDao.insertUsers(profiles.map { UserEntity.fromUserProfile(it) })
-                }
-                android.util.Log.d(
-                    "UserRepositoryImpl", "Inserted ${profiles.size} users into Room"
-                )
-            } catch (e: Exception) {
-                android.util.Log.e("UserRepositoryImpl", "Error fetching users from Firestore", e)
-                // Network errors are ignored here, relying on offline Room cache
             }
         }
 
-        // 2. Continually emit from Room Database (Single Source of Truth)
-        userDao.getAllUsers()
-            .collect { entities ->
-                android.util.Log.d("UserRepositoryImpl", "Room emitted ${entities.size} users")
+        launch {
+            userDao.getAllUsers().collect { entities ->
                 send(entities.map { it.toUserProfile() })
             }
+        }
+
+        awaitClose {
+            listenerRegistration.remove()
+        }
     }
 
     override suspend fun deleteUsers(uids: List<String>): Result<Unit> {

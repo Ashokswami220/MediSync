@@ -377,7 +377,10 @@ fun LangSelectionSheet(settingsManager: SettingsManager, onNext: () -> Unit) {
                 subtitle = stringResource(R.string.select_english_as_your_primary),
                 iconText = "A",
                 isSelected = selectedLanguage == "English",
-                onClick = { selectedLanguage = "English" }
+                onClick = {
+                    selectedLanguage = "English"
+                    coroutineScope.launch { settingsManager.setLanguage("English") }
+                }
             )
             LanguageCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -385,13 +388,15 @@ fun LangSelectionSheet(settingsManager: SettingsManager, onNext: () -> Unit) {
                 subtitle = stringResource(R.string.str_8421783446223237316),
                 iconText = "अ",
                 isSelected = selectedLanguage == "Hindi",
-                onClick = { selectedLanguage = "Hindi" }
+                onClick = {
+                    selectedLanguage = "Hindi"
+                    coroutineScope.launch { settingsManager.setLanguage("Hindi") }
+                }
             )
         }
         Spacer(modifier = Modifier.height(32.dp))
         Button(
             onClick = {
-                coroutineScope.launch { settingsManager.setLanguage(selectedLanguage) }
                 onNext()
             },
             modifier = Modifier

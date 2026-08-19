@@ -443,6 +443,9 @@ fun NavApp(
                         },
                         onDataDeleted = {
                             navController.popBackStack()
+                        },
+                        onReportsDeleted = {
+                            navController.popBackStack()
                         }
                     )
                 }
