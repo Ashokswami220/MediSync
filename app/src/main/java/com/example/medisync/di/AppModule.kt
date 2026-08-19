@@ -54,7 +54,7 @@ val appModule = module {
     single { SettingsManager(androidContext()) }
 
     // ViewModels
-    viewModel { AuthViewModel(get(), get(), androidContext() as Application) }
+    viewModel { AuthViewModel(get(), get(), androidContext() as Application, get()) }
     viewModel { ProfileViewModel(get(), get(), get()) }
     viewModel { UserListViewModel(get(), get(), get()) }
     viewModel { UserDetailViewModel(get(), get()) }

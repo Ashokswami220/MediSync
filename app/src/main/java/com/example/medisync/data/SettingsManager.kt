@@ -21,6 +21,7 @@ class SettingsManager(private val context: Context) {
         val ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("onboarding_completed_v2")
         val USER_ROLE_KEY = stringPreferencesKey("user_role")
         val LANGUAGE_KEY = stringPreferencesKey("app_language")
+        val HAS_COMPLETED_PROFILE_KEY = booleanPreferencesKey("has_completed_profile")
     }
 
     val hapticsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -41,6 +42,10 @@ class SettingsManager(private val context: Context) {
 
     val languageFlow: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[LANGUAGE_KEY] ?: "English"
+    }
+
+    val hasCompletedProfileFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[HAS_COMPLETED_PROFILE_KEY] ?: false
     }
 
     suspend fun setHapticsEnabled(enabled: Boolean) {
@@ -71,9 +76,15 @@ class SettingsManager(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences[LANGUAGE_KEY] = language
         }
+        val tag = if (language == "Hindi") "hi" else "en"
         withContext(Dispatchers.Main) {
-            val tag = if (language == "Hindi") "hi" else "en"
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+        }
+    }
+
+    suspend fun setHasCompletedProfile(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[HAS_COMPLETED_PROFILE_KEY] = completed
         }
     }
 }

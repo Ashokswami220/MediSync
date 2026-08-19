@@ -17,6 +17,7 @@ sealed class ProfileState {
     object Loading : ProfileState()
     data class Success(val profile: UserProfile) : ProfileState()
     data class Error(val message: String) : ProfileState()
+    object Deleted : ProfileState()
 }
 
 sealed class ProfileUpdateState {
@@ -43,6 +44,7 @@ class ProfileViewModel(
     }
 
     private var profileJob: Job? = null
+    private var isSelfDeleting = false
 
     fun loadProfile() {
         if (_profileState.value !is ProfileState.Success) {
@@ -58,10 +60,9 @@ class ProfileViewModel(
                             if (profile != null) {
                                 _profileState.value = ProfileState.Success(profile)
                             } else {
-                                // If null is emitted (e.g., from empty cache), keep state as Loading
-                                // until server responds, or fallback if it persists.
-                                if (_profileState.value !is ProfileState.Success) {
-                                    _profileState.value = ProfileState.Loading
+                                if (!isSelfDeleting) {
+                                    // Profile does not exist (deleted by admin)
+                                    _profileState.value = ProfileState.Deleted
                                 }
                             }
                         }
@@ -110,6 +111,7 @@ class ProfileViewModel(
 
     fun deleteAccount(onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
+            isSelfDeleting = true
             try {
                 val user = authRepo.getCurrentUserSync()
                 val uid = user?.uid
@@ -136,7 +138,8 @@ class ProfileViewModel(
                 }
                 onResult(true, "Account deleted successfully")
             } catch (e: Exception) {
-                onResult(false, e.message ?: "Failed to wipe account data")
+                isSelfDeleting = false
+                onResult(false, e.message ?: "Failed to delete account")
             }
         }
     }

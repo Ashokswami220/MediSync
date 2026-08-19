@@ -20,9 +20,11 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.messaging.FirebaseMessaging
+import com.example.medisync.data.SettingsManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -38,7 +40,8 @@ sealed class AuthState {
 class AuthViewModel(
     private val authRepo: AuthRepository,
     private val userRepo: UserRepository,
-    private val application: Application
+    private val application: Application,
+    private val settingsManager: SettingsManager
 ) : ViewModel() {
 
     private val credentialManager = CredentialManager.create(application)
@@ -66,9 +69,10 @@ class AuthViewModel(
     }
 
     fun signOut() {
+        _authState.value = AuthState.LoggedOut
         viewModelScope.launch {
             authRepo.signOut()
-            _authState.value = AuthState.LoggedOut
+            settingsManager.setHasCompletedProfile(false)
         }
     }
 
@@ -130,7 +134,14 @@ class AuthViewModel(
         try {
             val result = userRepo.getUserProfileSync(user.uid)
             val profile = result.getOrNull()
-            if (profile == null || profile.firstName.isEmpty() || profile.phoneNumber.isEmpty()) {
+            if (profile == null) {
+                val hasCompleted = settingsManager.hasCompletedProfileFlow.first()
+                if (hasCompleted) {
+                    signOut()
+                    return
+                }
+                _authState.value = AuthState.NeedsInfo
+            } else if (profile.firstName.isEmpty() || profile.phoneNumber.isEmpty()) {
                 _authState.value = AuthState.NeedsInfo
             } else {
                 val updates = mutableMapOf<String, Any>()
@@ -151,6 +162,7 @@ class AuthViewModel(
                 if (updates.isNotEmpty()) {
                     userRepo.updateUserProfile(user.uid, updates)
                 }
+                settingsManager.setHasCompletedProfile(true)
                 _authState.value = AuthState.Success
             }
         } catch (e: Exception) {
@@ -230,6 +242,7 @@ class AuthViewModel(
                             Log.d(
                                 "MediSync", "Profile created with placeholder data at $firebaseUid"
                             )
+                            settingsManager.setHasCompletedProfile(true)
                             _authState.value = AuthState.Success
                         } else {
                             _authState.value = AuthState.Error("Failed to save profile.")
@@ -254,6 +267,7 @@ class AuthViewModel(
 
                         val result = userRepo.createUserProfile(newProfile)
                         if (result.isSuccess) {
+                            settingsManager.setHasCompletedProfile(true)
                             _authState.value = AuthState.Success
                         } else {
                             _authState.value = AuthState.Error("Failed to save profile.")

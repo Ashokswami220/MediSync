@@ -49,6 +49,9 @@ import com.example.medisync.ui.screens.common.AboutUsScreen
 import com.example.medisync.ui.screens.common.DeleteActionMode
 import com.example.medisync.ui.screens.common.DeleteActionScreen
 import com.example.medisync.ui.screens.common.EditProfileScreen
+import com.example.medisync.utils.GlobalToastManager
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Error
 import com.example.medisync.ui.screens.common.ProfileState
 import com.example.medisync.ui.screens.common.ProfileViewModel
 import com.example.medisync.ui.screens.common.ReportDetailScreen
@@ -114,6 +117,21 @@ fun NavApp(
             }
         } else if (authState is AuthState.Success) {
             profileViewModel.loadProfile()
+        }
+    }
+
+    LaunchedEffect(profileState) {
+        if (profileState is ProfileState.Deleted) {
+            GlobalToastManager.showToast(
+                "Your account was deleted by an admin",
+                Icons.Default.Error
+            )
+            authViewModel.signOut()
+            if (currentRoute != Routes.LOGIN) {
+                navController.navigate(Routes.LOGIN) {
+                    popUpTo(navController.graph.id) { inclusive = true }
+                }
+            }
         }
     }
 
@@ -432,6 +450,7 @@ fun NavApp(
                     }
                     DeleteActionScreen(
                         mode = mode,
+                        profileViewModel = profileViewModel,
                         onAccountDeleted = {
                             coroutineScope.launch {
                                 settingsManager.setUserRole("USER")
