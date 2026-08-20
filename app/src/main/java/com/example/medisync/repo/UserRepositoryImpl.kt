@@ -93,7 +93,9 @@ class UserRepositoryImpl(
                                     ?: false
                                 profile?.copy(uid = doc.id, isPlaceholder = isPlaceholder)
                             } catch (e: Exception) {
-                                android.util.Log.e("UserRepositoryImpl", "Error mapping user document ${doc.id}", e)
+                                android.util.Log.e(
+                                    "UserRepositoryImpl", "Error mapping user document ${doc.id}", e
+                                )
                                 null
                             }
                         }
@@ -102,16 +104,19 @@ class UserRepositoryImpl(
                             userDao.insertUsers(profiles.map { UserEntity.fromUserProfile(it) })
                         }
                     } catch (e: Exception) {
-                        android.util.Log.e("UserRepositoryImpl", "Error transacting users from Firestore", e)
+                        android.util.Log.e(
+                            "UserRepositoryImpl", "Error transacting users from Firestore", e
+                        )
                     }
                 }
             }
         }
 
         launch {
-            userDao.getAllUsers().collect { entities ->
-                send(entities.map { it.toUserProfile() })
-            }
+            userDao.getAllUsers()
+                .collect { entities ->
+                    send(entities.map { it.toUserProfile() })
+                }
         }
 
         awaitClose {
@@ -176,10 +181,25 @@ class UserRepositoryImpl(
                     "MediSync",
                     "  Doc ${doc.id}: isPlaceholder=$isPlaceholder, claimedByUid=$claimedByUid, fields=${doc.data?.keys}"
                 )
-                if (isPlaceholder && claimedByUid == null) {
-                    android.util.Log.d("MediSync", "  → MATCH! Returning placeholder ${doc.id}")
-                    return doc.toObject(UserProfile::class.java)
-                        ?.copy(uid = doc.id, isPlaceholder = true)
+                if (isPlaceholder) {
+                    val isClaimed = claimedByUid != null
+                    var isClaimerAlive = false
+                    if (isClaimed) {
+                        try {
+                            val claimerDoc = usersCollection.document(claimedByUid)
+                                .get()
+                                .await()
+                            isClaimerAlive = claimerDoc.exists()
+                        } catch (_: Exception) {
+                            // Ignore
+                        }
+                    }
+
+                    if (!isClaimed || !isClaimerAlive) {
+                        android.util.Log.d("MediSync", "  → MATCH! Returning placeholder ${doc.id}")
+                        return doc.toObject(UserProfile::class.java)
+                            ?.copy(uid = doc.id, isPlaceholder = true)
+                    }
                 }
             }
 
@@ -199,10 +219,25 @@ class UserRepositoryImpl(
                     "MediSync",
                     "  Doc ${doc.id}: isPlaceholder=$isPlaceholder, claimedByUid=$claimedByUid, fields=${doc.data?.keys}"
                 )
-                if (isPlaceholder && claimedByUid == null) {
-                    android.util.Log.d("MediSync", "  → MATCH! Returning placeholder ${doc.id}")
-                    return doc.toObject(UserProfile::class.java)
-                        ?.copy(uid = doc.id, isPlaceholder = true)
+                if (isPlaceholder) {
+                    val isClaimed = claimedByUid != null
+                    var isClaimerAlive = false
+                    if (isClaimed) {
+                        try {
+                            val claimerDoc = usersCollection.document(claimedByUid)
+                                .get()
+                                .await()
+                            isClaimerAlive = claimerDoc.exists()
+                        } catch (_: Exception) {
+                            // Ignore
+                        }
+                    }
+
+                    if (!isClaimed || !isClaimerAlive) {
+                        android.util.Log.d("MediSync", "  → MATCH! Returning placeholder ${doc.id}")
+                        return doc.toObject(UserProfile::class.java)
+                            ?.copy(uid = doc.id, isPlaceholder = true)
+                    }
                 }
             }
 
