@@ -160,4 +160,12 @@
     <string name="contact_removed">Contact removed</string>
     <string name="name_is_required">Name is required</string>
     <string name="data_is_updating">Data is updating…</string>
+    <string name="delete_account_title">Delete account</string>
+    <string name="delete_data_title">Delete my data</string>
+    <string name="clear_reports_title">Clear local reports</string>
+    <string name="delete_account_subtitle">If you proceed with the deletion of your account, you will lose access to all your synced medical reports, history, and preferences. This action is permanent and cannot be undone.</string>
+    <string name="delete_data_subtitle">If you proceed with the deletion of your data, all your synced medical reports, history, and preferences will be permanently wiped. This action cannot be undone.</string>
+    <string name="clear_reports_subtitle">This will remove downloaded reports from your device to free up space. Your reports will NOT be deleted from the database and you can view them again anytime.</string>
+    <string name="clear_downloaded_reports">Clear Downloaded Reports</string>
+    <string name="clear_downloaded_reports_subtitle">Remove all downloaded reports from device</string>
 </resources>

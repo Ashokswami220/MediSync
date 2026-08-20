@@ -786,7 +786,7 @@ fun RecentReportsSection(
                                         Icon(
                                             imageVector = Icons.Default.MedicalInformation,
                                             contentDescription = null,
-                                            tint = colorScheme.onSecondaryContainer
+                                            tint = colorScheme.onSurfaceVariant
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(16.dp))

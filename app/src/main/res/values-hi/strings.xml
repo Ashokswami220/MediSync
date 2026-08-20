@@ -154,4 +154,12 @@
     <string name="contact_removed">संपर्क हटा दिया गया</string>
     <string name="name_is_required">नाम आवश्यक है</string>
     <string name="data_is_updating">डेटा अपडेट हो रहा है…</string>
+    <string name="delete_account_title">खाता हटाएं</string>
+    <string name="delete_data_title">मेरा डेटा हटाएं</string>
+    <string name="clear_reports_title">स्थानीय रिपोर्ट साफ़ करें</string>
+    <string name="delete_account_subtitle">यदि आप अपना खाता हटाने के साथ आगे बढ़ते हैं, तो आप अपने सभी सिंक किए गए मेडिकल रिपोर्ट, इतिहास और प्राथमिकताओं तक पहुंच खो देंगे। यह कार्रवाई स्थायी है और इसे पूर्ववत नहीं किया जा सकता है।</string>
+    <string name="delete_data_subtitle">यदि आप अपने डेटा को हटाने के साथ आगे बढ़ते हैं, तो आपके सभी सिंक किए गए मेडिकल रिपोर्ट, इतिहास और प्राथमिकताएं स्थायी रूप से मिटा दी जाएंगी। यह कार्रवाई पूर्ववत नहीं की जा सकती।</string>
+    <string name="clear_reports_subtitle">यह स्थान खाली करने के लिए आपके डिवाइस से डाउनलोड की गई रिपोर्ट को हटा देगा। आपकी रिपोर्ट डेटाबेस से नहीं हटाई जाएंगी और आप उन्हें कभी भी फिर से देख सकते हैं।</string>
+    <string name="clear_downloaded_reports">स्थानीय रिपोर्ट साफ़ करें</string>
+    <string name="clear_downloaded_reports_subtitle">डिवाइस पर डाउनलोड की गई सभी रिपोर्ट हटाएँ</string>
 </resources>

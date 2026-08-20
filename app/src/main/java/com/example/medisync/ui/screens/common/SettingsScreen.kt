@@ -471,7 +471,7 @@ fun SettingsScreen(
             ) {
                 SettingsItem(
                     icon = Icons.Default.Delete,
-                    title = "Clear Downloaded Reports",
+                    title = stringResource(R.string.clear_downloaded_reports),
                     titleColor = colorScheme.onSurfaceVariant,
                     showArrow = false,
                     onClick = {
