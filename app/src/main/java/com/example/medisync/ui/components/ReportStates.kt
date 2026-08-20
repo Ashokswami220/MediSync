@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,7 +62,7 @@ fun NotLoggedInState(
                     .padding(horizontal = horizontalPadding)
                     .height(240.dp)
                     .background(
-                        Color.Black.copy(alpha = 0.04f),
+                        if (isSystemInDarkTheme()) Color.White.copy(alpha = 0.04f) else Color.Black.copy(alpha = 0.04f),
                         shape = RoundedCornerShape(32.dp)
                     )
             )
@@ -97,7 +98,7 @@ fun NotLoggedInState(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Login,
                     contentDescription = null,
-                    tint = colorScheme.onPrimary,
+                    tint = Color.White,
                     modifier = Modifier.size(14.dp)
                 )
             }

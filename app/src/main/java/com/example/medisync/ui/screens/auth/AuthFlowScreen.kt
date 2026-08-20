@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -484,7 +485,7 @@ fun LoginSheet(onGoogleSignIn: () -> Unit, isLoading: Boolean) {
                     .fillMaxWidth()
                     .height(240.dp)
                     .background(
-                        Color.Black.copy(alpha = 0.04f),
+                        if (isSystemInDarkTheme()) Color.White.copy(alpha = 0.04f) else Color.Black.copy(alpha = 0.04f),
                         shape = RoundedCornerShape(32.dp)
                     )
             )
@@ -505,7 +506,7 @@ fun LoginSheet(onGoogleSignIn: () -> Unit, isLoading: Boolean) {
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(100.dp),
-            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor =  MaterialTheme.colorScheme.surface),
             border = BorderStroke(
                 1.dp, MaterialTheme.colorScheme.outlineVariant
             )
@@ -542,7 +543,7 @@ fun GoogleSignInButtonContent(isLoading: Boolean) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    stringResource(R.string.g), color = MaterialTheme.colorScheme.onPrimary,
+                    stringResource(R.string.g), color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -788,7 +789,7 @@ fun InfoSheet(onDone: (String, String, String) -> Unit, onLogout: () -> Unit, is
         ) {
             Text(
                 stringResource(R.string.continue_action),
-                color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
