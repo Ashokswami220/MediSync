@@ -40,7 +40,7 @@ object AdConfig {
     const val REAL_RICH_AD = "ca-app-pub-6093923293882696/6122877560"
 
     // Toggle this to false before generating production release!
-    const val IS_TEST_MODE = true
+    const val IS_TEST_MODE = false
 
     val compactAdId: String
         get() = if (IS_TEST_MODE) TEST_NATIVE_AD else REAL_COMPACT_AD
