@@ -20,3 +20,9 @@ functions/node_modules/
 functions/.env
 
 .vercel
+
+# Release Artifacts
+*.apk
+*.aab
+*.dm
+output-metadata.json

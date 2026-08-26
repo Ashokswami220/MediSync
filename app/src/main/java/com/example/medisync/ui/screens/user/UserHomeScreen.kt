@@ -68,11 +68,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import com.example.medisync.ui.components.RichNativeAd
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -84,6 +87,7 @@ import androidx.core.net.toUri
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.ContactModel
+import com.example.medisync.ui.components.AdConfig
 import com.example.medisync.ui.components.HomeTopBar
 import com.example.medisync.ui.components.HorizEmptyReportsState
 import com.example.medisync.ui.components.NotLoggedInState
@@ -187,7 +191,9 @@ fun UserHomeScreen(
                 contacts = appConfig.contacts
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             PromotionCard()
 
@@ -834,6 +840,23 @@ fun RecentReportsSection(
             }
         }
     }
+
+    Spacer(modifier = Modifier.height(16.dp))
+    
+    val containerSize = LocalWindowInfo.current.containerSize
+    val adHeight = with(LocalDensity.current) {
+        (containerSize.height * 0.2f).toDp()
+    }
+    
+    RichNativeAd(
+        adUnitId = AdConfig.richAdId,
+        backgroundColor = colorScheme.surface,
+        textColor = colorScheme.onSurface,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(adHeight)
+            .border(1.dp, colorScheme.outlineVariant, RectangleShape)
+    )
 }
 
 

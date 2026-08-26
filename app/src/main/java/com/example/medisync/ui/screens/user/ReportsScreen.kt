@@ -54,7 +54,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -62,8 +64,12 @@ import androidx.compose.ui.unit.sp
 import com.example.medisync.R
 import com.example.medisync.model.DocumentMetadata
 import com.example.medisync.repo.AuthRepository
+import com.example.medisync.ui.components.AdConfig.compactAdId
+import com.example.medisync.ui.components.AdConfig.richAdId
+import com.example.medisync.ui.components.CompactNativeAd
 import com.example.medisync.ui.components.CustomToast
 import com.example.medisync.ui.components.NotLoggedInState
+import com.example.medisync.ui.components.RichNativeAd
 import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.VertEmptyReportsState
 import com.example.medisync.utils.HapticHelper
@@ -237,12 +243,27 @@ fun UserReportsScreen(
                                     }
                                 }
                             if (filteredDocuments.isEmpty()) {
-                                VertEmptyReportsState(
-                                    modifier = Modifier
-                                        .height(480.dp)
-                                        .padding(top = 48.dp),
-                                    colorScheme = colorScheme
-                                )
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    VertEmptyReportsState(
+                                        modifier = Modifier
+                                            .height(250.dp)
+                                            .padding(top = 48.dp),
+                                        colorScheme = colorScheme
+                                    )
+                                    val containerSize = LocalWindowInfo.current.containerSize
+                                    val adHeight = with(LocalDensity.current) {
+                                        (containerSize.height * 0.35f).toDp()
+                                    }
+                                    RichNativeAd(
+                                        adUnitId = richAdId,
+                                        backgroundColor = colorScheme.surface,
+                                        textColor = colorScheme.onSurface,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(adHeight)
+                                            .padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                                    )
+                                }
                             } else {
                                 ReportsList(
                                     filteredDocuments = filteredDocuments,
@@ -431,6 +452,10 @@ fun ReportsList(
         groupFormatter.format(Date(doc.uploadedAt))
     }
 
+    val adFrequency = if (filteredDocuments.size > 12) 6 else 4
+
+    var reportIndex = 0
+
     for ((year, yearReports) in groupedReports) {
         // Section Header
         Row(
@@ -452,6 +477,17 @@ fun ReportsList(
                 color = colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
+        }
+
+        if (reportIndex == 0) {
+            // Top Ad (placed right after the first header)
+            CompactNativeAd(
+                adUnitId = compactAdId,
+                backgroundColor = colorScheme.surface,
+                textColor = colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            HorizontalDivider(color = colorScheme.outlineVariant.copy(alpha = 0.5f))
         }
 
         // List Items
@@ -512,6 +548,19 @@ fun ReportsList(
                         tint = colorScheme.onSurfaceVariant
                     )
                 }
+                HorizontalDivider(
+                    color = colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+            }
+
+            reportIndex++
+            if (reportIndex % adFrequency == 0) {
+                CompactNativeAd(
+                    adUnitId = compactAdId,
+                    backgroundColor = colorScheme.surface,
+                    textColor = colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
                 HorizontalDivider(
                     color = colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )

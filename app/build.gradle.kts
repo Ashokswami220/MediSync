@@ -18,7 +18,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.example.medisync"
+        applicationId = "com.medisync.app"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -33,10 +33,9 @@ android {
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
-            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
     compileOptions {
@@ -77,6 +76,9 @@ dependencies {
     
     // OkHttp for triggering webhook
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // AdMob
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
 
     // Cloudinary
     implementation("com.cloudinary:cloudinary-android:2.5.0")

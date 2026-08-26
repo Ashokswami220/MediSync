@@ -51,13 +51,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import com.example.medisync.ui.components.RichNativeAd
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.R
+import com.example.medisync.model.UserRole
+import com.example.medisync.ui.components.AdConfig.richAdId
 import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.utils.GlobalToastManager
 import com.google.firebase.auth.FirebaseAuth
@@ -258,6 +264,26 @@ fun EditProfileScreen(
                     onCancelClick = {},
                     onSaveClick = {},
                     showEditIcon = false
+                )
+            }
+
+            val currentRole = (profileState as? ProfileState.Success)?.profile?.role ?: UserRole.USER
+            if (currentRole != UserRole.ADMIN) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                val containerSize = LocalWindowInfo.current.containerSize
+                val adHeight = with(LocalDensity.current) {
+                    (containerSize.height * 0.35f).toDp()
+                }
+                
+                RichNativeAd(
+                    adUnitId = richAdId,
+                    backgroundColor = colorScheme.surface,
+                    textColor = colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(adHeight)
+                        .border(1.dp, colorScheme.outlineVariant, RectangleShape)
                 )
             }
 

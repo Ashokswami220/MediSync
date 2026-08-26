@@ -59,6 +59,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import com.example.medisync.ui.components.RichNativeAd
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,6 +78,7 @@ import com.example.medisync.data.SettingsManager
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.UserRole
 import com.example.medisync.repo.AuthRepository
+import com.example.medisync.ui.components.AdConfig.richAdId
 import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.ui.components.sheets.AppearanceBottomSheet
@@ -97,6 +105,7 @@ fun SettingsScreen(
     val authRepo: AuthRepository = koinInject()
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
 
     val profileState by profileViewModel.profileState.collectAsState()
     val currentUser = FirebaseAuth.getInstance().currentUser
@@ -208,6 +217,25 @@ fun SettingsScreen(
                 }
             }
 
+            if (currentRole != UserRole.ADMIN) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                val containerSize = LocalWindowInfo.current.containerSize
+                val adHeight = with(LocalDensity.current) {
+                    (containerSize.height * 0.15f).toDp()
+                }
+                
+                RichNativeAd(
+                    adUnitId = richAdId,
+                    backgroundColor = colorScheme.surface,
+                    textColor = colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(adHeight)
+                        .border(1.dp, colorScheme.outlineVariant, RectangleShape)
+                )
+            }
+
             if (currentRole == UserRole.ADMIN) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Box(
@@ -262,7 +290,7 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Text(
                 text = stringResource(R.string.app_preferences),
@@ -449,6 +477,37 @@ fun SettingsScreen(
                         }
                     )
                 }
+                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Privacy Policy",
+                        fontSize = 12.sp,
+                        color = colorScheme.primary,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable {
+                            uriHandler.openUri("https://google.com") // Replace with actual Privacy Policy URL
+                        }
+                    )
+                    Text(
+                        text = " • ",
+                        fontSize = 12.sp,
+                        color = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    Text(
+                        text = "Terms of Service",
+                        fontSize = 12.sp,
+                        color = colorScheme.primary,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable {
+                            uriHandler.openUri("https://google.com") // Replace with actual Terms of Service URL
+                        }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -543,6 +602,7 @@ fun SettingsScreen(
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(100.dp))
         }
 

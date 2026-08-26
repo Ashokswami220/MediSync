@@ -35,11 +35,15 @@ import com.example.medisync.ui.theme.MediSyncTheme
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import org.koin.android.ext.android.inject
+import com.google.android.gms.ads.MobileAds
 
 class MainActivity : AppCompatActivity() {
     private val settingsManager: SettingsManager by inject()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize AdMob
+        MobileAds.initialize(this) {}
 
         HapticHelper.init()
 
