@@ -2,6 +2,7 @@ package com.example.medisync.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medisync.model.UserRole
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.repo.DocumentRepository
 import com.example.medisync.repo.UserRepository
@@ -66,6 +67,7 @@ class UserListViewModel(
 
                 val adminModels = profiles
                     .filter { it.uid != currentUserId }
+                    .filter { it.role != UserRole.ADMIN }
                     .filter { it.uid !in claimedPlaceholderUids }
                     .map { profile ->
                         val allUids = listOf(profile.uid) + profile.previousUids
@@ -168,7 +170,7 @@ class UserListViewModel(
                     lastName = lastName,
                     phoneNumber = if (contactMethod == "phone") contactValue else "",
                     email = if (contactMethod == "email") contactValue else "",
-                    role = com.example.medisync.model.UserRole.USER,
+                    role = UserRole.USER,
                     isPlaceholder = true
                 )
 
