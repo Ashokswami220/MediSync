@@ -186,7 +186,7 @@ fun UserHomeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            PharmacistSection(
+            DoctorSection(
                 colorScheme = colorScheme,
                 contacts = appConfig.contacts
             )
@@ -861,7 +861,7 @@ fun RecentReportsSection(
 
 
 @Composable
-fun PharmacistSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
+fun DoctorSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -906,7 +906,7 @@ fun PharmacistSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
                     else -> R.drawable.holding_flowers
                 }
 
-                PharmacistCard(
+                DoctorCard(
                     name = contact.name,
                     specialty = contact.role,
                     experience = contact.experience,
@@ -926,7 +926,7 @@ fun PharmacistSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
 }
 
 @Composable
-fun PharmacistCard(
+fun DoctorCard(
     name: String,
     specialty: String,
     experience: String,

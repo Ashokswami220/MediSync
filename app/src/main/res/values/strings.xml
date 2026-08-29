@@ -83,7 +83,7 @@
     <string name="login_illustration">Login Illustration</string>
     <string name="login_to_see_reports">Login to see reports</string>
     <string name="mail">Mail</string>
-    <string name="manage_pharmacists_and_support">Manage pharmacists and support</string>
+    <string name="manage_pharmacists_and_support">Manage doctors and support</string>
     <string name="medical">Medical</string>
     <string name="member">Member</string>
     <string name="member_name">Member Name</string>
@@ -97,8 +97,8 @@
     <string name="no_reports">No reports</string>
     <string name="no_users_found">No users found</string>
     <string name="notifications">Notifications</string>
-    <string name="pharmacist">Pharmacist</string>
-    <string name="pharmacists">Pharmacists</string>
+    <string name="pharmacist">Doctor</string>
+    <string name="pharmacists">Doctors</string>
     <string name="phone_number">Phone Number</string>
     <string name="phone_number_or_email_address">Phone Number or Email Address</string>
     <string name="pill">Pill</string>

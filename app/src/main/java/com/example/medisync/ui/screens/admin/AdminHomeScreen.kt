@@ -32,7 +32,7 @@ import com.example.medisync.ui.components.sheets.ReportsOpenedBottomSheet
 import com.example.medisync.ui.components.sheets.TotalUsersBottomSheet
 import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.ui.screens.user.AnimatedSloganText
-import com.example.medisync.ui.screens.user.PharmacistSection
+import com.example.medisync.ui.screens.user.DoctorSection
 import com.example.medisync.ui.screens.user.PromotionCard
 import org.koin.androidx.compose.koinViewModel
 
@@ -92,7 +92,7 @@ fun AdminHomeScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            PharmacistSection(colorScheme = colorScheme, contacts = appConfig.contacts)
+            DoctorSection(colorScheme = colorScheme, contacts = appConfig.contacts)
 
             Spacer(modifier = Modifier.height(48.dp))
 
