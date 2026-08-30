@@ -4,12 +4,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,14 +20,12 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,15 +37,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,23 +53,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.ContactModel
+import com.example.medisync.ui.components.sheets.DoctorSheet
+import com.example.medisync.ui.components.sheets.ExtraContactSheet
+import com.example.medisync.ui.components.sheets.HeadingSheet
 import com.example.medisync.ui.screens.common.ConfigViewModel
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import org.koin.androidx.compose.koinViewModel
-import java.util.UUID
 
 @Composable
 fun AdminEditContactsScreen(
@@ -81,40 +79,46 @@ fun AdminEditContactsScreen(
 ) {
     val config by configViewModel.appConfig.collectAsState()
     val colorScheme = MaterialTheme.colorScheme
-    val doctor1 = config.contacts.find { it.imageResName == "doctor1" } ?: ContactModel(
-        id = UUID.randomUUID()
-            .toString(),
-        name = "Sawai Singh",
-        role = "Pharmacist",
-        experience = "8 years experience",
+    val context = LocalContext.current
+    
+    val doctorContacts = config.contacts.filter { it.category == "Doctor" }.toMutableList()
+    val doctor1 = doctorContacts.find { it.id == "predefined_doctor1" } ?: ContactModel(
+        id = "predefined_doctor1",
+        name = "Dr. Sawai Singh",
+        role = "Doctor",
+        experience = "10 years experience",
         phone = ContactConfig.pharmacistPhones.sawaiSingh,
-        imageResName = "doctor1"
-    )
+        imageResName = "doctor1",
+        category = "Doctor"
+    ).also { doctorContacts.add(0, it) }
 
-    val doctor2 = config.contacts.find { it.imageResName == "doctor2" } ?: ContactModel(
-        id = UUID.randomUUID()
-            .toString(),
-        name = "Govind",
-        role = "Pharmacist",
-        experience = "5 years experience",
+    val doctor2 = doctorContacts.find { it.id == "predefined_doctor2" } ?: ContactModel(
+        id = "predefined_doctor2",
+        name = "Dr. Govind Prasad Sau",
+        role = "Doctor",
+        experience = "10 years experience",
         phone = ContactConfig.pharmacistPhones.govind,
-        imageResName = "doctor2"
-    )
+        imageResName = "doctor2",
+        category = "Doctor"
+    ).also { doctorContacts.add(1, it) }
 
-    val extraContacts =
-        config.contacts.filter { it.imageResName != "doctor1" && it.imageResName != "doctor2" }
+    val extraContacts = config.contacts.filter { it.category == "ExtraContact" }
 
-    var showAddSheet by remember { mutableStateOf(false) }
+    var doctorSheetContact by remember { mutableStateOf<ContactModel?>(null) }
+    var showDoctorSheet by remember { mutableStateOf(false) }
+
+    var extraSheetContact by remember { mutableStateOf<ContactModel?>(null) }
+    var showExtraSheet by remember { mutableStateOf(false) }
+    
+    var headingSheetContact by remember { mutableStateOf<ContactModel?>(null) }
+    var showHeadingSheet by remember { mutableStateOf(false) }
 
     val contactUpdatedMsg = stringResource(R.string.contact_updated)
     val contactRemovedMsg = stringResource(R.string.contact_removed)
-    var editingContact by remember { mutableStateOf<ContactModel?>(null) }
 
     fun updateContact(updatedContact: ContactModel) {
         val existingIndex = config.contacts.indexOfFirst {
-            it.id == updatedContact.id || (it.imageResName in listOf(
-                "doctor1", "doctor2"
-            ) && it.imageResName == updatedContact.imageResName)
+            it.id == updatedContact.id
         }
         val newList = config.contacts.toMutableList()
         if (existingIndex >= 0) {
@@ -132,6 +136,27 @@ fun AdminEditContactsScreen(
         GlobalToastManager.showToast(contactRemovedMsg)
     }
 
+    fun moveContact(contactId: String, direction: Int, category: String) {
+        val categoryItems = config.contacts.filter { it.category == category }.toMutableList()
+        // If doctors, ensure we have doctor1 and doctor2 in categoryItems if they aren't already there (they should be)
+        if (category == "Doctor") {
+            if (categoryItems.none { it.id == "predefined_doctor1" }) categoryItems.add(0, doctor1)
+            if (categoryItems.none { it.id == "predefined_doctor2" }) categoryItems.add(1, doctor2)
+        }
+        
+        val index = categoryItems.indexOfFirst { it.id == contactId }
+        if (index >= 0 && index + direction in categoryItems.indices) {
+            val temp = categoryItems[index]
+            categoryItems[index] = categoryItems[index + direction]
+            categoryItems[index + direction] = temp
+            
+            val newList = config.contacts.filter { it.category != category }.toMutableList()
+            newList.addAll(categoryItems)
+            configViewModel.updateConfig(config.copy(contacts = newList))
+            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -146,41 +171,90 @@ fun AdminEditContactsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // New Add Title and Add Card Buttons at the top
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { showHeadingSheet = true; headingSheetContact = null },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Title", modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add Title")
+                }
+                
+                Button(
+                    onClick = { showDoctorSheet = true; doctorSheetContact = null },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = colorScheme.secondary)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Card", modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add Card")
+                }
+            }
 
             Text(
-                text = stringResource(R.string.pharmacists),
+                text = stringResource(R.string.doctors),
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
                 color = colorScheme.onBackground
             )
 
-            PharmacistCardItem(
-                contact = doctor1,
-                colorScheme = colorScheme,
-                onEdit = { editingContact = doctor1 }
-            )
-
-            PharmacistCardItem(
-                contact = doctor2,
-                colorScheme = colorScheme,
-                onEdit = { editingContact = doctor2 }
-            )
+            doctorContacts.forEachIndexed { _, doc ->
+                if (doc.headingItem) {
+                    HeadingItem(
+                        contact = doc,
+                        colorScheme = colorScheme,
+                        onEdit = { showHeadingSheet = true; headingSheetContact = doc },
+                        onDelete = { deleteContact(doc.id) },
+                        onMoveUp = { moveContact(doc.id, -1, "Doctor") },
+                        onMoveDown = { moveContact(doc.id, 1, "Doctor") }
+                    )
+                } else {
+                    val isPredefined = doc.id == "predefined_doctor1" || doc.id == "predefined_doctor2"
+                    PharmacistCardItem(
+                        contact = doc,
+                        colorScheme = colorScheme,
+                        onEdit = { showDoctorSheet = true; doctorSheetContact = doc },
+                        onDelete = { deleteContact(doc.id) },
+                        onMoveUp = { moveContact(doc.id, -1, "Doctor") },
+                        onMoveDown = { moveContact(doc.id, 1, "Doctor") },
+                        isPredefined = isPredefined
+                    )
+                }
+            }
 
             SyringeDivider(colorScheme)
 
             ExtraContactsHeader(
                 colorScheme = colorScheme,
-                onAddClick = { showAddSheet = true }
+                onAddClick = { showExtraSheet = true; extraSheetContact = null }
             )
 
             if (extraContacts.isNotEmpty()) {
-                extraContacts.forEach { extra ->
-                    ExtraContactCardItem(
-                        contact = extra,
-                        colorScheme = colorScheme,
-                        onEdit = { editingContact = extra },
-                        onDelete = { deleteContact(extra.id) }
-                    )
+                extraContacts.forEachIndexed { _, extra ->
+                    if (extra.headingItem) {
+                        HeadingItem(
+                            contact = extra,
+                            colorScheme = colorScheme,
+                            onEdit = { showHeadingSheet = true; headingSheetContact = extra },
+                            onDelete = { deleteContact(extra.id) },
+                            onMoveUp = { moveContact(extra.id, -1, "ExtraContact") },
+                            onMoveDown = { moveContact(extra.id, 1, "ExtraContact") }
+                        )
+                    } else {
+                        ExtraContactCardItem(
+                            contact = extra,
+                            colorScheme = colorScheme,
+                            onEdit = { showExtraSheet = true; extraSheetContact = extra },
+                            onDelete = { deleteContact(extra.id) },
+                            onMoveUp = { moveContact(extra.id, -1, "ExtraContact") },
+                            onMoveDown = { moveContact(extra.id, 1, "ExtraContact") }
+                        )
+                    }
                 }
             }
 
@@ -188,25 +262,38 @@ fun AdminEditContactsScreen(
         }
     }
 
-    if (showAddSheet) {
-        AddContactSheet(
+    if (showExtraSheet) {
+        ExtraContactSheet(
+            contact = extraSheetContact,
             colorScheme = colorScheme,
-            onDismiss = { showAddSheet = false },
-            onAdd = {
+            onDismiss = { showExtraSheet = false },
+            onSave = {
                 updateContact(it)
-                showAddSheet = false
+                showExtraSheet = false
+            }
+        )
+    }
+    
+    if (showHeadingSheet) {
+        HeadingSheet(
+            contact = headingSheetContact,
+            colorScheme = colorScheme,
+            onDismiss = { showHeadingSheet = false },
+            onSave = {
+                updateContact(it)
+                showHeadingSheet = false
             }
         )
     }
 
-    if (editingContact != null) {
-        EditContactSheet(
-            contact = editingContact!!,
+    if (showDoctorSheet) {
+        DoctorSheet(
+            contact = doctorSheetContact,
             colorScheme = colorScheme,
-            onDismiss = { editingContact = null },
+            onDismiss = { showDoctorSheet = false },
             onSave = {
                 updateContact(it)
-                editingContact = null
+                showDoctorSheet = false
             }
         )
     }
@@ -264,12 +351,19 @@ fun AdminEditContactsTopBar(colorScheme: ColorScheme, onNavigateBack: () -> Unit
 }
 
 @Composable
-fun PharmacistCardItem(contact: ContactModel, colorScheme: ColorScheme, onEdit: () -> Unit) {
+fun PharmacistCardItem(
+    contact: ContactModel, 
+    colorScheme: ColorScheme, 
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    isPredefined: Boolean
+) {
     val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = 120.dp)
             .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(0.dp)),
         colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
         shape = RoundedCornerShape(0.dp)
@@ -285,22 +379,63 @@ fun PharmacistCardItem(contact: ContactModel, colorScheme: ColorScheme, onEdit: 
                     color = colorScheme.onSurface
                 )
                 Text(
+                    text = contact.role, fontSize = 15.sp,
+                    color = colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium
+                )
+                Text(
                     text = contact.experience, fontSize = 15.sp,
                     color = colorScheme.onSurfaceVariant
                 )
                 Text(text = contact.phone, fontSize = 15.sp, color = colorScheme.onSurfaceVariant)
             }
-            IconButton(
-                onClick = {
+            var dragAmountAccumulator by remember { mutableFloatStateOf(0f) }
+            Row(modifier = Modifier.align(Alignment.TopEnd), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = {
                     HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                     onEdit()
-                },
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.edit),
+                        tint = colorScheme.secondary
+                    )
+                }
+                if (!isPredefined) {
+                    IconButton(onClick = {
+                        HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                        onDelete()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.delete),
+                            tint = colorScheme.error
+                        )
+                    }
+                }
                 Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = stringResource(R.string.edit),
-                    tint = colorScheme.secondary
+                    imageVector = Icons.Default.DragHandle,
+                    contentDescription = "Drag to reorder",
+                    tint = colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .padding(start = 8.dp)
+                        .pointerInput(Unit) {
+                            detectVerticalDragGestures(
+                                onDragStart = { dragAmountAccumulator = 0f },
+                                onDragEnd = { dragAmountAccumulator = 0f },
+                                onVerticalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    dragAmountAccumulator += dragAmount
+                                    if (dragAmountAccumulator > 60f) {
+                                        onMoveDown()
+                                        dragAmountAccumulator = 0f
+                                    } else if (dragAmountAccumulator < -60f) {
+                                        onMoveUp()
+                                        dragAmountAccumulator = 0f
+                                    }
+                                }
+                            )
+                        }
                 )
             }
         }
@@ -363,294 +498,197 @@ fun ExtraContactsHeader(colorScheme: ColorScheme, onAddClick: () -> Unit) {
 }
 
 @Composable
-fun ExtraContactCardItem(
-    contact: ContactModel, colorScheme: ColorScheme, onEdit: () -> Unit, onDelete: () -> Unit
-) {
-    val context = LocalContext.current
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(0.dp)),
-        colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
-        shape = RoundedCornerShape(0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = contact.name, fontWeight = FontWeight.Bold, fontSize = 18.sp,
-                    color = colorScheme.onSurface
-                )
-                Text(text = contact.phone, fontSize = 14.sp, color = colorScheme.onSurfaceVariant)
-            }
-            Row {
-                IconButton(onClick = {
-                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                    onEdit()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.edit),
-                        tint = colorScheme.secondary
-                    )
-                }
-                IconButton(onClick = {
-                    HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
-                    onDelete()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.delete),
-                        tint = colorScheme.error
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddContactSheet(
-    colorScheme: ColorScheme,
-    onDismiss: () -> Unit,
-    onAdd: (ContactModel) -> Unit
-) {
-    val nameIsRequiredMsg = stringResource(R.string.name_is_required)
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = colorScheme.surface,
-        dragHandle = null
-    ) {
-        var name by remember { mutableStateOf("") }
-        var phone by remember { mutableStateOf("") }
-        var showError by remember { mutableStateOf(false) }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.add_extra_contact), fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.close)
-                    )
-                }
-            }
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.name)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorScheme.secondary,
-                    focusedLabelColor = colorScheme.secondary,
-                    cursorColor = colorScheme.secondary
-                )
-            )
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { newValue ->
-                    if (newValue.length <= 10 && newValue.all { it.isDigit() }) {
-                        phone = newValue
-                        showError = false
-                    }
-                },
-                label = { Text(stringResource(R.string.phone_number)) },
-                isError = showError,
-                supportingText = {
-                    if (showError) {
-                        Text(
-                            stringResource(R.string.enter_exactly_10_digits),
-                            color = colorScheme.error
-                        )
-                    }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorScheme.secondary,
-                    focusedLabelColor = colorScheme.secondary,
-                    cursorColor = colorScheme.secondary
-                )
-            )
-            Button(
-                onClick = {
-                    if (phone.length != 10) {
-                        showError = true
-                    }
-                    if (name.isNotBlank() && phone.length == 10) {
-                        val newContact = ContactModel(
-                            id = UUID.randomUUID()
-                                .toString(),
-                            name = name,
-                            role = "Support",
-                            experience = "",
-                            phone = phone,
-                            imageResName = "holding_flowers"
-                        )
-                        onAdd(newContact)
-                    } else if (name.isBlank()) {
-                        GlobalToastManager.showToast(nameIsRequiredMsg)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.secondary)
-            ) {
-                Text(stringResource(R.string.add), color = colorScheme.onSecondary)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EditContactSheet(
+fun HeadingItem(
     contact: ContactModel,
     colorScheme: ColorScheme,
-    onDismiss: () -> Unit,
-    onSave: (ContactModel) -> Unit
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
 ) {
-    val nameIsRequiredMsg = stringResource(R.string.name_is_required)
-    val isPharmacist = contact.imageResName == "doctor1" || contact.imageResName == "doctor2"
-    val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
+    var dragAmountAccumulator by remember { mutableFloatStateOf(0f) }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = colorScheme.surface,
-        dragHandle = null
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        var name by remember { mutableStateOf(contact.name) }
-        var experience by remember { mutableStateOf(contact.experience) }
-        var phone by remember { mutableStateOf(contact.phone) }
-        var showError by remember { mutableStateOf(false) }
+        Text(
+            text = contact.name,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            color = colorScheme.onBackground,
+            modifier = Modifier.weight(1f)
+        )
+        
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = {
+                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                onEdit()
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = stringResource(R.string.edit),
+                    tint = colorScheme.secondary
+                )
+            }
+            IconButton(onClick = {
+                HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                onDelete()
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.delete),
+                    tint = colorScheme.error
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.DragHandle,
+                contentDescription = "Drag to reorder",
+                tint = colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(32.dp)
+                    .padding(start = 8.dp)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onDragStart = { dragAmountAccumulator = 0f },
+                            onDragEnd = { dragAmountAccumulator = 0f },
+                            onVerticalDrag = { change, dragAmount ->
+                                change.consume()
+                                dragAmountAccumulator += dragAmount
+                                if (dragAmountAccumulator > 60f) {
+                                    onMoveDown()
+                                    dragAmountAccumulator = 0f
+                                } else if (dragAmountAccumulator < -60f) {
+                                    onMoveUp()
+                                    dragAmountAccumulator = 0f
+                                }
+                            }
+                        )
+                    }
+            )
+        }
+    }
+}
 
-        Column(
+@Composable
+fun ExtraContactCardItem(
+    contact: ContactModel,
+    colorScheme: ColorScheme,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
+) {
+    val context = LocalContext.current
+    var dragAmountAccumulator by remember { mutableFloatStateOf(0f) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .weight(1f)
+                .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(0.dp)),
+            colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
+            shape = RoundedCornerShape(0.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(R.string.edit_contact), fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.close)
-                    )
-                }
-            }
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.name)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorScheme.secondary,
-                    focusedLabelColor = colorScheme.secondary,
-                    cursorColor = colorScheme.secondary
-                )
-            )
-            if (isPharmacist) {
-                OutlinedTextField(
-                    value = experience,
-                    onValueChange = { experience = it },
-                    label = { Text(stringResource(R.string.experience)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = colorScheme.secondary,
-                        focusedLabelColor = colorScheme.secondary,
-                        cursorColor = colorScheme.secondary
-                    )
-                )
-            }
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { newValue ->
-                    if (newValue.length <= 10 && newValue.all { it.isDigit() }) {
-                        phone = newValue
-                        showError = false
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(shape = CircleShape)
+                        .background(colorScheme.surfaceVariant)
+                ) {
+                    val resId = when (contact.imageResName) {
+                        "doctor1" -> R.drawable.doctor1
+                        "doctor2" -> R.drawable.doctor2
+                        "holding_flowers" -> R.drawable.holding_flowers
+                        else -> 0
                     }
-                },
-                label = { Text(stringResource(R.string.phone_number)) },
-                isError = showError,
-                supportingText = {
-                    if (showError) {
-                        Text(
-                            stringResource(R.string.enter_exactly_10_digits),
-                            color = colorScheme.error
+                    if (resId != 0 && contact.imageResName.isNotBlank()) {
+                        Image(
+                            painter = painterResource(id = resId),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.holding_flowers),
+                            contentDescription = null,
+                            tint = colorScheme.onSurfaceVariant,
+                            modifier = Modifier.align(Alignment.Center).size(24.dp)
                         )
                     }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorScheme.secondary,
-                    focusedLabelColor = colorScheme.secondary,
-                    cursorColor = colorScheme.secondary
-                )
-            )
-            Button(
-                onClick = {
-                    if (phone.length != 10) {
-                        showError = true
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = contact.name, fontWeight = FontWeight.Bold, fontSize = 18.sp,
+                        color = colorScheme.onSurface
+                    )
+                    Text(text = contact.phone, fontSize = 14.sp, color = colorScheme.onSurfaceVariant)
+                }
+                Row {
+                    IconButton(onClick = {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        onEdit()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.edit),
+                            tint = colorScheme.secondary
+                        )
                     }
-                    if (name.isNotBlank() && phone.length == 10) {
-                        onSave(contact.copy(name = name, experience = experience, phone = phone))
-                    } else if (name.isBlank()) {
-                        GlobalToastManager.showToast(nameIsRequiredMsg)
+                    IconButton(onClick = {
+                        HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                        onDelete()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.delete),
+                            tint = colorScheme.error
+                        )
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.secondary)
-            ) {
-                Text(stringResource(R.string.save_changes), color = colorScheme.onSecondary)
+                }
             }
         }
+        
+        Icon(
+            imageVector = Icons.Default.DragHandle,
+            contentDescription = "Drag to reorder",
+            tint = colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .size(32.dp)
+                .padding(start = 8.dp)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onDragStart = { dragAmountAccumulator = 0f },
+                        onDragEnd = { dragAmountAccumulator = 0f },
+                        onVerticalDrag = { change, dragAmount ->
+                            change.consume()
+                            dragAmountAccumulator += dragAmount
+                            if (dragAmountAccumulator > 60f) {
+                                onMoveDown()
+                                dragAmountAccumulator = 0f
+                            } else if (dragAmountAccumulator < -60f) {
+                                onMoveUp()
+                                dragAmountAccumulator = 0f
+                            }
+                        }
+                    )
+                }
+        )
     }
 }

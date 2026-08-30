@@ -97,8 +97,8 @@
     <string name="no_reports">No reports</string>
     <string name="no_users_found">No users found</string>
     <string name="notifications">Notifications</string>
-    <string name="pharmacist">Doctor</string>
-    <string name="pharmacists">Doctors</string>
+    <string name="doctor">Doctor</string>
+    <string name="doctors">Doctors</string>
     <string name="phone_number">Phone Number</string>
     <string name="phone_number_or_email_address">Phone Number or Email Address</string>
     <string name="pill">Pill</string>

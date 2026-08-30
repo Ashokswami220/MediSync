@@ -72,7 +72,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import com.example.medisync.ui.components.RichNativeAd
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -85,12 +84,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.example.medisync.R
-import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.ContactModel
 import com.example.medisync.ui.components.AdConfig
 import com.example.medisync.ui.components.HomeTopBar
 import com.example.medisync.ui.components.HorizEmptyReportsState
 import com.example.medisync.ui.components.NotLoggedInState
+import com.example.medisync.ui.components.RichNativeAd
 import com.example.medisync.ui.components.sheets.CallUsBottomSheet
 import com.example.medisync.ui.components.sheets.HealthStatBottomSheet
 import com.example.medisync.ui.components.sheets.HealthStatDetails
@@ -188,7 +187,7 @@ fun UserHomeScreen(
 
             DoctorSection(
                 colorScheme = colorScheme,
-                contacts = appConfig.contacts
+                contacts = appConfig.contacts.filter { it.category == "Doctor" }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -842,12 +841,12 @@ fun RecentReportsSection(
     }
 
     Spacer(modifier = Modifier.height(16.dp))
-    
+
     val containerSize = LocalWindowInfo.current.containerSize
     val adHeight = with(LocalDensity.current) {
         (containerSize.height * 0.2f).toDp()
     }
-    
+
     RichNativeAd(
         adUnitId = AdConfig.richAdId,
         backgroundColor = colorScheme.surface,
@@ -862,17 +861,17 @@ fun RecentReportsSection(
 
 @Composable
 fun DoctorSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
+    Text(
+        text = stringResource(R.string.doctors),
+        fontSize = 22.sp,
+        fontWeight = FontWeight.Bold,
+        color = colorScheme.onBackground,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+    )
+
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = stringResource(R.string.pharmacist),
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = colorScheme.onBackground,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -881,45 +880,39 @@ fun DoctorSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
         ) {
             val context = LocalContext.current
 
-            val displayContacts =
-                contacts.filter { it.imageResName == "doctor1" || it.imageResName == "doctor2" }
-                    .sortedBy { it.imageResName }
-                    .ifEmpty {
-                        listOf(
-                            ContactModel(
-                                name = "Sawai Singh",
-                                phone = ContactConfig.pharmacistPhones.sawaiSingh,
-                                experience = "8 years experience", imageResName = "doctor1"
-                            ),
-                            ContactModel(
-                                name = "Govind", phone = ContactConfig.pharmacistPhones.govind,
-                                experience = "5 years experience", imageResName = "doctor2"
-                            )
-                        )
+            contacts.forEach { contact ->
+                if (contact.headingItem) {
+                    Text(
+                        text = contact.name,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.onBackground
+                    )
+                } else {
+                    val resId = when (contact.imageResName) {
+                        "doctor1" -> R.drawable.doctor1
+                        "doctor2" -> R.drawable.doctor2
+                        "holding_flowers" -> R.drawable.holding_flowers
+                        else -> 0
                     }
+                    val imageRes =
+                        if (resId != 0 && contact.imageResName.isNotBlank()) resId else R.drawable.holding_flowers
 
-            displayContacts.forEach { contact ->
-                val imageRes = when (contact.imageResName) {
-                    "doctor1" -> R.drawable.doctor1
-                    "doctor2" -> R.drawable.doctor2
-                    "holding_flowers" -> R.drawable.holding_flowers
-                    else -> R.drawable.holding_flowers
-                }
-
-                DoctorCard(
-                    name = contact.name,
-                    specialty = contact.role,
-                    experience = contact.experience,
-                    imageRes = imageRes,
-                    colorScheme = colorScheme,
-                    onCallClick = {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        val intent = Intent(Intent.ACTION_DIAL).apply {
-                            data = "tel:${contact.phone}".toUri()
+                    DoctorCard(
+                        name = contact.name,
+                        specialty = contact.role,
+                        experience = contact.experience,
+                        imageRes = imageRes,
+                        colorScheme = colorScheme,
+                        onCallClick = {
+                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                            val intent = Intent(Intent.ACTION_DIAL).apply {
+                                data = "tel:${contact.phone}".toUri()
+                            }
+                            context.startActivity(intent)
                         }
-                        context.startActivity(intent)
-                    }
-                )
+                    )
+                }
             }
         }
     }

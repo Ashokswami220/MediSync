@@ -89,8 +89,8 @@
     <string name="no_reports">कोई रिपोर्ट नहीं</string>
     <string name="no_users_found">कोई उपयोगकर्ता नहीं मिला</string>
     <string name="notifications">सूचनाएं</string>
-    <string name="pharmacist">डॉक्टर</string>
-    <string name="pharmacists">डॉक्टर</string>
+    <string name="doctor">डॉक्टर</string>
+    <string name="doctors">डॉक्टर</string>
     <string name="phone_number">फ़ोन नंबर</string>
     <string name="phone_number_or_email_address">फ़ोन नंबर या ईमेल पता</string>
     <string name="pill">गोली</string>

@@ -92,7 +92,10 @@ fun AdminHomeScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            DoctorSection(colorScheme = colorScheme, contacts = appConfig.contacts)
+            DoctorSection(
+                colorScheme = colorScheme, 
+                contacts = appConfig.contacts.filter { it.category == "Doctor" }
+            )
 
             Spacer(modifier = Modifier.height(48.dp))
 

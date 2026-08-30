@@ -62,7 +62,10 @@ fun CallUsBottomSheet(
     configViewModel: ConfigViewModel = koinViewModel()
 ) {
     val appConfig by configViewModel.appConfig.collectAsState()
-    val dynamicContacts = appConfig.contacts.map { contact ->
+    val dynamicContacts = appConfig.contacts
+        .filter { !it.headingItem }
+        .sortedBy { if (it.category == "Doctor") 0 else 1 }
+        .map { contact ->
         val imageRes = when (contact.imageResName) {
             "doctor1" -> R.drawable.doctor1
             "doctor2" -> R.drawable.doctor2
@@ -77,14 +80,10 @@ fun CallUsBottomSheet(
             ContactOption(
                 "Sawai Singh", ContactConfig.pharmacistPhones.sawaiSingh, R.drawable.doctor1
             ),
-            ContactOption("Govind", ContactConfig.pharmacistPhones.govind, R.drawable.doctor2),
-            ContactOption(
-                "Ashok Swami", ContactConfig.pharmacistPhones.thirdNum, R.drawable.holding_flowers
-            )
+            ContactOption("Govind", ContactConfig.pharmacistPhones.govind, R.drawable.doctor2)
         )
     }
 
-    @Suppress("DEPRECATION")
     val context = LocalContext.current
 
     @Suppress("DEPRECATION")

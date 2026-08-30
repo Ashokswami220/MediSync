@@ -7,8 +7,7 @@ object ContactConfig {
 
 class PharmacistPhones {
     val sawaiSingh = "9024306775"
-    val govind = "+1-555-987-6543"
-    val thirdNum = "9876543210"
+    val govind = "9694151494"
 }
 
 class SocialLinks {
