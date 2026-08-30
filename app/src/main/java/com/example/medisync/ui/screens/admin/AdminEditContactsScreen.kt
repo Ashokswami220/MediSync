@@ -65,6 +65,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import coil.compose.AsyncImage
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.ContactModel
@@ -435,12 +436,57 @@ fun PharmacistCardItem(
         colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
         shape = RoundedCornerShape(0.dp)
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(colorScheme.surfaceVariant)
+            ) {
+                if (contact.imageResName.startsWith("http")) {
+                    AsyncImage(
+                        model = contact.imageResName,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    val resId = when (contact.imageResName) {
+                        "doctor1" -> R.drawable.doctor1
+                        "doctor2" -> R.drawable.doctor2
+                        "holding_flowers" -> R.drawable.holding_flowers
+                        else -> 0
+                    }
+                    if (resId != 0 && contact.imageResName.isNotBlank()) {
+                        Image(
+                            painter = painterResource(id = resId),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.holding_flowers),
+                            contentDescription = null,
+                            tint = colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(24.dp)
+                        )
+                    }
+                }
+            }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = contact.name, fontWeight = FontWeight.Bold, fontSize = 18.sp,
                     color = colorScheme.onSurface
@@ -457,7 +503,6 @@ fun PharmacistCardItem(
             }
             var dragAmountAccumulator by remember { mutableFloatStateOf(0f) }
             Column(
-                modifier = Modifier.align(Alignment.TopEnd),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 IconButton(onClick = {
@@ -723,28 +768,37 @@ fun ExtraContactCardItem(
                     .clip(shape = CircleShape)
                     .background(colorScheme.surfaceVariant)
             ) {
-                val resId = when (contact.imageResName) {
-                    "doctor1" -> R.drawable.doctor1
-                    "doctor2" -> R.drawable.doctor2
-                    "holding_flowers" -> R.drawable.holding_flowers
-                    else -> 0
-                }
-                if (resId != 0 && contact.imageResName.isNotBlank()) {
-                    Image(
-                        painter = painterResource(id = resId),
+                if (contact.imageResName.startsWith("http")) {
+                    AsyncImage(
+                        model = contact.imageResName,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    Icon(
-                        painter = painterResource(id = R.drawable.holding_flowers),
-                        contentDescription = null,
-                        tint = colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(24.dp)
-                    )
+                    val resId = when (contact.imageResName) {
+                        "doctor1" -> R.drawable.doctor1
+                        "doctor2" -> R.drawable.doctor2
+                        "holding_flowers" -> R.drawable.holding_flowers
+                        else -> 0
+                    }
+                    if (resId != 0 && contact.imageResName.isNotBlank()) {
+                        Image(
+                            painter = painterResource(id = resId),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.holding_flowers),
+                            contentDescription = null,
+                            tint = colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(24.dp)
+                        )
+                    }
                 }
             }
 

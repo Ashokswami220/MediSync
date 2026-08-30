@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.ui.screens.common.ConfigViewModel
@@ -51,7 +52,7 @@ import org.koin.androidx.compose.koinViewModel
 data class ContactOption(
     val name: String,
     val number: String,
-    val imageRes: Int
+    val imageResName: String
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,23 +65,16 @@ fun CallUsBottomSheet(
     val appConfig by configViewModel.appConfig.collectAsState()
     val dynamicContacts = appConfig.contacts
         .filter { !it.headingItem }
-        .sortedBy { if (it.category == "Doctor") 0 else 1 }
         .map { contact ->
-        val imageRes = when (contact.imageResName) {
-            "doctor1" -> R.drawable.doctor1
-            "doctor2" -> R.drawable.doctor2
-            "holding_flowers" -> R.drawable.holding_flowers
-            else -> R.drawable.holding_flowers
+            ContactOption(contact.name, contact.phone, contact.imageResName)
         }
-        ContactOption(contact.name, contact.phone, imageRes)
-    }
 
     val contacts = dynamicContacts.ifEmpty {
         listOf(
             ContactOption(
-                "Sawai Singh", ContactConfig.pharmacistPhones.sawaiSingh, R.drawable.doctor1
+                "Sawai Singh", ContactConfig.pharmacistPhones.sawaiSingh, "doctor1"
             ),
-            ContactOption("Govind", ContactConfig.pharmacistPhones.govind, R.drawable.doctor2)
+            ContactOption("Govind", ContactConfig.pharmacistPhones.govind, "doctor2")
         )
     }
 
@@ -144,15 +138,33 @@ fun CallUsBottomSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Image on the left
-                    Image(
-                        painter = painterResource(id = contact.imageRes),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                    )
+                    if (contact.imageResName.startsWith("http")) {
+                        AsyncImage(
+                            model = contact.imageResName,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.outlineVariant)
+                        )
+                    } else {
+                        val resId = when (contact.imageResName) {
+                            "doctor1" -> R.drawable.doctor1
+                            "doctor2" -> R.drawable.doctor2
+                            "holding_flowers" -> R.drawable.holding_flowers
+                            else -> R.drawable.holding_flowers
+                        }
+                        Image(
+                            painter = painterResource(id = resId),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.outlineVariant)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.width(16.dp))
 

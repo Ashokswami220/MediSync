@@ -83,6 +83,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import coil.compose.AsyncImage
 import com.example.medisync.R
 import com.example.medisync.model.ContactModel
 import com.example.medisync.ui.components.AdConfig
@@ -889,20 +890,11 @@ fun DoctorSection(colorScheme: ColorScheme, contacts: List<ContactModel>) {
                         color = colorScheme.onBackground
                     )
                 } else {
-                    val resId = when (contact.imageResName) {
-                        "doctor1" -> R.drawable.doctor1
-                        "doctor2" -> R.drawable.doctor2
-                        "holding_flowers" -> R.drawable.holding_flowers
-                        else -> 0
-                    }
-                    val imageRes =
-                        if (resId != 0 && contact.imageResName.isNotBlank()) resId else R.drawable.holding_flowers
-
                     DoctorCard(
                         name = contact.name,
                         specialty = contact.role,
                         experience = contact.experience,
-                        imageRes = imageRes,
+                        imageResName = contact.imageResName,
                         colorScheme = colorScheme,
                         onCallClick = {
                             HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
@@ -923,7 +915,7 @@ fun DoctorCard(
     name: String,
     specialty: String,
     experience: String,
-    imageRes: Int,
+    imageResName: String,
     colorScheme: ColorScheme,
     onCallClick: () -> Unit
 ) {
@@ -945,14 +937,33 @@ fun DoctorCard(
             verticalAlignment = Alignment.Bottom
         ) {
             // Image touches left and bottom
-            Image(
-                painter = painterResource(id = imageRes),
-                contentDescription = stringResource(R.string.doctor_image),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .width(imageWidth)
-                    .fillMaxHeight()
-            )
+            if (imageResName.startsWith("http")) {
+                AsyncImage(
+                    model = imageResName,
+                    contentDescription = stringResource(R.string.doctor_image),
+                    contentScale = ContentScale.Crop, // Crop usually looks better for custom uploaded images
+                    modifier = Modifier
+                        .width(imageWidth)
+                        .fillMaxHeight()
+                )
+            } else {
+                val resId = when (imageResName) {
+                    "doctor1" -> R.drawable.doctor1
+                    "doctor2" -> R.drawable.doctor2
+                    "holding_flowers" -> R.drawable.holding_flowers
+                    else -> 0
+                }
+                val imageRes =
+                    if (resId != 0 && imageResName.isNotBlank()) resId else R.drawable.holding_flowers
+                Image(
+                    painter = painterResource(id = imageRes),
+                    contentDescription = stringResource(R.string.doctor_image),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .width(imageWidth)
+                        .fillMaxHeight()
+                )
+            }
 
             // Details
             Column(

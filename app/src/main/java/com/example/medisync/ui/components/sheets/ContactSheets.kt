@@ -1,5 +1,7 @@
 package com.example.medisync.ui.components.sheets
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,9 +58,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.medisync.R
 import com.example.medisync.model.ContactModel
+import com.example.medisync.utils.CloudinaryHelper
 import com.example.medisync.utils.GlobalToastManager
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -158,7 +165,32 @@ fun HeadingSheet(
 }
 
 @Composable
-private fun CircularImageUploadSection(colorScheme: ColorScheme, imageResName: String) {
+private fun CircularImageUploadSection(
+    colorScheme: ColorScheme, imageResName: String, onImageResNameChange: (String) -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var isUploading by remember { mutableStateOf(false) }
+
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri != null) {
+                isUploading = true
+                coroutineScope.launch {
+                    try {
+                        val url = CloudinaryHelper.uploadImage(context, uri)
+                        onImageResNameChange(url)
+                        GlobalToastManager.showToast("Image uploaded successfully!")
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        GlobalToastManager.showToast("Failed to upload image: ${e.message}")
+                    } finally {
+                        isUploading = false
+                    }
+                }
+            }
+        }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -173,26 +205,35 @@ private fun CircularImageUploadSection(colorScheme: ColorScheme, imageResName: S
                 .border(1.dp, colorScheme.outlineVariant, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            val resId = when (imageResName) {
-                "doctor1" -> R.drawable.doctor1
-                "doctor2" -> R.drawable.doctor2
-                "holding_flowers" -> R.drawable.holding_flowers
-                else -> 0
-            }
-            if (resId != 0 && imageResName.isNotBlank()) {
-                Image(
-                    painter = painterResource(id = resId),
+            if (imageResName.startsWith("http")) {
+                AsyncImage(
+                    model = imageResName,
                     contentDescription = "Contact Image",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                Icon(
-                    painter = painterResource(id = R.drawable.holding_flowers),
-                    contentDescription = null,
-                    tint = colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(40.dp)
-                )
+                val resId = when (imageResName) {
+                    "doctor1" -> R.drawable.doctor1
+                    "doctor2" -> R.drawable.doctor2
+                    "holding_flowers" -> R.drawable.holding_flowers
+                    else -> 0
+                }
+                if (resId != 0 && imageResName.isNotBlank()) {
+                    Image(
+                        painter = painterResource(id = resId),
+                        contentDescription = "Contact Image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.holding_flowers),
+                        contentDescription = null,
+                        tint = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
         }
 
@@ -200,20 +241,57 @@ private fun CircularImageUploadSection(colorScheme: ColorScheme, imageResName: S
 
         OutlinedButton(
             onClick = {
-                GlobalToastManager.showToast("Image upload coming soon")
-            }
+                launcher.launch(
+                    androidx.activity.result.PickVisualMediaRequest(
+                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                    )
+                )
+            },
+            enabled = !isUploading
         ) {
-            Icon(
-                Icons.Default.Upload, contentDescription = "Upload", modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Upload")
+            if (isUploading) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Uploading...")
+            } else {
+                Icon(
+                    Icons.Default.Upload, contentDescription = "Upload",
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Upload")
+            }
         }
     }
 }
 
 @Composable
-private fun RectangularImageUploadSection(colorScheme: ColorScheme, imageResName: String) {
+private fun RectangularImageUploadSection(
+    colorScheme: ColorScheme, imageResName: String, onImageResNameChange: (String) -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var isUploading by remember { mutableStateOf(false) }
+
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri != null) {
+                isUploading = true
+                coroutineScope.launch {
+                    try {
+                        val url = CloudinaryHelper.uploadImage(context, uri)
+                        onImageResNameChange(url)
+                        GlobalToastManager.showToast("Image uploaded successfully!")
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        GlobalToastManager.showToast("Failed to upload image: ${e.message}")
+                    } finally {
+                        isUploading = false
+                    }
+                }
+            }
+        }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -228,26 +306,35 @@ private fun RectangularImageUploadSection(colorScheme: ColorScheme, imageResName
                 .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center
         ) {
-            val resId = when (imageResName) {
-                "doctor1" -> R.drawable.doctor1
-                "doctor2" -> R.drawable.doctor2
-                "holding_flowers" -> R.drawable.holding_flowers
-                else -> 0
-            }
-            if (resId != 0 && imageResName.isNotBlank()) {
-                Image(
-                    painter = painterResource(id = resId),
+            if (imageResName.startsWith("http")) {
+                AsyncImage(
+                    model = imageResName,
                     contentDescription = "Contact Image",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                Icon(
-                    painter = painterResource(id = R.drawable.holding_flowers),
-                    contentDescription = null,
-                    tint = colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(40.dp)
-                )
+                val resId = when (imageResName) {
+                    "doctor1" -> R.drawable.doctor1
+                    "doctor2" -> R.drawable.doctor2
+                    "holding_flowers" -> R.drawable.holding_flowers
+                    else -> 0
+                }
+                if (resId != 0 && imageResName.isNotBlank()) {
+                    Image(
+                        painter = painterResource(id = resId),
+                        contentDescription = "Contact Image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.holding_flowers),
+                        contentDescription = null,
+                        tint = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
         }
 
@@ -255,14 +342,26 @@ private fun RectangularImageUploadSection(colorScheme: ColorScheme, imageResName
 
         OutlinedButton(
             onClick = {
-                GlobalToastManager.showToast("Image upload coming soon")
-            }
+                launcher.launch(
+                    androidx.activity.result.PickVisualMediaRequest(
+                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                    )
+                )
+            },
+            enabled = !isUploading
         ) {
-            Icon(
-                Icons.Default.Upload, contentDescription = "Upload", modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Upload")
+            if (isUploading) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Uploading...")
+            } else {
+                Icon(
+                    Icons.Default.Upload, contentDescription = "Upload",
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Upload")
+            }
         }
     }
 }
@@ -290,6 +389,11 @@ fun ExtraContactSheet(
         var name by remember { mutableStateOf(contact?.name ?: "") }
         var phone by remember { mutableStateOf(contact?.phone ?: "") }
         var showError by remember { mutableStateOf(false) }
+        var imageResNameState by remember {
+            mutableStateOf(
+                contact?.imageResName ?: "holding_flowers"
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -320,7 +424,8 @@ fun ExtraContactSheet(
 
             CircularImageUploadSection(
                 colorScheme = colorScheme,
-                imageResName = contact?.imageResName ?: "holding_flowers"
+                imageResName = imageResNameState,
+                onImageResNameChange = { imageResNameState = it }
             )
 
             OutlinedTextField(
@@ -382,12 +487,16 @@ fun ExtraContactSheet(
                                 role = "Support",
                                 experience = "",
                                 phone = phone,
-                                imageResName = "holding_flowers",
+                                imageResName = imageResNameState,
                                 category = "ExtraContact"
                             )
                             onSave(newContact)
                         } else {
-                            onSave(contact.copy(name = name, phone = phone))
+                            onSave(
+                                contact.copy(
+                                    name = name, phone = phone, imageResName = imageResNameState
+                                )
+                            )
                         }
                     } else if (name.isBlank()) {
                         GlobalToastManager.showToast("Name is required")
@@ -429,6 +538,11 @@ fun DoctorSheet(
         var experience by remember { mutableStateOf(contact?.experience ?: "") }
         var phone by remember { mutableStateOf(contact?.phone ?: "") }
         var showError by remember { mutableStateOf(false) }
+        var imageResNameState by remember {
+            mutableStateOf(
+                contact?.imageResName ?: "holding_flowers"
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -459,7 +573,8 @@ fun DoctorSheet(
 
             RectangularImageUploadSection(
                 colorScheme = colorScheme,
-                imageResName = contact?.imageResName ?: "doctor1"
+                imageResName = imageResNameState,
+                onImageResNameChange = { imageResNameState = it }
             )
 
             OutlinedTextField(
@@ -549,14 +664,15 @@ fun DoctorSheet(
                                 role = role,
                                 experience = experience,
                                 phone = phone,
-                                imageResName = "holding_flowers",
+                                imageResName = imageResNameState,
                                 category = "Doctor"
                             )
                             onSave(newContact)
                         } else {
                             onSave(
                                 contact.copy(
-                                    name = name, role = role, experience = experience, phone = phone
+                                    name = name, role = role, experience = experience,
+                                    phone = phone, imageResName = imageResNameState
                                 )
                             )
                         }
