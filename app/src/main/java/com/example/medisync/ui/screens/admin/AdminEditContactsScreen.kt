@@ -1,5 +1,7 @@
 package com.example.medisync.ui.screens.admin
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,10 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -53,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -61,6 +64,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.medisync.R
 import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.ContactModel
@@ -80,8 +84,9 @@ fun AdminEditContactsScreen(
     val config by configViewModel.appConfig.collectAsState()
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
-    
-    val doctorContacts = config.contacts.filter { it.category == "Doctor" }.toMutableList()
+
+    val doctorContacts = config.contacts.filter { it.category == "Doctor" }
+        .toMutableList()
     val doctor1 = doctorContacts.find { it.id == "predefined_doctor1" } ?: ContactModel(
         id = "predefined_doctor1",
         name = "Dr. Sawai Singh",
@@ -109,7 +114,7 @@ fun AdminEditContactsScreen(
 
     var extraSheetContact by remember { mutableStateOf<ContactModel?>(null) }
     var showExtraSheet by remember { mutableStateOf(false) }
-    
+
     var headingSheetContact by remember { mutableStateOf<ContactModel?>(null) }
     var showHeadingSheet by remember { mutableStateOf(false) }
 
@@ -137,20 +142,22 @@ fun AdminEditContactsScreen(
     }
 
     fun moveContact(contactId: String, direction: Int, category: String) {
-        val categoryItems = config.contacts.filter { it.category == category }.toMutableList()
+        val categoryItems = config.contacts.filter { it.category == category }
+            .toMutableList()
         // If doctors, ensure we have doctor1 and doctor2 in categoryItems if they aren't already there (they should be)
         if (category == "Doctor") {
             if (categoryItems.none { it.id == "predefined_doctor1" }) categoryItems.add(0, doctor1)
             if (categoryItems.none { it.id == "predefined_doctor2" }) categoryItems.add(1, doctor2)
         }
-        
+
         val index = categoryItems.indexOfFirst { it.id == contactId }
         if (index >= 0 && index + direction in categoryItems.indices) {
             val temp = categoryItems[index]
             categoryItems[index] = categoryItems[index + direction]
             categoryItems[index + direction] = temp
-            
-            val newList = config.contacts.filter { it.category != category }.toMutableList()
+
+            val newList = config.contacts.filter { it.category != category }
+                .toMutableList()
             newList.addAll(categoryItems)
             configViewModel.updateConfig(config.copy(contacts = newList))
             HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
@@ -164,102 +171,19 @@ fun AdminEditContactsScreen(
     ) {
         AdminEditContactsTopBar(colorScheme, onNavigateBack)
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // New Add Title and Add Card Buttons at the top
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { showHeadingSheet = true; headingSheetContact = null },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Title", modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add Title")
-                }
-                
-                Button(
-                    onClick = { showDoctorSheet = true; doctorSheetContact = null },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = colorScheme.secondary)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Card", modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add Card")
-                }
-            }
-
-            Text(
-                text = stringResource(R.string.doctors),
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                color = colorScheme.onBackground
-            )
-
-            doctorContacts.forEachIndexed { _, doc ->
-                if (doc.headingItem) {
-                    HeadingItem(
-                        contact = doc,
-                        colorScheme = colorScheme,
-                        onEdit = { showHeadingSheet = true; headingSheetContact = doc },
-                        onDelete = { deleteContact(doc.id) },
-                        onMoveUp = { moveContact(doc.id, -1, "Doctor") },
-                        onMoveDown = { moveContact(doc.id, 1, "Doctor") }
-                    )
-                } else {
-                    val isPredefined = doc.id == "predefined_doctor1" || doc.id == "predefined_doctor2"
-                    PharmacistCardItem(
-                        contact = doc,
-                        colorScheme = colorScheme,
-                        onEdit = { showDoctorSheet = true; doctorSheetContact = doc },
-                        onDelete = { deleteContact(doc.id) },
-                        onMoveUp = { moveContact(doc.id, -1, "Doctor") },
-                        onMoveDown = { moveContact(doc.id, 1, "Doctor") },
-                        isPredefined = isPredefined
-                    )
-                }
-            }
-
-            SyringeDivider(colorScheme)
-
-            ExtraContactsHeader(
-                colorScheme = colorScheme,
-                onAddClick = { showExtraSheet = true; extraSheetContact = null }
-            )
-
-            if (extraContacts.isNotEmpty()) {
-                extraContacts.forEachIndexed { _, extra ->
-                    if (extra.headingItem) {
-                        HeadingItem(
-                            contact = extra,
-                            colorScheme = colorScheme,
-                            onEdit = { showHeadingSheet = true; headingSheetContact = extra },
-                            onDelete = { deleteContact(extra.id) },
-                            onMoveUp = { moveContact(extra.id, -1, "ExtraContact") },
-                            onMoveDown = { moveContact(extra.id, 1, "ExtraContact") }
-                        )
-                    } else {
-                        ExtraContactCardItem(
-                            contact = extra,
-                            colorScheme = colorScheme,
-                            onEdit = { showExtraSheet = true; extraSheetContact = extra },
-                            onDelete = { deleteContact(extra.id) },
-                            onMoveUp = { moveContact(extra.id, -1, "ExtraContact") },
-                            onMoveDown = { moveContact(extra.id, 1, "ExtraContact") }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(100.dp))
-        }
+        AdminContactsList(
+            doctorContacts = doctorContacts,
+            extraContacts = extraContacts,
+            colorScheme = colorScheme,
+            onAddTitleClick = { showHeadingSheet = true; headingSheetContact = null },
+            onAddCardClick = { showDoctorSheet = true; doctorSheetContact = null },
+            onAddExtraContactClick = { showExtraSheet = true; extraSheetContact = null },
+            onEditHeading = { showHeadingSheet = true; headingSheetContact = it },
+            onEditDoctor = { showDoctorSheet = true; doctorSheetContact = it },
+            onEditExtraContact = { showExtraSheet = true; extraSheetContact = it },
+            onDelete = ::deleteContact,
+            onMove = ::moveContact
+        )
     }
 
     if (showExtraSheet) {
@@ -273,7 +197,7 @@ fun AdminEditContactsScreen(
             }
         )
     }
-    
+
     if (showHeadingSheet) {
         HeadingSheet(
             contact = headingSheetContact,
@@ -296,6 +220,134 @@ fun AdminEditContactsScreen(
                 showDoctorSheet = false
             }
         )
+    }
+}
+
+
+@Composable
+fun AdminContactsList(
+    doctorContacts: List<ContactModel>,
+    extraContacts: List<ContactModel>,
+    colorScheme: ColorScheme,
+    onAddTitleClick: () -> Unit,
+    onAddCardClick: () -> Unit,
+    onAddExtraContactClick: () -> Unit,
+    onEditHeading: (ContactModel) -> Unit,
+    onEditDoctor: (ContactModel) -> Unit,
+    onEditExtraContact: (ContactModel) -> Unit,
+    onDelete: (String) -> Unit,
+    onMove: (String, Int, String) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedButton(onClick = onAddTitleClick, modifier = Modifier.weight(1f)) {
+                    Icon(
+                        Icons.Default.Add, contentDescription = "Add Title",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add Title")
+                }
+
+                Button(
+                    onClick = onAddCardClick,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = colorScheme.secondary)
+                ) {
+                    Icon(
+                        Icons.Default.Add, contentDescription = "Add Card",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add Card")
+                }
+            }
+        }
+
+        item {
+            Text(
+                text = stringResource(R.string.doctors),
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp,
+                color = colorScheme.onBackground,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        items(items = doctorContacts, key = { it.id }) { doc ->
+            Box(modifier = Modifier.animateItem()) {
+                if (doc.headingItem) {
+                    HeadingItem(
+                        contact = doc,
+                        colorScheme = colorScheme,
+                        onEdit = { onEditHeading(doc) },
+                        onDelete = { onDelete(doc.id) },
+                        onMoveUp = { onMove(doc.id, -1, "Doctor") },
+                        onMoveDown = { onMove(doc.id, 1, "Doctor") }
+                    )
+                } else {
+                    val isPredefined =
+                        doc.id == "predefined_doctor1" || doc.id == "predefined_doctor2"
+                    PharmacistCardItem(
+                        contact = doc,
+                        colorScheme = colorScheme,
+                        onEdit = { onEditDoctor(doc) },
+                        onDelete = { onDelete(doc.id) },
+                        onMoveUp = { onMove(doc.id, -1, "Doctor") },
+                        onMoveDown = { onMove(doc.id, 1, "Doctor") },
+                        isPredefined = isPredefined
+                    )
+                }
+            }
+        }
+
+        item {
+            SyringeDivider(colorScheme)
+            ExtraContactsHeader(
+                colorScheme = colorScheme,
+                onAddClick = onAddExtraContactClick
+            )
+        }
+
+        if (extraContacts.isNotEmpty()) {
+            items(items = extraContacts, key = { it.id }) { extra ->
+                Box(modifier = Modifier.animateItem()) {
+                    if (extra.headingItem) {
+                        HeadingItem(
+                            contact = extra,
+                            colorScheme = colorScheme,
+                            onEdit = { onEditHeading(extra) },
+                            onDelete = { onDelete(extra.id) },
+                            onMoveUp = { onMove(extra.id, -1, "ExtraContact") },
+                            onMoveDown = { onMove(extra.id, 1, "ExtraContact") }
+                        )
+                    } else {
+                        ExtraContactCardItem(
+                            contact = extra,
+                            colorScheme = colorScheme,
+                            onEdit = { onEditExtraContact(extra) },
+                            onDelete = { onDelete(extra.id) },
+                            onMoveUp = { onMove(extra.id, -1, "ExtraContact") },
+                            onMoveDown = { onMove(extra.id, 1, "ExtraContact") }
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(100.dp))
+        }
     }
 }
 
@@ -352,17 +404,32 @@ fun AdminEditContactsTopBar(colorScheme: ColorScheme, onNavigateBack: () -> Unit
 
 @Composable
 fun PharmacistCardItem(
-    contact: ContactModel, 
-    colorScheme: ColorScheme, 
+    contact: ContactModel,
+    colorScheme: ColorScheme,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     isPredefined: Boolean
 ) {
+    var isDragging by remember { mutableStateOf(false) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+    val scale by animateFloatAsState(if (isDragging) 1.02f else 1f, label = "scale")
+    val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "elevation")
+    val zIndex = if (isDragging) 1f else 0f
+    val animatedOffsetY by animateFloatAsState(offsetY, label = "offsetY")
+
     val context = LocalContext.current
     Card(
+
         modifier = Modifier
+            .zIndex(zIndex)
+            .graphicsLayer {
+                translationY = animatedOffsetY
+                scaleX = scale
+                scaleY = scale
+                shadowElevation = elevation.toPx()
+            }
             .fillMaxWidth()
             .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(0.dp)),
         colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
@@ -424,17 +491,34 @@ fun PharmacistCardItem(
                         .padding(top = 8.dp)
                         .pointerInput(Unit) {
                             detectVerticalDragGestures(
-                                onDragStart = { dragAmountAccumulator = 0f },
-                                onDragEnd = { dragAmountAccumulator = 0f },
+                                onDragStart = {
+                                    dragAmountAccumulator = 0f
+                                    isDragging = true
+                                },
+                                onDragEnd = {
+                                    dragAmountAccumulator = 0f
+                                    offsetY = 0f
+                                    isDragging = false
+                                },
+                                onDragCancel = {
+                                    dragAmountAccumulator = 0f
+                                    offsetY = 0f
+                                    isDragging = false
+                                },
                                 onVerticalDrag = { change, dragAmount ->
                                     change.consume()
                                     dragAmountAccumulator += dragAmount
-                                    if (dragAmountAccumulator > 60f) {
+                                    offsetY += dragAmount
+
+                                    val threshold = 120f
+                                    if (dragAmountAccumulator > threshold) {
                                         onMoveDown()
-                                        dragAmountAccumulator = 0f
-                                    } else if (dragAmountAccumulator < -60f) {
+                                        dragAmountAccumulator -= threshold
+                                        offsetY -= threshold
+                                    } else if (dragAmountAccumulator < -threshold) {
                                         onMoveUp()
-                                        dragAmountAccumulator = 0f
+                                        dragAmountAccumulator += threshold
+                                        offsetY += threshold
                                     }
                                 }
                             )
@@ -509,11 +593,28 @@ fun HeadingItem(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit
 ) {
+    var isDragging by remember { mutableStateOf(false) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+    val scale by animateFloatAsState(if (isDragging) 1.02f else 1f, label = "scale")
+    val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "elevation")
+    val zIndex = if (isDragging) 1f else 0f
+    val animatedOffsetY by animateFloatAsState(offsetY, label = "offsetY")
+
     val context = LocalContext.current
     var dragAmountAccumulator by remember { mutableFloatStateOf(0f) }
 
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+
+        modifier = Modifier
+            .zIndex(zIndex)
+            .graphicsLayer {
+                translationY = animatedOffsetY
+                scaleX = scale
+                scaleY = scale
+                shadowElevation = elevation.toPx()
+            }
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -524,7 +625,7 @@ fun HeadingItem(
             color = colorScheme.onBackground,
             modifier = Modifier.weight(1f)
         )
-        
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = {
                 HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
@@ -584,11 +685,26 @@ fun ExtraContactCardItem(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit
 ) {
+    var isDragging by remember { mutableStateOf(false) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+    val scale by animateFloatAsState(if (isDragging) 1.02f else 1f, label = "scale")
+    val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "elevation")
+    val zIndex = if (isDragging) 1f else 0f
+    val animatedOffsetY by animateFloatAsState(offsetY, label = "offsetY")
+
     val context = LocalContext.current
     var dragAmountAccumulator by remember { mutableFloatStateOf(0f) }
 
     Card(
+
         modifier = Modifier
+            .zIndex(zIndex)
+            .graphicsLayer {
+                translationY = animatedOffsetY
+                scaleX = scale
+                scaleY = scale
+                shadowElevation = elevation.toPx()
+            }
             .fillMaxWidth()
             .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(0.dp)),
         colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
@@ -601,91 +717,95 @@ fun ExtraContactCardItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(shape = CircleShape)
-                        .background(colorScheme.surfaceVariant)
-                ) {
-                    val resId = when (contact.imageResName) {
-                        "doctor1" -> R.drawable.doctor1
-                        "doctor2" -> R.drawable.doctor2
-                        "holding_flowers" -> R.drawable.holding_flowers
-                        else -> 0
-                    }
-                    if (resId != 0 && contact.imageResName.isNotBlank()) {
-                        Image(
-                            painter = painterResource(id = resId),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(id = R.drawable.holding_flowers),
-                            contentDescription = null,
-                            tint = colorScheme.onSurfaceVariant,
-                            modifier = Modifier.align(Alignment.Center).size(24.dp)
-                        )
-                    }
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(shape = CircleShape)
+                    .background(colorScheme.surfaceVariant)
+            ) {
+                val resId = when (contact.imageResName) {
+                    "doctor1" -> R.drawable.doctor1
+                    "doctor2" -> R.drawable.doctor2
+                    "holding_flowers" -> R.drawable.holding_flowers
+                    else -> 0
                 }
-                
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = contact.name, fontWeight = FontWeight.Bold, fontSize = 18.sp,
-                        color = colorScheme.onSurface
+                if (resId != 0 && contact.imageResName.isNotBlank()) {
+                    Image(
+                        painter = painterResource(id = resId),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    Text(text = contact.phone, fontSize = 14.sp, color = colorScheme.onSurfaceVariant)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        onEdit()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = stringResource(R.string.edit),
-                            tint = colorScheme.secondary
-                        )
-                    }
-                    IconButton(onClick = {
-                        HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
-                        onDelete()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.delete),
-                            tint = colorScheme.error
-                        )
-                    }
+                } else {
                     Icon(
-                        imageVector = Icons.Default.DragIndicator,
-                        contentDescription = "Drag to reorder",
+                        painter = painterResource(id = R.drawable.holding_flowers),
+                        contentDescription = null,
                         tint = colorScheme.onSurfaceVariant,
                         modifier = Modifier
-                            .size(32.dp)
-                            .padding(start = 4.dp)
-                            .pointerInput(Unit) {
-                                detectVerticalDragGestures(
-                                    onDragStart = { dragAmountAccumulator = 0f },
-                                    onDragEnd = { dragAmountAccumulator = 0f },
-                                    onVerticalDrag = { change, dragAmount ->
-                                        change.consume()
-                                        dragAmountAccumulator += dragAmount
-                                        if (dragAmountAccumulator > 60f) {
-                                            onMoveDown()
-                                            dragAmountAccumulator = 0f
-                                        } else if (dragAmountAccumulator < -60f) {
-                                            onMoveUp()
-                                            dragAmountAccumulator = 0f
-                                        }
-                                    }
-                                )
-                            }
+                            .align(Alignment.Center)
+                            .size(24.dp)
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = contact.name, fontWeight = FontWeight.Bold, fontSize = 18.sp,
+                    color = colorScheme.onSurface
+                )
+                Text(text = contact.phone, fontSize = 14.sp, color = colorScheme.onSurfaceVariant)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    onEdit()
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.edit),
+                        tint = colorScheme.secondary
+                    )
+                }
+                IconButton(onClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                    onDelete()
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.delete),
+                        tint = colorScheme.error
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.DragIndicator,
+                    contentDescription = "Drag to reorder",
+                    tint = colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .padding(start = 4.dp)
+                        .pointerInput(Unit) {
+                            detectVerticalDragGestures(
+                                onDragStart = { dragAmountAccumulator = 0f },
+                                onDragEnd = { dragAmountAccumulator = 0f },
+                                onVerticalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    dragAmountAccumulator += dragAmount
+                                    if (dragAmountAccumulator > 60f) {
+                                        onMoveDown()
+                                        dragAmountAccumulator = 0f
+                                    } else if (dragAmountAccumulator < -60f) {
+                                        onMoveUp()
+                                        dragAmountAccumulator = 0f
+                                    }
+                                }
+                            )
+                        }
+                )
+            }
         }
+    }
 }
