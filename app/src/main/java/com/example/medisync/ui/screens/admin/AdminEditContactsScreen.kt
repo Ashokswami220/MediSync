@@ -25,7 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -389,7 +389,10 @@ fun PharmacistCardItem(
                 Text(text = contact.phone, fontSize = 15.sp, color = colorScheme.onSurfaceVariant)
             }
             var dragAmountAccumulator by remember { mutableFloatStateOf(0f) }
-            Row(modifier = Modifier.align(Alignment.TopEnd), verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                modifier = Modifier.align(Alignment.TopEnd),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 IconButton(onClick = {
                     HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                     onEdit()
@@ -413,12 +416,12 @@ fun PharmacistCardItem(
                     }
                 }
                 Icon(
-                    imageVector = Icons.Default.DragHandle,
+                    imageVector = Icons.Default.DragIndicator,
                     contentDescription = "Drag to reorder",
                     tint = colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(32.dp)
-                        .padding(start = 8.dp)
+                        .padding(top = 8.dp)
                         .pointerInput(Unit) {
                             detectVerticalDragGestures(
                                 onDragStart = { dragAmountAccumulator = 0f },
@@ -544,7 +547,7 @@ fun HeadingItem(
                 )
             }
             Icon(
-                imageVector = Icons.Default.DragHandle,
+                imageVector = Icons.Default.DragIndicator,
                 contentDescription = "Drag to reorder",
                 tint = colorScheme.onSurfaceVariant,
                 modifier = Modifier
@@ -584,24 +587,20 @@ fun ExtraContactCardItem(
     val context = LocalContext.current
     var dragAmountAccumulator by remember { mutableFloatStateOf(0f) }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(0.dp)),
+        colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
+        shape = RoundedCornerShape(0.dp)
     ) {
-        Card(
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(0.dp)),
-            colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
-            shape = RoundedCornerShape(0.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -640,7 +639,7 @@ fun ExtraContactCardItem(
                     )
                     Text(text = contact.phone, fontSize = 14.sp, color = colorScheme.onSurfaceVariant)
                 }
-                Row {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = {
                         HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
                         onEdit()
@@ -661,34 +660,32 @@ fun ExtraContactCardItem(
                             tint = colorScheme.error
                         )
                     }
+                    Icon(
+                        imageVector = Icons.Default.DragIndicator,
+                        contentDescription = "Drag to reorder",
+                        tint = colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .padding(start = 4.dp)
+                            .pointerInput(Unit) {
+                                detectVerticalDragGestures(
+                                    onDragStart = { dragAmountAccumulator = 0f },
+                                    onDragEnd = { dragAmountAccumulator = 0f },
+                                    onVerticalDrag = { change, dragAmount ->
+                                        change.consume()
+                                        dragAmountAccumulator += dragAmount
+                                        if (dragAmountAccumulator > 60f) {
+                                            onMoveDown()
+                                            dragAmountAccumulator = 0f
+                                        } else if (dragAmountAccumulator < -60f) {
+                                            onMoveUp()
+                                            dragAmountAccumulator = 0f
+                                        }
+                                    }
+                                )
+                            }
+                    )
                 }
             }
         }
-        
-        Icon(
-            imageVector = Icons.Default.DragHandle,
-            contentDescription = "Drag to reorder",
-            tint = colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .size(32.dp)
-                .padding(start = 8.dp)
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures(
-                        onDragStart = { dragAmountAccumulator = 0f },
-                        onDragEnd = { dragAmountAccumulator = 0f },
-                        onVerticalDrag = { change, dragAmount ->
-                            change.consume()
-                            dragAmountAccumulator += dragAmount
-                            if (dragAmountAccumulator > 60f) {
-                                onMoveDown()
-                                dragAmountAccumulator = 0f
-                            } else if (dragAmountAccumulator < -60f) {
-                                onMoveUp()
-                                dragAmountAccumulator = 0f
-                            }
-                        }
-                    )
-                }
-        )
-    }
 }
