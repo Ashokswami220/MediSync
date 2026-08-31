@@ -1,11 +1,13 @@
 package com.example.medisync.ui.screens.common
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +36,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -56,16 +59,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
-import com.example.medisync.ui.components.RichNativeAd
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -79,6 +80,7 @@ import com.example.medisync.data.local.ContactConfig
 import com.example.medisync.model.UserRole
 import com.example.medisync.repo.AuthRepository
 import com.example.medisync.ui.components.AdConfig.richAdId
+import com.example.medisync.ui.components.RichNativeAd
 import com.example.medisync.ui.components.TopBar
 import com.example.medisync.ui.components.UserAvatar
 import com.example.medisync.ui.components.sheets.AppearanceBottomSheet
@@ -87,6 +89,7 @@ import com.example.medisync.ui.theme.LocalAppearance
 import com.example.medisync.utils.GlobalToastManager
 import com.example.medisync.utils.HapticHelper
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -161,70 +164,26 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 24.dp)
         ) {
-            // Profile Card (Blueprint Style)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(colorScheme.surface)
-                    .border(1.dp, colorScheme.outlineVariant)
-                    .clickable {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        if (isLoggedIn) {
-                            onNavigateToEditProfile()
-                        } else {
-                            onNavigateToLogin()
-                        }
-                    }
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(20.dp)
-                ) {
-                    UserAvatar(
-                        avatarUrl = avatarUrl,
-                        size = 64.dp
-                    )
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (isLoggedIn) name else "Guest",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = colorScheme.onBackground
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (isLoggedIn) number else "Tap to login to access profile",
-                            fontSize = 15.sp,
-                            color = colorScheme.onSurfaceVariant
-                        )
-                        if (isLoggedIn && email.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = email,
-                                fontSize = 13.sp,
-                                color = colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = stringResource(R.string.edit_profile),
-                        tint = colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            ProfileSection(
+                isLoggedIn = isLoggedIn,
+                name = name,
+                number = number,
+                email = email,
+                avatarUrl = avatarUrl,
+                onNavigateToEditProfile = onNavigateToEditProfile,
+                onNavigateToLogin = onNavigateToLogin,
+                colorScheme = colorScheme,
+                context = context
+            )
 
             if (currentRole != UserRole.ADMIN) {
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 val containerSize = LocalWindowInfo.current.containerSize
                 val adHeight = with(LocalDensity.current) {
                     (containerSize.height * 0.15f).toDp()
                 }
-                
+
                 RichNativeAd(
                     adUnitId = richAdId,
                     backgroundColor = colorScheme.surface,
@@ -301,45 +260,26 @@ fun SettingsScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Preferences Group
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(colorScheme.surface)
-                    .border(1.dp, colorScheme.outlineVariant)
-            ) {
-                SettingsItem(
-                    icon = Icons.Default.Language,
-                    title = stringResource(R.string.app_language),
-                    value = currentLanguage,
-                    onClick = {
+            PreferencesSection(
+                currentLanguage = currentLanguage,
+                currentAppearance = currentAppearance,
+                isHaptic = isHaptic,
+                onLanguageClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    showLanguageSheet = true
+                },
+                onAppearanceClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    showAppearanceSheet = true
+                },
+                onHapticChange = { checked ->
+                    if (checked) {
                         HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        showLanguageSheet = true
                     }
-                )
-                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-                SettingsItem(
-                    icon = Icons.Default.DarkMode,
-                    title = stringResource(R.string.appearance),
-                    value = currentAppearance,
-                    onClick = {
-                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        showAppearanceSheet = true
-                    }
-                )
-                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-                SettingsSwitchItem(
-                    icon = Icons.Default.Vibration,
-                    title = stringResource(R.string.haptic_feedback),
-                    checked = isHaptic,
-                    onCheckedChange = { checked ->
-                        if (checked) {
-                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                        }
-                        coroutineScope.launch { settingsManager.setHapticsEnabled(checked) }
-                    }
-                )
-            }
+                    coroutineScope.launch { settingsManager.setHapticsEnabled(checked) }
+                },
+                colorScheme = colorScheme
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -352,163 +292,12 @@ fun SettingsScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Support Group
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(colorScheme.surface)
-                    .border(1.dp, colorScheme.outlineVariant)
-            ) {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .diagonalHatch(
-                                colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
-                            )
-                            .clickable {
-                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                                val intent = Intent(
-                                    Intent.ACTION_VIEW,
-
-                                    ContactConfig.socialLinks.telegram.toUri()
-                                )
-                                try {
-                                    context.startActivity(intent)
-                                } catch (_: ActivityNotFoundException) {
-                                    // Handle missing browser
-                                }
-                            }
-                            .padding(16.dp), contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.Email,
-                                contentDescription = stringResource(R.string.contact_us),
-                                tint = colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                stringResource(R.string.contact_us), fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = colorScheme.onSurface
-                            )
-                        }
-                    }
-                    VerticalDivider(color = colorScheme.outlineVariant)
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .diagonalHatch(
-                                colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
-                            )
-                            .clickable {
-                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            }
-                            .padding(16.dp), contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.Star,
-                                contentDescription = stringResource(R.string.rate_app),
-                                tint = colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                stringResource(R.string.rate_app), fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = colorScheme.onSurface
-                            )
-                        }
-                    }
-                    VerticalDivider(color = colorScheme.outlineVariant)
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .diagonalHatch(
-                                colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
-                            )
-                            .clickable {
-                                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                                val shareIntent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    putExtra(
-                                        Intent.EXTRA_TEXT,
-                                        "Check out MediSync! The smartest way to manage your health: https://medisync-4c8c0.web.app"
-                                    )
-                                    type = "text/plain"
-                                }
-                                context.startActivity(
-                                    Intent.createChooser(shareIntent, "Share MediSync via")
-                                )
-                            }
-                            .padding(16.dp), contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.Share,
-                                contentDescription = stringResource(R.string.share),
-                                tint = colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                stringResource(R.string.share), fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .diagonalHatch(
-                            colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
-                        )
-                ) {
-                    SettingsItem(
-                        icon = Icons.Default.Info,
-                        title = stringResource(R.string.about_us),
-                        showArrow = true,
-                        onClick = {
-                            HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
-                            onNavigateToAboutUs()
-                        }
-                    )
-                }
-                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Privacy Policy",
-                        fontSize = 12.sp,
-                        color = colorScheme.primary,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable {
-                            uriHandler.openUri("https://google.com") // Replace with actual Privacy Policy URL
-                        }
-                    )
-                    Text(
-                        text = " • ",
-                        fontSize = 12.sp,
-                        color = colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    Text(
-                        text = "Terms of Service",
-                        fontSize = 12.sp,
-                        color = colorScheme.primary,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable {
-                            uriHandler.openUri("https://google.com") // Replace with actual Terms of Service URL
-                        }
-                    )
-                }
-            }
+            SupportSection(
+                colorScheme = colorScheme, context = context,
+                onNavigateToAboutUs = onNavigateToAboutUs
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            LegalSection(colorScheme = colorScheme, uriHandler = uriHandler)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -521,86 +310,18 @@ fun SettingsScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Danger Zone Group
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(colorScheme.surface)
-                    .border(1.dp, colorScheme.outlineVariant)
-            ) {
-                SettingsItem(
-                    icon = Icons.Default.Delete,
-                    title = stringResource(R.string.clear_downloaded_reports),
-                    titleColor = colorScheme.onSurfaceVariant,
-                    showArrow = false,
-                    onClick = {
-                        HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
-                        onNavigateToDeleteAction(DeleteActionMode.REPORTS)
-                    }
-                )
-                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-                SettingsItem(
-                    icon = Icons.Default.Delete,
-                    title = stringResource(R.string.delete_my_data),
-                    titleColor = if (isLoggedIn) colorScheme.error else colorScheme.onSurfaceVariant,
-                    showArrow = false,
-                    onClick = {
-                        if (isLoggedIn) {
-                            HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
-                            onNavigateToDeleteAction(DeleteActionMode.DATA)
-                        }
-                    }
-                )
-                HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
-                SettingsItem(
-                    icon = Icons.Default.PersonRemove,
-                    title = stringResource(R.string.delete_my_account),
-                    titleColor = if (isLoggedIn) colorScheme.error else colorScheme.onSurfaceVariant,
-                    showArrow = false,
-                    onClick = {
-                        if (isLoggedIn) {
-                            HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
-                            onNavigateToDeleteAction(DeleteActionMode.ACCOUNT)
-                        }
-                    }
-                )
-            }
+            DangerZoneSection(
+                isLoggedIn = isLoggedIn, colorScheme = colorScheme, context = context,
+                onNavigateToDeleteAction = onNavigateToDeleteAction
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             if (isLoggedIn) {
-                OutlinedButton(
-                    onClick = {
-                        HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
-                        coroutineScope.launch {
-                            authRepo.signOut()
-                            onSignOut()
-                            GlobalToastManager.showToast(
-                                message = "You have Logged out successfully",
-                                icon = Icons.AutoMirrored.Filled.Logout
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    border = BorderStroke(1.dp, colorScheme.error),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = colorScheme.error
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = stringResource(R.string.sign_out),
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.sign_out),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                SignOutSection(
+                    colorScheme = colorScheme, context = context, coroutineScope = coroutineScope,
+                    authRepo = authRepo, onSignOut = onSignOut
+                )
             }
 
             Spacer(modifier = Modifier.height(100.dp))
@@ -735,5 +456,400 @@ fun Modifier.diagonalHatch(
             )
             x += spacingPx
         }
+    }
+}
+
+@Composable
+fun ProfileSection(
+    isLoggedIn: Boolean,
+    name: String,
+    number: String,
+    email: String,
+    avatarUrl: String,
+    onNavigateToEditProfile: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    colorScheme: ColorScheme,
+    context: Context
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colorScheme.surface)
+            .border(1.dp, colorScheme.outlineVariant)
+            .clickable {
+                HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                if (isLoggedIn) {
+                    onNavigateToEditProfile()
+                } else {
+                    onNavigateToLogin()
+                }
+            }
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(20.dp)
+        ) {
+            UserAvatar(
+                avatarUrl = avatarUrl,
+                size = 64.dp
+            )
+            Spacer(modifier = Modifier.width(20.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (isLoggedIn) name else "Guest",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (isLoggedIn) number else "Tap to login to access profile",
+                    fontSize = 15.sp,
+                    color = colorScheme.onSurfaceVariant
+                )
+                if (isLoggedIn && email.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = email,
+                        fontSize = 13.sp,
+                        color = colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = stringResource(R.string.edit_profile),
+                tint = colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun PreferencesSection(
+    currentLanguage: String,
+    currentAppearance: String,
+    isHaptic: Boolean,
+    onLanguageClick: () -> Unit,
+    onAppearanceClick: () -> Unit,
+    onHapticChange: (Boolean) -> Unit,
+    colorScheme: ColorScheme
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colorScheme.surface)
+            .border(1.dp, colorScheme.outlineVariant)
+    ) {
+        SettingsItem(
+            icon = Icons.Default.Language,
+            title = stringResource(R.string.app_language),
+            value = currentLanguage,
+            onClick = onLanguageClick
+        )
+        HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+        SettingsItem(
+            icon = Icons.Default.DarkMode,
+            title = stringResource(R.string.appearance),
+            value = currentAppearance,
+            onClick = onAppearanceClick
+        )
+        HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+        SettingsSwitchItem(
+            icon = Icons.Default.Vibration,
+            title = stringResource(R.string.haptic_feedback),
+            checked = isHaptic,
+            onCheckedChange = onHapticChange
+        )
+    }
+}
+
+@Composable
+fun SupportSection(
+    colorScheme: ColorScheme,
+    context: Context,
+    onNavigateToAboutUs: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colorScheme.surface)
+            .border(1.dp, colorScheme.outlineVariant)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .diagonalHatch(
+                        colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
+                    )
+                    .clickable {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            ContactConfig.socialLinks.telegram.toUri()
+                        )
+                        try {
+                            context.startActivity(intent)
+                        } catch (_: ActivityNotFoundException) {
+                        }
+                    }
+                    .padding(16.dp), contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.Email,
+                        contentDescription = stringResource(R.string.contact_us),
+                        tint = colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.contact_us), fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colorScheme.onSurface
+                    )
+                }
+            }
+            VerticalDivider(color = colorScheme.outlineVariant)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .diagonalHatch(
+                        colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
+                    )
+                    .clickable {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    }
+                    .padding(16.dp), contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = stringResource(R.string.rate_app),
+                        tint = colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.rate_app), fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colorScheme.onSurface
+                    )
+                }
+            }
+            VerticalDivider(color = colorScheme.outlineVariant)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .diagonalHatch(
+                        colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
+                    )
+                    .clickable {
+                        HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                        val shareIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "Check out MediSync! The smartest way to manage your health: https://medisync-4c8c0.web.app"
+                            )
+                            type = "text/plain"
+                        }
+                        context.startActivity(
+                            Intent.createChooser(shareIntent, "Share MediSync via")
+                        )
+                    }
+                    .padding(16.dp), contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = stringResource(R.string.share),
+                        tint = colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.share), fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colorScheme.onSurface
+                    )
+                }
+            }
+        }
+        HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .diagonalHatch(
+                    colorScheme.outlineVariant.copy(alpha = 0.5f), spacing = 6.dp
+                )
+        ) {
+            SettingsItem(
+                icon = Icons.Default.Info,
+                title = stringResource(R.string.about_us),
+                showArrow = true,
+                onClick = {
+                    HapticHelper.trigger(context, HapticHelper.Type.LIGHT)
+                    onNavigateToAboutUs()
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun LegalSection(
+    colorScheme: ColorScheme,
+    uriHandler: UriHandler
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedButton(
+            onClick = {
+                uriHandler.openUri("https://sites.google.com/view/medisync-legal/home")
+            },
+            modifier = Modifier
+                .weight(1f)
+                .height(44.dp),
+            shape = RoundedCornerShape(
+                topStartPercent = 50, bottomStartPercent = 50, topEndPercent = 0,
+                bottomEndPercent = 0
+            ),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = colorScheme.surface,
+                contentColor = colorScheme.onSurfaceVariant
+            ),
+            border = BorderStroke(1.dp, colorScheme.outlineVariant)
+        ) {
+            Text(
+                text = "Privacy Policy",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        OutlinedButton(
+            onClick = {
+                uriHandler.openUri(
+                    "https://sites.google.com/view/medisync-legal/terms-and-conditions"
+                )
+            },
+            modifier = Modifier
+                .weight(1f)
+                .height(44.dp),
+            shape = RoundedCornerShape(
+                topStartPercent = 0, bottomStartPercent = 0, topEndPercent = 50,
+                bottomEndPercent = 50
+            ),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = colorScheme.surface,
+                contentColor = colorScheme.onSurfaceVariant
+            ),
+            border = BorderStroke(1.dp, colorScheme.outlineVariant)
+        ) {
+            Text(
+                text = "Terms of Service",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
+fun DangerZoneSection(
+    isLoggedIn: Boolean,
+    colorScheme: ColorScheme,
+    context: Context,
+    onNavigateToDeleteAction: (DeleteActionMode) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colorScheme.surface)
+            .border(1.dp, colorScheme.outlineVariant)
+    ) {
+        SettingsItem(
+            icon = Icons.Default.Delete,
+            title = stringResource(R.string.clear_downloaded_reports),
+            titleColor = colorScheme.onSurfaceVariant,
+            showArrow = false,
+            onClick = {
+                HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                onNavigateToDeleteAction(DeleteActionMode.REPORTS)
+            }
+        )
+        HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+        SettingsItem(
+            icon = Icons.Default.Delete,
+            title = stringResource(R.string.delete_my_data),
+            titleColor = if (isLoggedIn) colorScheme.error else colorScheme.onSurfaceVariant,
+            showArrow = false,
+            onClick = {
+                if (isLoggedIn) {
+                    HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                    onNavigateToDeleteAction(DeleteActionMode.DATA)
+                }
+            }
+        )
+        HorizontalDivider(thickness = 1.dp, color = colorScheme.outlineVariant)
+        SettingsItem(
+            icon = Icons.Default.PersonRemove,
+            title = stringResource(R.string.delete_my_account),
+            titleColor = if (isLoggedIn) colorScheme.error else colorScheme.onSurfaceVariant,
+            showArrow = false,
+            onClick = {
+                if (isLoggedIn) {
+                    HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+                    onNavigateToDeleteAction(DeleteActionMode.ACCOUNT)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun SignOutSection(
+    colorScheme: ColorScheme,
+    context: Context,
+    coroutineScope: CoroutineScope,
+    authRepo: AuthRepository,
+    onSignOut: () -> Unit
+) {
+    OutlinedButton(
+        onClick = {
+            HapticHelper.trigger(context, HapticHelper.Type.HEAVY)
+            coroutineScope.launch {
+                authRepo.signOut()
+                onSignOut()
+                GlobalToastManager.showToast(
+                    message = "You have Logged out successfully",
+                    icon = Icons.AutoMirrored.Filled.Logout
+                )
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp),
+        border = BorderStroke(1.dp, colorScheme.error),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = colorScheme.error
+        )
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+            contentDescription = stringResource(R.string.sign_out),
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.sign_out),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
