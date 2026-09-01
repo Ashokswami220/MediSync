@@ -19,3 +19,24 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep Data Models for Firebase Firestore
+-keep class com.example.medisync.model.** { *; }
+
+# Keep Firebase / Google Play Services
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+
+# Kotlin Coroutines
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+
+# Koin (Dependency Injection)
+-keep class org.koin.** { *; }
+
+# Coil (Image loading)
+-keep class coil.** { *; }
+
+# Cloudinary
+-keep class com.cloudinary.** { *; }
+
