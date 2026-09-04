@@ -710,7 +710,7 @@ fun LegalSection(
     ) {
         OutlinedButton(
             onClick = {
-                uriHandler.openUri("https://sites.google.com/view/medisync-legal/home")
+                uriHandler.openUri("https://sites.google.com/view/balajimedilab-legal/home")
             },
             modifier = Modifier
                 .weight(1f)
@@ -735,7 +735,7 @@ fun LegalSection(
         OutlinedButton(
             onClick = {
                 uriHandler.openUri(
-                    "https://sites.google.com/view/medisync-legal/terms-and-conditions"
+                    "https://sites.google.com/view/balajimedilab-legal/terms-and-conditions"
                 )
             },
             modifier = Modifier
