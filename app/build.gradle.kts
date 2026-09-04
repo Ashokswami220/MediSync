@@ -18,7 +18,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.medisync.app"
+        applicationId = "com.balajimedilab.app"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
